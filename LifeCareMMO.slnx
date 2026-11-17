@@ -19,6 +19,7 @@
     <Project Path="tests/LifeCare.Construction.ServiceProbe/LifeCare.Construction.ServiceProbe.csproj" />
     <Project Path="tests/LifeCare.Construction.Tests/LifeCare.Construction.Tests.csproj" />
     <Project Path="tests/LifeCare.Phase0Probe/LifeCare.Phase0Probe.csproj" />
+    <Project Path="tests/LifeCare.Phase1Probe/LifeCare.Phase1Probe.csproj" />
     <Project Path="tests/StormChase.Networking.Tests/StormChase.Networking.Tests.csproj" />
   </Folder>
   <Project Path="../BiologyLib/src/BiologyLib/BiologyLib.csproj" />

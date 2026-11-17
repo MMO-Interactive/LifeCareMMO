@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>LifeCare.Phase1Probe</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Shared\StormChase.Networking\StormChase.Networking.csproj" />
+    <ProjectReference Include="..\..\src\Shared\LifeCare.Construction\LifeCare.Construction.csproj" />
+  </ItemGroup>
+</Project>
