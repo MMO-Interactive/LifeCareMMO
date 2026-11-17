@@ -11,7 +11,7 @@ internal enum WorldClick { PrimaryDown, PrimaryUp, SecondaryDown }
 /// <summary>Draws lots from their authoritative revisions, plus build and furniture ghosts. Shared by every client.</summary>
 internal sealed class StormChaseLotRenderer
 {
-    private static readonly AssetHandle Cube = new("mesh", "lot/cube");
+    private static readonly AssetHandle Cube = StormChaseLotParts.Cube;
     private static readonly (string Name, ColorRgba Tint, float Emissive)[] Materials =
     [
         ("floor", new(.55f, .47f, .36f, 1), 0), ("wall", new(.82f, .8f, .74f, 1), 0), ("wall-interior", new(.9f, .88f, .82f, 1), 0),
@@ -33,9 +33,7 @@ internal sealed class StormChaseLotRenderer
     }
 
     /// <summary>The render item for a piece: its stable id doubles as the motion-vector id the host's debris names.</summary>
-    public static RenderItem Item(LotPiece piece, string? material = null) => new("lot/" + (material ?? piece.Material), Cube, new AssetHandle("material", "lot/" + (material ?? piece.Material)),
-        new(piece.CenterX, piece.CenterY, piece.CenterZ), new(piece.SizeX, piece.SizeY, piece.SizeZ), piece.YawDegrees, true,
-        MotionVectorId: piece.PieceId, AllowStaticInstancing: material is null);
+    public static RenderItem Item(LotPiece piece, string? material = null) => StormChaseLotParts.Item(piece, material);
 
     public static IEnumerable<RenderItem> Items(IEnumerable<LotPiece> pieces, Vector3f observer, Func<string, bool> released, float range = 900)
     {

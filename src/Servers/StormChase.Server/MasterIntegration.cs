@@ -93,7 +93,14 @@ internal static class MasterApi
     {
         app.MapPost("/api/internal/service-purchase",(RemotePurchaseRequest request,GameAuthority game)=>Results.Ok(game.Purchase(request.CharacterId,request.Purchase)));
         app.MapPost("/api/internal/service-select",(RemoteSelectRequest request,GameAuthority game)=>Results.Ok(game.SelectVehicle(request.CharacterId,request.VehicleId)));
+        app.MapGet("/api/internal/lots",(GameAuthority game)=>Results.Ok(game.LotRevisions()));
+        if(app.Services.GetRequiredService<ServerOptions>().StormTestRoutes)
+        {
+            app.MapPost("/api/internal/test/lot-tornado",(LotTornadoRequest request,GameAuthority game)=>game.StartLotTestStorm(request.LotId,request.Seconds,request.PeakMph,request.WidthMeters) is { } started?Results.Ok(started):Results.NotFound());
+            app.MapGet("/api/internal/test/clear-site",(float? clearMeters,GameAuthority game)=>game.FindClearTestSite(clearMeters??1500) is { } site?Results.Ok(site):Results.NotFound());
+        }
     }
     private static string GameId(HttpContext context)=>context.Request.Headers["X-StormChase-Game"].ToString();
     private sealed record CharacterIdRequest(string CharacterId);
+    private sealed record LotTornadoRequest(string LotId,double Seconds=8,float PeakMph=220,float WidthMeters=160);
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -16,6 +16,7 @@
     <ProjectReference Include="$(EngineRoot)\src\Engine.Splines\Engine.Splines.csproj" />
     <ProjectReference Include="$(EngineRoot)\src\Engine.Physics.PhysX\Engine.Physics.PhysX.csproj" />
     <ProjectReference Include="..\..\Shared\StormChase.Networking\StormChase.Networking.csproj" />
+    <ProjectReference Include="..\..\Shared\LifeCare.Construction\LifeCare.Construction.csproj" />
     <Compile Include="..\..\Client\PmWeather.Showcase\StormChaseCampaignWeather.cs" Link="Weather\StormChaseCampaignWeather.cs" />
     <Compile Include="..\..\Client\PmWeather.Showcase\StormChaseAtmosphere.cs" Link="Weather\StormChaseAtmosphere.cs" />
     <Compile Include="..\..\Client\PmWeather.Showcase\StormChaseCoast.cs" Link="World\StormChaseCoast.cs" />
@@ -37,6 +38,8 @@
     <Compile Include="..\..\Client\PmWeather.Showcase\StormChaseModelInteriors.cs" Link="World\StormChaseModelInteriors.cs" />
     <Compile Include="..\..\Client\PmWeather.Showcase\StormChaseDestruction.cs" Link="Physics\StormChaseDestruction.cs" />
     <Compile Include="..\..\Client\PmWeather.Showcase\StormChaseDestructionReplication.cs" Link="Physics\StormChaseDestructionReplication.cs" />
+    <Compile Include="..\..\Client\PmWeather.Showcase\StormChaseDestruction.External.cs" Link="Physics\StormChaseDestruction.External.cs" />
+    <Compile Include="..\..\Client\PmWeather.Showcase\StormChaseLotParts.cs" Link="Physics\StormChaseLotParts.cs" />
     <Compile Include="..\..\Client\PmWeather.Showcase\StormChaseVehicles.cs" Link="Physics\StormChaseVehicles.cs" />
     <Compile Include="..\..\Client\PmWeather.Showcase\FlyCamera.cs" Link="Physics\FlyCamera.cs" />
   </ItemGroup>

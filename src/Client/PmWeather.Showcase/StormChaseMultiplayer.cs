@@ -99,6 +99,7 @@ internal sealed class StormChasePlaySession : IDisposable
             var ticket=await accounts.JoinAsync(selection.Character.Id,server.ServerId,cancellation);
             online=new(server,ticket,session.World.ContentFingerprint);
             await online.Admission.WaitAsync(TimeSpan.FromSeconds(25),cancellation);
+            _=new StormChaseLotRenderer(catalog);
             var lots=new StormChaseLotPlay(selection.AccountAddress,selection.AccessToken,selection.Character.Id,session.World);
             session.LotItems=lots.RenderItems;session.LotDebrisPart=id=>lots.Piece(id) is { } piece?StormChaseLotRenderer.Item(piece):null;
             return new(session,online,name,output,staging){Lots=lots};

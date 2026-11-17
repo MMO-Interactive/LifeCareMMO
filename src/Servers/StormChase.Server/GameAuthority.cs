@@ -156,6 +156,7 @@ public sealed partial class GameAuthority:BackgroundService
             if(destruction.NativeProvider.IsReducedFallback||destruction.NativeProvider.ProviderName!="PhysX")throw new InvalidOperationException("The dedicated world requires the actual native PhysX provider.");
             destruction.AdditionalPhysicsAnchors=()=>players.Values.SelectMany(p=>new[]{p.Feet,p.Vehicle.Position}).Concat(furniturePhysics?.PhysicsAnchors??[]).ToArray();
             int id=0;foreach(var item in world.DestructibleItems.OrderBy(i=>i.MotionVectorId,StringComparer.Ordinal))stablePartIds.Add(item.MotionVectorId!,++id);
+            _=PollLotsAsync(stoppingToken);
             if(options.RelayPort>0)
             {
                 // Gateway mode: no public game port. Players reach this district host only through a Gateway link.
@@ -189,7 +190,7 @@ public sealed partial class GameAuthority:BackgroundService
                 long started=Stopwatch.GetTimestamp();
                 lock(gate)
                 {
-                    ProcessNetwork();weather.Update(TickDelta);
+                    ProcessNetwork();weather.Update(TickDelta);AdvanceLotTestStorm();
                     if(fixtureWeather is not null)
                     {
                         fixtureWeather.Advance(TickDelta);
@@ -200,7 +201,7 @@ public sealed partial class GameAuthority:BackgroundService
                     if(destruction is not null&&world is not null)
                     {
                         renderWeather=frameBuilder.Build(tick,DateTimeOffset.UnixEpoch.AddSeconds(weather.ElapsedSeconds),new(1,1),new RenderScene{Environment=environment}).Weather;
-                        AdvancePlayers();
+                        AdvancePlayers();ApplyLotUpdates();
                         var observer=players.Values.FirstOrDefault()?.Feet??world.GasStations[0].ParkingPosition;
                         destruction.Update(TickDelta,renderWeather,observer,delta=>{foreach(var p in players.Values)p.Vehicle.StepForces(delta);});
                         HousingWorldUpdate();

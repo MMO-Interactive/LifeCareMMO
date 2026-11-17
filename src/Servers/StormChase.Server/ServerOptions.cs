@@ -32,6 +32,12 @@ public sealed record ServerOptions
     public string? LinkKeyEnvironment { get; init; }
     /// <summary>Weather comes from a separate climate process at this address; empty runs the climate model in-process.</summary>
     public string? ClimateAddress { get; init; }
+    /// <summary>The LifeCare Construction service; lots built there become destructible parts of this district.</summary>
+    public string? ConstructionUrl { get; init; }
+    public string? ConstructionKeyEnvironment { get; init; }
+    public double LotPollSeconds { get; init; } = 2;
+    /// <summary>Enables the trusted /api/internal/test/lot-tornado seam for gate probes. Requires --master-url (keyed internal routes).</summary>
+    public bool StormTestRoutes { get; init; }
 
     public static ServerOptions Parse(string[] args)
     {
@@ -59,8 +65,14 @@ public sealed record ServerOptions
             RelayPort=int.Parse(Read("--relay-port","0"),CultureInfo.InvariantCulture),
             RelayListen=Read("--relay-listen","127.0.0.1"),
             LinkKeyEnvironment=Read("--link-key-env","") is{Length:>0} linkKey?linkKey:null,
-            ClimateAddress=Read("--climate","") is{Length:>0} climate?climate:null
+            ClimateAddress=Read("--climate","") is{Length:>0} climate?climate:null,
+            ConstructionUrl=Read("--construction","") is{Length:>0} construction?construction.TrimEnd('/'):null,
+            ConstructionKeyEnvironment=Read("--construction-key-env","") is{Length:>0} constructionKey?constructionKey:null,
+            LotPollSeconds=double.Parse(Read("--lot-poll-seconds","2"),CultureInfo.InvariantCulture),
+            StormTestRoutes=args.Contains("--storm-test-routes")
         };
+        if(options.StormTestRoutes&&options.MasterUrl is null)throw new ArgumentException("--storm-test-routes needs --master-url so internal routes are keyed.");
+        if(options.LotPollSeconds is <.2 or >60)throw new ArgumentException("--lot-poll-seconds must be 0.2..60.");
         if(options.HttpPort is <0 or >65535 || options.GamePort is <0 or >65535 || options.MaxPlayers is <1 or >64)
             throw new ArgumentException("Ports must be 0..65535; max players must be 1..64.");
         if(options.ServerName.Length is <1 or >64 || !float.IsFinite(options.CampaignStartHour) || options.CampaignStartHour is <0 or >=24)

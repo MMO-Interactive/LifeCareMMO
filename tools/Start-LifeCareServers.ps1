@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Starts every LifeCare server role as its own process on this machine: climate, accounts, one district host and the Gateway.
   Clients use only the Gateway: accounts address http://127.0.0.1:<GatewayHttpPort>.
@@ -39,7 +39,7 @@ Start-Role 'accounts' (Dll 'StormChase.Server') @('--accounts-only', '--http-por
 Wait-Http "http://127.0.0.1:$AccountsPort/health" 60
 $env:LIFECARE_MASTER_KEY = (Get-Content (Join-Path $DataRoot 'accounts\master-server.key') -Raw).Trim()
 Start-Role 'district' (Dll 'StormChase.Server') @('--http-port', $DistrictHttpPort, '--relay-port', $DistrictRelayPort, '--climate', "127.0.0.1:$ClimatePort",
-    '--master-url', "http://127.0.0.1:$AccountsPort", '--master-key-env', 'LIFECARE_MASTER_KEY', '--world-seed', $WorldSeed, '--server-name', 'LifeCare district', '--data-root', (Join-Path $DataRoot 'district'))
+    '--master-url', "http://127.0.0.1:$AccountsPort", '--master-key-env', 'LIFECARE_MASTER_KEY', '--world-seed', $WorldSeed, '--construction', "http://127.0.0.1:$ConstructionPort", '--server-name', 'LifeCare district', '--data-root', (Join-Path $DataRoot 'district'))
 Start-Role 'construction' (Dll 'LifeCare.Construction.Service') @('--http-port', $ConstructionPort, '--accounts', "http://127.0.0.1:$AccountsPort", '--accounts-key-env', 'LIFECARE_MASTER_KEY', '--data-root', (Join-Path $DataRoot 'construction'))
 Start-Role 'gateway' (Dll 'LifeCare.Gateway') @('--http-port', $GatewayHttpPort, '--game-port', $GatewayGamePort, '--accounts', "http://127.0.0.1:$AccountsPort",
     '--construction', "http://127.0.0.1:$ConstructionPort", '--data-root', (Join-Path $DataRoot 'gateway'))
