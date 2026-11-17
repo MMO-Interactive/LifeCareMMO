@@ -14,6 +14,7 @@
     <Project Path="src/Shared/StormChase.Protocol/StormChase.Protocol.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/LifeCare.Phase0Probe/LifeCare.Phase0Probe.csproj" />
     <Project Path="tests/StormChase.Networking.Tests/StormChase.Networking.Tests.csproj" />
   </Folder>
   <Project Path="../BiologyLib/src/BiologyLib/BiologyLib.csproj" />

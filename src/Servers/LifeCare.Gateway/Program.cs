@@ -4,6 +4,8 @@ using LifeCare.Gateway;
 try
 {
     var options = GatewayOptions.Parse(args);
+    // Relay waits are 1–2 ms; at the default 15.6 ms Windows timer they would add a frame of delay to every hop.
+    if (OperatingSystem.IsWindows()) TimerResolution.Request(1);
     Directory.CreateDirectory(options.DataRoot);
     var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = [], ContentRootPath = AppContext.BaseDirectory });
     builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning).AddFilter("System.Net.Http", LogLevel.Warning);
