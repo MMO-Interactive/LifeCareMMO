@@ -133,6 +133,12 @@ internal static partial class Showcase
             DemoThreadPump.Wait(clientPerformance,surface);
             return clientPerformance.GetAwaiter().GetResult();
         }
+        if (args.Contains("--hud-smoke", StringComparer.OrdinalIgnoreCase))
+        {
+            var hudProof = VerifyLifeCareHudAsync(options, surface, catalog, logger, output, staging);
+            DemoThreadPump.Wait(hudProof, surface);
+            return hudProof.GetAwaiter().GetResult();
+        }
         if (args.Contains("--online-smoke", StringComparer.OrdinalIgnoreCase))
         {
             var onlineProof = VerifyStormChaseOnlineAsync(options, surface, catalog, logger, validation, output, staging, args);

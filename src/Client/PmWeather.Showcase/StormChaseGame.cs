@@ -59,11 +59,13 @@ internal static partial class Showcase
                     if(key==0x1B)
                     {
                         if(play.Lots?.Cancel()==true){}
+                        else if(hud.MapOpen)hud.MapOpen=false;
+                        else if(hud.PhoneOpen)hud.PhoneOpen=false;
                         else if(hud.ForecastOpen)hud.ForecastOpen=false;
                         else if(play.ShopOpen||play.DispatchOpen||play.HousingOpen){play.ShopOpen=false;play.DispatchOpen=false;play.HousingOpen=false;}
                         else paused=!paused;
                     }
-                    else if(key==0x4E)hud.RegionalMap=!hud.RegionalMap;
+                    else if(HudKey(key)){}
                     else if(key==0x5A){hud.ForecastOpen=!hud.ForecastOpen;surface.ReleaseMouseLook();}
                     else if(key==0x51)hud.HandleWeatherGuiAction("radar/toggle");
                     else if(key==0x4D)audio?.ToggleMuted();
@@ -102,7 +104,8 @@ internal static partial class Showcase
                         try
                         {
                             var admitted=loading.GetAwaiter().GetResult();lock(photoGate)play=admitted;
-                            paused=false;hud.RegionalMap=false;hud.ForecastOpen=false;
+                            paused=false;hud.RegionalMap=false;hud.ForecastOpen=false;hud.MapOpen=false;hud.PhoneOpen=false;
+                            hud.AttachWorld(play.Session.World);hud.MapLots=play.Lots is { } mapLots?mapLots.MapLots:null;
                             audio?.ConfigureWarningSites(play.Session.World.Settlements.Select(site=>site.Position with{Y=site.Position.Y+15}));
                             surface.GuiInputEnabled=false;
                             Console.WriteLine(play.Online?"Native multiplayer admitted: complete reliable debris baseline and server environment.":"Authenticated single-player session loaded.");
@@ -116,13 +119,15 @@ internal static partial class Showcase
                     foreach(var key in keyboard)
                     {
                         if(key.Key==0x1B)
-                        {if(play.Lots?.Cancel()==true){}else if(hud.ForecastOpen)hud.ForecastOpen=false;else if(play.ShopOpen||play.DispatchOpen||play.HousingOpen){play.ShopOpen=false;play.DispatchOpen=false;play.HousingOpen=false;}else paused=!paused;}
+                        {if(play.Lots?.Cancel()==true){}else if(hud.MapOpen)hud.MapOpen=false;else if(hud.PhoneOpen)hud.PhoneOpen=false;else if(hud.ForecastOpen)hud.ForecastOpen=false;else if(play.ShopOpen||play.DispatchOpen||play.HousingOpen){play.ShopOpen=false;play.DispatchOpen=false;play.HousingOpen=false;}else paused=!paused;}
+                        else if(HudKey(key.Key)){}
                         else if(key.Key==0x5A){hud.ForecastOpen=!hud.ForecastOpen;surface.ReleaseMouseLook();}
                         else if(key.Key==0x51)hud.HandleWeatherGuiAction("radar/toggle");
-                        else if(!paused&&key.Key is 0x26 or 0x28 or 0x0D or 0x55 or 0x4F or 0x48 or 0x50)play.HandleKey(key.Key);
+                        else if(!paused&&key.Key is 0x26 or 0x28 or 0x0D or 0x55 or 0x4F or 0x48 or 0x59)play.HandleKey(key.Key);
                     }
-                    surface.GuiInputEnabled=paused||play.ShopOpen||play.DispatchOpen||play.HousingOpen||hud.ForecastOpen||play.Lots?.Pie is not null;
+                    surface.GuiInputEnabled=paused||play.ShopOpen||play.DispatchOpen||play.HousingOpen||hud.ForecastOpen||hud.MapOpen||hud.PhoneOpen||play.Lots?.Pie is not null;
                     hud.WorldOverlay=play.Lots is { } lotLayer?lotLayer.Overlay:null;
+                    hud.Hotbar=play.Lots?.Hotbar();hud.LotStatus=play.Lots?.StatusLine;hud.LotMessage=play.Lots?.Status;hud.PlayerName=play.PlayerName;
                     if(profiler is not null){profiler.Mark("InputAndKeys");play.Session.FrameTimingSink??=profiler.Prefixed("Game.");}
                     try{frame=play.Step(surface,number++,delta,paused,particles,hud.ForecastOpen);}
                     catch(Exception error)
@@ -148,7 +153,20 @@ internal static partial class Showcase
                     {
                         frame=frame with{Ui=hud.Ui};
                         if(hud.LastFrame.Interaction.ActivatedElementId is { } action)
-                        {if(hud.HandleWeatherGuiAction(action)){}else if(action.StartsWith("lot/",StringComparison.Ordinal))play.Lots?.HandleGuiAction(action);
+                        {if(hud.HandleWeatherGuiAction(action)){}
+                        else if(hud.HandleHudAction(action,out var request))
+                        {
+                            switch(request)
+                            {
+                                case "jobs":play.DispatchOpen=true;play.ShopOpen=false;play.HousingOpen=false;break;
+                                case "home":play.HousingOpen=true;play.ShopOpen=false;play.DispatchOpen=false;break;
+                                case "shop":if(!play.ShopOpen)play.HandleKey(0x55);break;
+                                case "build":play.HandleKey(0x59);break;
+                                case "menu":paused=true;break;
+                                case "forecast":hud.ForecastOpen=true;hud.MapOpen=false;break;
+                            }
+                        }
+                        else if(action.StartsWith("lot/",StringComparison.Ordinal))play.Lots?.HandleGuiAction(action);
                         else if(action.StartsWith("housing/",StringComparison.Ordinal))HousingAction(action);else play.HandleGuiAction(action);}
                     }
                     audio?.Update(frame,(float)seconds,null,play.Session.Effects.LastStrike);
@@ -177,6 +195,17 @@ internal static partial class Showcase
             }
             return 0;
 
+            bool HudKey(int key)
+            {
+                switch(key)
+                {
+                    case 0x4E:hud.MapOpen=!hud.MapOpen;hud.PhoneOpen=false;hud.MapCenter=null;surface.ReleaseMouseLook();return true;
+                    case 0x50:hud.PhoneOpen=!hud.PhoneOpen;hud.PhoneApp=null;hud.MapOpen=false;surface.ReleaseMouseLook();return true;
+                    case 0xDB:hud.HandleHudAction("map/mini-in",out _);return true;
+                    case 0xDD:hud.HandleHudAction("map/mini-out",out _);return true;
+                    default:return false;
+                }
+            }
             void Leave(string reason)
             {
                 lock(photoGate){var leaving=play;play=null;leaving?.Dispose();}

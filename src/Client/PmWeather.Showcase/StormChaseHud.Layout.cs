@@ -3,23 +3,23 @@ using Shared.Contracts.Rendering;
 using Shared.Contracts.World;
 
 /// <summary>
-/// Storm-chaser instrument HUD. Layout is authored in 1600×900 design units and
-/// converted to real pixels (so glyphs are rasterised at their displayed size and stay
-/// sharp at any resolution). Panels are Engine.GUI elements; gauges, the compass and the
-/// radar scope are drawn as GPU geometry in <see cref="DrawInstruments"/>.
+/// The LifeCare HUD: about the player's avatar and life, after Life Beyond's panels and Tiny Clinic's tiles and hotbar.
+/// Layout is authored in design units (about 1500×850) and converted to real pixels so type stays sharp. Panels are
+/// Engine.GUI elements; the compass, icons, bars, the map and the phone's radar are GPU geometry drawn in
+/// <see cref="DrawInstruments"/>. Weather lives in the phone's Weather app, not on the HUD.
 /// </summary>
 internal sealed partial class StormChaseHud
 {
     internal static class Theme
     {
         public const string Font = "Bahnschrift", Bold = "Bahnschrift SemiBold";
-        public static readonly GuiColor Glass = new(8, 14, 20, 200), GlassEdge = new(255, 255, 255, 30);
-        public static readonly GuiColor Ink = new(238, 243, 245), Muted = new(162, 180, 188), Faint = new(120, 138, 146);
-        public static readonly GuiColor Accent = new(84, 226, 198), Warn = new(255, 198, 74), Danger = new(255, 88, 94);
-        public static readonly GuiColor Track = new(255, 255, 255, 34), KeyCap = new(255, 255, 255, 22);
+        // Deep navy glass with a cool cyan edge: Life Beyond's panels in Tiny Clinic's blue.
+        public static readonly GuiColor Glass = new(7, 17, 28, 224), GlassEdge = new(78, 150, 196, 96), Header = new(12, 30, 48, 240);
+        public static readonly GuiColor Ink = new(236, 244, 248), Muted = new(160, 182, 196), Faint = new(112, 136, 152);
+        public static readonly GuiColor Accent = new(84, 226, 198), Sky = new(64, 180, 255), Warn = new(255, 198, 74), Danger = new(255, 88, 94), Good = new(88, 214, 140);
+        public static readonly GuiColor Track = new(255, 255, 255, 34), KeyCap = new(255, 255, 255, 22), Tile = new(18, 58, 96, 240), TileEdge = new(110, 190, 240, 170);
         public static readonly (float Mph, string Label)[] EfScale = [(65, "EF0"), (86, "EF1"), (111, "EF2"), (136, "EF3"), (166, "EF4"), (200, "EF5")];
 
-        /// <summary>Peak-wind colour: teal below tornadic strength, then green→yellow→orange→red→magenta by EF class.</summary>
         public static GuiColor Threat(float mph) => mph < 40 ? new(120, 205, 196) : mph < 65 ? new(118, 214, 124)
             : mph < 111 ? new(244, 214, 72) : mph < 136 ? new(255, 158, 62) : mph < 166 ? new(255, 86, 90) : new(234, 112, 238);
 
@@ -28,27 +28,30 @@ internal sealed partial class StormChaseHud
     }
 
     /// <summary>Design-space rectangles shared by the GUI document and the GPU instruments.</summary>
-    private sealed record HudLayout(float Scale, float Width, float Height, GuiRect Storm, GuiRect Compass,
-        GuiRect? Outlook, GuiRect? Mission, GuiRect Radar, GuiRect Cluster, GuiRect Prompt, bool ShowRadar);
+    private sealed record HudLayout(float Scale, float Width, float Height, GuiRect Character, GuiRect Compass, GuiRect Clock, GuiRect Icons,
+        GuiRect Task, GuiRect Notes, GuiRect Minimap, GuiRect MinimapCanvas, GuiRect Hotbar, GuiRect Status, GuiRect? Vehicle, GuiRect Phone);
+
+    private static readonly (string Id, string Key, string Label)[] IconTiles =
+        [("hud/map", "N", "Map"), ("hud/jobs", "O", "Jobs"), ("hud/phone", "P", "Phone"), ("hud/build", "Y", "Build"), ("hud/shop", "U", "Shop"), ("hud/menu", "Esc", "Menu")];
 
     private static float HudScale(int w, int h) => Math.Clamp(Math.Min(w / 1500f, h / 850f), .78f, 2.4f);
 
     private HudLayout ComputeLayout(int w, int h, StormChaseTelemetry t)
     {
-        float s = HudScale(w, h), W = w / s, H = h / s, m = 22;
-        var c = t.Campaign;
-        bool radar = W >= 900 && H >= 560;
-        var storm = new GuiRect(m, m, 372, 166);
-        float compassWidth = Math.Clamp(2 * (W / 2 - storm.Right - 16), 240, 560);
-        var compass = new GuiRect(W / 2 - compassWidth / 2, m, compassWidth, 42);
-        GuiRect? outlook = c is null || W < 1180 ? null : new GuiRect(W - m - 340, m, 340, 196);
-        GuiRect? mission = c?.Mission is not null && outlook is { } o ? new GuiRect(o.X, o.Bottom + 12, 340, 140) : null;
-        var radarRect = new GuiRect(W - m - 300, H - m - 356, 300, 356);
-        var cluster = c is null ? new GuiRect(m, H - m - 128, 372, 128) : new GuiRect(m, H - m - 182, 372, 182);
-        float left = cluster.Right + 24, right = radar ? radarRect.X - 24 : W - m;
-        float promptWidth = Math.Clamp(right - left, 320, 760);
-        var prompt = new GuiRect(left + (right - left - promptWidth) / 2, H - m - 74, promptWidth, 74);
-        return new(s, W, H, storm, compass, outlook, mission, radarRect, cluster, prompt, radar);
+        float s = HudScale(w, h), W = w / s, H = h / s, m = 16;
+        var character = new GuiRect(m, m, 344, 170);
+        var compass = new GuiRect(W / 2 - 240, m, 480, 34);
+        var clock = new GuiRect(W / 2 - 210, compass.Bottom + 6, 420, 60);
+        var icons = new GuiRect(W - m - 390, m, 390, 66);
+        var task = new GuiRect(W - m - 344, icons.Bottom + 10, 344, 124);
+        var notes = new GuiRect(W - m - 344, task.Bottom + 10, 344, 136);
+        var minimap = new GuiRect(W - m - 320, H - m - 278, 320, 278);
+        var canvas = new GuiRect(minimap.X + 12, minimap.Y + 44, 296, 186);
+        var hotbar = new GuiRect(W / 2 - 325, H - m - 78, 650, 78);
+        var status = new GuiRect(hotbar.X, hotbar.Y - 38, hotbar.Width, 30);
+        GuiRect? vehicle = t.CameraMode == "DRIVING" && t.Campaign is not null ? new GuiRect(m, H - m - 136, 300, 136) : null;
+        var phone = new GuiRect(W - m - 312, task.Bottom + 12, 312, Math.Min(640, H - m - task.Bottom - 12));
+        return new(s, W, H, character, compass, clock, icons, task, notes, minimap, canvas, hotbar, status, vehicle, phone);
     }
 
     private HudLayout? layoutForInstruments;
@@ -63,6 +66,7 @@ internal sealed partial class StormChaseHud
         var root = new List<GuiElement>();
         if (c?.ShopOpen == true)
             return new(new GuiOverlayPanel { Width = GuiLength.Pixels(w), Height = GuiLength.Pixels(h), Items = BuildShop(w, h, s, c).ToList() });
+        TrackNotifications(t);
 
         GuiLabel Label(GuiRect panel, string text, float x, float y, float width, float size, GuiColor color,
             bool bold = false, GuiTextAlignment align = GuiTextAlignment.Left) => new()
@@ -71,206 +75,186 @@ internal sealed partial class StormChaseHud
             Height = GuiLength.Pixels(size * 1.9f * s), TextAlignment = align, WrapMode = GuiTextWrapMode.NoWrap,
             Style = new(bold ? Theme.Bold : Theme.Font, size * s, 1.1f, color),
         };
-        GuiOverlayPanel Glass(GuiRect r, GuiColor? edge = null) => new()
+        GuiLabel Wrapped(GuiRect panel, string text, float x, float y, float width, float height, float size, GuiColor color) => new()
+        {
+            Text = text, Translation = new((panel.X + x) * s, (panel.Y + y) * s), Width = GuiLength.Pixels(width * s), Height = GuiLength.Pixels(height * s),
+            WrapMode = GuiTextWrapMode.Wrap, Style = new(Theme.Font, size * s, 1.18f, color),
+        };
+        GuiOverlayPanel Fill(GuiRect r, GuiColor color, float radius, GuiColor? border = null, float thickness = 1) => new()
         {
             Translation = new(r.X * s, r.Y * s), Width = GuiLength.Pixels(r.Width * s), Height = GuiLength.Pixels(r.Height * s),
-            BackgroundColor = Theme.Glass, BorderColor = Theme.GlassEdge, BorderThickness = Math.Max(1, s), CornerRadius = 10 * s,
+            BackgroundColor = color, CornerRadius = radius * s, BorderColor = border ?? default, BorderThickness = border is null ? 0 : Math.Max(1, thickness * s),
         };
-        GuiOverlayPanel Fill(GuiRect r, GuiColor color, float radius) => new()
+        // Life Beyond panel: a header strip with the title in caps and a thin accent rule.
+        void Panel(GuiRect r, string title, GuiColor? accent = null, string? right = null)
         {
-            Translation = new(r.X * s, r.Y * s), Width = GuiLength.Pixels(r.Width * s), Height = GuiLength.Pixels(r.Height * s),
-            BackgroundColor = color, CornerRadius = radius * s,
-        };
-        GuiButton Button(string id, string text, GuiRect r, bool selected = false, float size = 9.5f) => new()
+            root.Add(Fill(r, Theme.Glass, 12, Theme.GlassEdge));
+            root.Add(Fill(new(r.X + 1, r.Y + 1, r.Width - 2, 30), Theme.Header, 11));
+            root.Add(Fill(new(r.X + 14, r.Y + 11, 8, 8), accent ?? Theme.Sky, 4));
+            root.Add(Label(r, title, 30, 7, r.Width - 140, 10, Theme.Ink, bold: true));
+            if (right is not null) root.Add(Label(r, right, r.Width - 160, 8, 146, 8.5f, accent ?? Theme.Muted, bold: true, align: GuiTextAlignment.Right));
+        }
+        GuiButton Button(string id, string text, GuiRect r, bool selected = false, float size = 9f, GuiColor? fill = null) => new()
         {
             Id = id, Text = text, Translation = new(r.X * s, r.Y * s), Width = GuiLength.Pixels(r.Width * s), Height = GuiLength.Pixels(r.Height * s),
-            TextStyle = new(Theme.Bold, size * s, 1, selected ? new GuiColor(8, 20, 24) : Theme.Ink), Padding = new(8 * s, 2 * s),
-            CornerRadius = r.Height * s / 2, TextAlignment = GuiTextAlignment.Center,
-            BackgroundColor = selected ? Theme.Accent : new(255, 255, 255, 18), HoverBackgroundColor = selected ? new(120, 238, 214) : new(255, 255, 255, 44),
-            PressedBackgroundColor = new(84, 226, 198, 160), BorderColor = selected ? Theme.Accent : new(255, 255, 255, 40), BorderThickness = Math.Max(1, s),
+            TextStyle = new(Theme.Bold, size * s, 1, selected ? new GuiColor(8, 20, 24) : Theme.Ink), Padding = new(6 * s, Math.Max(1, (r.Height - size * 1.35f) / 2) * s),
+            CornerRadius = 7 * s, TextAlignment = GuiTextAlignment.Center,
+            BackgroundColor = selected ? Theme.Accent : fill ?? new(22, 88, 120, 245), HoverBackgroundColor = selected ? new(120, 238, 214) : new(37, 116, 153, 250),
+            PressedBackgroundColor = new(6, 43, 57, 255), BorderColor = selected ? Theme.Accent : new(78, 150, 196, 140), BorderThickness = Math.Max(1, s),
         };
-        void Chip(GuiRect panel, float x, float y, string text, GuiColor color, out float width)
-        {
-            var style = new GuiTextStyle(Theme.Bold, 8.5f * s, 1, color);
-            width = composer.Measure(text, style, GuiSize.Zero, GuiTextWrapMode.NoWrap).Width / s + 16;
-            root.Add(Fill(new(panel.X + x, panel.Y + y, width, 20), color.WithAlpha(38), 10));
-            root.Add(Label(panel, text, x + 8, y + 3, width, 8.5f, color, bold: true));
-        }
 
-        // ---------------------------------------------------------------- storm card
-        var storm = L.Storm;
-        bool active = t.HasFunnel && t.PeakWind > 0;
-        var threat = active ? Theme.Threat(t.PeakWind) : Theme.Accent;
-        root.Add(Glass(storm));
-        root.Add(Fill(new(storm.X, storm.Y + 14, 4, storm.Height - 28), threat, 2));
-        bool noStorms = c?.StormCount == 0 || t.Distance <= 0;
-        Chip(storm, 18, 14, noStorms ? "QUIET SKIES" : t.Phase.ToUpperInvariant(), noStorms ? Theme.Muted : threat, out _);
-        root.Add(Label(storm, noStorms ? "NO ACTIVE CELLS" : active ? "NEAREST TORNADO" : "NEAREST STORM", 150, 16, 204, 8.5f, Theme.Muted, align: GuiTextAlignment.Right));
-        if (noStorms)
-        {
-            root.Add(Label(storm, "Clear skies", 18, 44, 330, 20, Theme.Ink, bold: true));
-            root.Add(Label(storm, c is null ? "Waiting for convection." : $"{c.Forecast} today  ·  tornado potential {c.Risk:P0}", 18, 80, 336, 10, Theme.Muted));
-        }
-        else
-        {
-            root.Add(Label(storm, active ? $"{t.PeakWind:0}" : $"{t.Distance / 1000:0.0}", 18, 40, 140, 30, Theme.Ink, bold: true));
-            root.Add(Label(storm, active ? "MPH PEAK WIND" : "KM TO CORE", 18, 92, 160, 8.5f, Theme.Muted));
-        }
-        if (!noStorms)
-        {
-            root.Add(Label(storm, active ? $"{t.Width:0} m wide" : "Developing cell", 174, 46, 180, 11, Theme.Ink));
-            root.Add(Label(storm, $"{t.Distance / 1000:0.00} km away", 200, 70, 154, 11, Theme.Ink));
-        }
-        root.Add(Label(storm, $"{t.FunnelEpisode} FUNNEL{(t.FunnelEpisode == 1 ? "" : "S")}   ·   {t.Touchdowns} TOUCHDOWN{(t.Touchdowns == 1 ? "" : "S")}",
-            18, 140, 336, 8, Theme.Faint));
-
-        // ---------------------------------------------------------------- compass + clock
-        root.Add(Glass(L.Compass));
+        // ---------------------------------------------------------------- character
+        var ch = L.Character;
+        var job = StormChaseJobs.Get(c?.Job);
+        Panel(ch, "CHARACTER", Theme.Accent, c is null ? null : job.Department.ToUpperInvariant());
+        root.Add(Fill(new(ch.X + 14, ch.Y + 42, 58, 58), new(16, 46, 70, 250), 10, Theme.TileEdge));
+        string name = string.IsNullOrWhiteSpace(PlayerName) ? "Citizen" : PlayerName;
+        root.Add(Label(new(ch.X + 14, ch.Y + 42, 58, 58), name[..1].ToUpperInvariant(), 0, 12, 58, 20, Theme.Ink, bold: true, align: GuiTextAlignment.Center));
+        root.Add(Label(ch, name, 84, 40, 246, 17, Theme.Ink, bold: true));
+        root.Add(Label(ch, c is null ? "Observer" : $"{job.Title}  ·  {(t.CameraMode == "DRIVING" ? "Driving" : "On foot")}", 84, 70, 246, 9.5f, Theme.Muted));
+        root.Add(Label(ch, NearestPlace(c) is { } place ? "Near " + place : "Open country", 84, 88, 246, 9.5f, Theme.Sky));
         if (c is not null)
         {
-            var pill = new GuiRect(L.Width / 2 - 150, L.Compass.Bottom + 8, 300, 28);
-            root.Add(Glass(pill));
-            root.Add(Label(pill, $"DAY {c.Day}   {(int)c.Hour:00}:{(int)(c.Hour % 1 * 60):00}", 16, 6, 150, 10.5f, Theme.Ink, bold: true));
-            root.Add(Label(pill, $"${c.Cash:#,0}", 150, 6, 134, 10.5f, Theme.Accent, bold: true, align: GuiTextAlignment.Right));
-            // What the storm is doing right here: hail, torrential rain, damaging gusts, near-zero visibility.
-            if (t.LocalStorm is { } here && here.Summary(t.Gust) is { Length: > 0 } conditions)
+            (string Name, string Value, GuiColor Color)[] stats = [("CASH", $"${c.Cash:#,0}", Theme.Accent), ("REPUTATION", $"{c.Popularity}", Theme.Ink), ("DAY", $"{c.Day}", Theme.Ink)];
+            for (int i = 0; i < stats.Length; i++)
             {
-                var color = here.Hail01 >= .08f || here.WindSpeedMetersPerSecond * t.Gust >= 26 ? Theme.Danger : Theme.Warn;
-                var style = new GuiTextStyle(Theme.Bold, 9 * s, 1, color);
-                float chipWidth = composer.Measure(conditions, style, GuiSize.Zero, GuiTextWrapMode.NoWrap).Width / s + 20;
-                var chip = new GuiRect(L.Width / 2 - chipWidth / 2, pill.Bottom + 6, chipWidth, 22);
-                root.Add(Fill(chip, color.WithAlpha(190), 11));
-                root.Add(Label(chip, conditions, 10, 4, chipWidth, 9, new GuiColor(16, 10, 8), bold: true));
+                var cell = new GuiRect(ch.X + 14 + i * 108, ch.Y + 112, 100, 44);
+                root.Add(Fill(cell, new(255, 255, 255, 10), 8));
+                root.Add(Label(cell, stats[i].Name, 10, 5, 84, 7.5f, Theme.Faint));
+                root.Add(Label(cell, stats[i].Value, 10, 19, 84, 12.5f, stats[i].Color, bold: true));
             }
-        }
-        else
-        {
-            var pill = new GuiRect(L.Width / 2 - 150, L.Compass.Bottom + 8, 300, 28);
-            root.Add(Glass(pill));
-            root.Add(Label(pill, $"{t.TimeOfDay.ToUpperInvariant()}   ·   {t.CameraMode}   ·   {(t.Muted ? "SOUND OFF" : "SOUND ON")}", 0, 6, 300, 9.5f, Theme.Ink, align: GuiTextAlignment.Center));
         }
 
-        // ---------------------------------------------------------------- outlook
-        if (L.Outlook is { } o && c is not null)
+        // ---------------------------------------------------------------- compass + clock (weather is one quiet line; the rest is on the phone)
+        root.Add(Fill(L.Compass, Theme.Glass, 17, Theme.GlassEdge));
+        var clockRect = L.Clock;
+        root.Add(Fill(clockRect, Theme.Glass, 12, Theme.GlassEdge));
+        float hour = c?.Hour ?? 12;
+        root.Add(Label(clockRect, ClockText(hour), 18, 8, 160, 18, Theme.Ink, bold: true));
+        root.Add(Label(clockRect, c is null ? t.TimeOfDay : $"Day {c.Day}  ·  {c.Forecast}{TemperatureText(c)}", 18, 38, 220, 8.5f, Theme.Muted));
+        var tile = (X: (int)MathF.Floor(observerPosition.X / 4), Z: (int)MathF.Floor(observerPosition.Z / 4));
+        root.Add(Label(clockRect, NearestPlace(c) ?? "Open country", 214, 10, 190, 11, Theme.Ink, bold: true, align: GuiTextAlignment.Right));
+        root.Add(Label(clockRect, $"Tile {tile.X}, {tile.Z}", 214, 32, 190, 8.5f, Theme.Faint, align: GuiTextAlignment.Right));
+
+        // ---------------------------------------------------------------- Tiny Clinic icon tiles
+        for (int i = 0; i < IconTiles.Length; i++)
         {
-            var risk = Theme.Risk(c.Risk);
-            root.Add(Glass(o));
-            root.Add(Fill(new(o.X, o.Y + 14, 4, o.Height - 28), risk, 2));
-            Chip(o, 18, 14, c.Forecast.ToUpperInvariant(), risk, out _);
-            root.Add(Label(o, $"{c.StormCount} ACTIVE CELL{(c.StormCount == 1 ? "" : "S")}", 170, 16, 152, 8.5f, Theme.Muted, align: GuiTextAlignment.Right));
-            var d = c.Atmosphere?.Diagnostics;
-            (string Name, string Value)[] metrics = d is null
-                ? [("RISK", $"{c.Risk:P0}"), ("STORMS", $"{c.StormCount}"), ("POPULARITY", $"{c.Popularity}"), ("VALUE", $"{StormChaseContracts.ContentValueMultiplier(c.Popularity):0.0}x")]
-                : [("CAPE", $"{d.CapeJkg:0}"), ("SRH 0-1", $"{d.Srh01KmM2S2:0}"), ("STP", $"{d.Stp:0.0}"), ("VTP-G", $"{d.VtpGame:0.0}")];
-            for (int i = 0; i < metrics.Length; i++)
+            var r = new GuiRect(L.Icons.X + i * 66, L.Icons.Y, 60, 66);
+            bool lit = (IconTiles[i].Id == "hud/phone" && PhoneOpen) || (IconTiles[i].Id == "hud/map" && MapOpen);
+            root.Add(new GuiButton
             {
-                float x = 18 + i * 78;
-                root.Add(Label(o, metrics[i].Name, x, 46, 74, 7.5f, Theme.Faint));
-                root.Add(Label(o, metrics[i].Value, x, 60, 74, 15, Theme.Ink, bold: true));
-            }
-            root.Add(Label(o, "TORNADO POTENTIAL", 18, 96, 200, 7.5f, Theme.Faint));
-            root.Add(Label(o, $"{c.Risk:P0}", 230, 94, 92, 9.5f, risk, bold: true, align: GuiTextAlignment.Right));
-            root.Add(Label(o, $"POPULARITY {c.Popularity}  ·  CONTENT {StormChaseContracts.ContentValueMultiplier(c.Popularity):0.00}x", 18, 126, 304, 8, Theme.Muted));
-            root.Add(Button("forecast/toggle", "FORECAST & HODOGRAPH   Z", new(o.X + 18, o.Y + 150, 304, 30)));
-        }
-        if (L.Mission is { } mr && c?.Mission is { } mission)
-        {
-            root.Add(Glass(mr));
-            root.Add(Fill(new(mr.X, mr.Y + 14, 4, mr.Height - 28), Theme.Warn, 2));
-            Chip(mr, 18, 14, $"JOB  {Math.Min(mission.Step + 1, mission.StepCount)}/{mission.StepCount}", Theme.Warn, out float jobChip);
-            float meters = StormChaseCareer.HorizontalDistance(observerPosition, new(mission.TargetPosition.X, mission.TargetPosition.Y, mission.TargetPosition.Z));
-            root.Add(Label(mr, meters >= 1000 ? $"{meters / 1000:0.0} KM" : $"{meters:0} M", 170, 16, 152, 9.5f, Theme.Warn, bold: true, align: GuiTextAlignment.Right));
-            root.Add(Label(mr, mission.Title, 18, 42, 304, 12, Theme.Ink, bold: true));
-            root.Add(new GuiLabel
-            {
-                Text = mission.Objective, Translation = new((mr.X + 18) * s, (mr.Y + 64) * s), Width = GuiLength.Pixels(304 * s),
-                Height = GuiLength.Pixels(34 * s), WrapMode = GuiTextWrapMode.Wrap, Style = new(Theme.Font, 8.5f * s, 1.15f, Theme.Muted),
+                Id = IconTiles[i].Id, Text = "", Translation = new(r.X * s, r.Y * s), Width = GuiLength.Pixels(r.Width * s), Height = GuiLength.Pixels(r.Height * s),
+                CornerRadius = 9 * s, BorderThickness = Math.Max(1, (lit ? 2 : 1) * s), BackgroundColor = lit ? new(26, 92, 140, 250) : Theme.Tile,
+                HoverBackgroundColor = new(34, 104, 156, 250), PressedBackgroundColor = new(10, 40, 70, 255), BorderColor = lit ? Theme.Accent : Theme.TileEdge,
             });
-            root.Add(Label(mr, mission.RequiredWorkSeconds > 0 ? $"WORK {mission.WorkSeconds:0}/{mission.RequiredWorkSeconds:0} s   ·   H TO WORK" : "H INTERACT   ·   O DISPATCH",
-                18, 102, 304, 8, Theme.Faint));
+            root.Add(Label(r, IconTiles[i].Key, 5, 2, 30, 7, Theme.Sky));
+            root.Add(Label(r, IconTiles[i].Label, 0, 46, 60, 8.5f, Theme.Ink, align: GuiTextAlignment.Center));
         }
 
-        // ---------------------------------------------------------------- vehicle / field cluster
-        var k = L.Cluster;
-        root.Add(Glass(k));
-        if (c is not null)
+        // ---------------------------------------------------------------- active task
+        var tr = L.Task;
+        if (c?.Mission is { } mission)
         {
-            bool onFoot = t.CameraMode != "DRIVING";
-            root.Add(Label(k, $"{c.SpeedMph:0}", 18, 62, 132, 26, Theme.Ink, bold: true, align: GuiTextAlignment.Center));
-            root.Add(Label(k, "MPH", 18, 104, 132, 8, Theme.Muted, align: GuiTextAlignment.Center));
-            root.Add(Label(k, c.VehicleName.ToUpperInvariant(), 166, 18, 190, 10.5f, Theme.Ink, bold: true));
-            root.Add(Label(k, onFoot ? "ON FOOT  ·  E TO ENTER" : "DRIVING", 166, 38, 190, 8, onFoot ? Theme.Muted : Theme.Accent));
-            bool lowFuel = c.Fuel < c.FuelCapacity * .2f;
-            root.Add(Label(k, "FUEL", 166, 62, 80, 7.5f, Theme.Faint));
-            root.Add(Label(k, $"{c.Fuel:0.0} / {c.FuelCapacity:0} L", 236, 60, 120, 8.5f, lowFuel ? Theme.Warn : Theme.Ink, align: GuiTextAlignment.Right));
-            root.Add(Label(k, "BODY", 166, 92, 80, 7.5f, Theme.Faint));
-            root.Add(Label(k, $"{c.Health:0}%", 236, 90, 120, 8.5f, c.Health < 35 ? Theme.Danger : Theme.Ink, align: GuiTextAlignment.Right));
-            float chipX = 166;
-            if (c.Refueling) { Chip(k, chipX, 124, "REFUELING  R STOP", Theme.Warn, out float wd); chipX += wd + 6; }
-            if (c.Anchored) { Chip(k, chipX, 124, "ANCHORED", Theme.Accent, out float wd); chipX += wd + 6; }
-            root.Add(Label(k, $"PROBES {c.Probes.Count}  ·  PHOTOS {t.Photos}", 166, 154, 190, 8, Theme.Faint));
+            float meters = StormChaseCareer.HorizontalDistance(observerPosition, new(mission.TargetPosition.X, mission.TargetPosition.Y, mission.TargetPosition.Z));
+            Panel(tr, "ACTIVE TASK", Theme.Warn, $"STEP {Math.Min(mission.Step + 1, mission.StepCount)}/{mission.StepCount}");
+            root.Add(Label(tr, mission.Title, 14, 38, 316, 14, Theme.Ink, bold: true));
+            root.Add(Wrapped(tr, mission.Objective, 14, 64, 240, 34, 8.5f, Theme.Muted));
+            root.Add(Label(tr, meters >= 1000 ? $"{meters / 1000:0.0} km" : $"{meters:0} m", 254, 64, 76, 13, Theme.Warn, bold: true, align: GuiTextAlignment.Right));
+            root.Add(Label(tr, mission.RequiredWorkSeconds > 0 ? $"WORK {mission.WorkSeconds:0}/{mission.RequiredWorkSeconds:0} s  ·  H TO WORK" : "H INTERACT  ·  O JOB BOARD", 14, 98, 316, 7.5f, Theme.Faint));
         }
         else
         {
-            root.Add(Label(k, "FIELD TELEMETRY", 18, 16, 200, 8.5f, Theme.Muted));
-            root.Add(Label(k, t.Distance > 0 ? $"{t.Distance / 1000:0.00} KM" : "No storm", 18, 36, 200, t.Distance > 0 ? 22 : 16, Theme.Ink, bold: true));
-            root.Add(Label(k, $"{(t.HasFunnel ? "TORNADO" : "STORM")} RANGE", 18, 72, 200, 8, Theme.Muted));
-            root.Add(Label(k, $"PROBES {t.ProbeCount}   PHOTOS {t.Photos}   DEBRIS {t.BrokenParts}", 18, 98, 340, 8.5f, Theme.Faint));
-            if (!string.IsNullOrEmpty(t.ProbeReading)) root.Add(Label(k, t.ProbeReading, 196, 40, 160, 9.5f, Theme.Accent, bold: true, align: GuiTextAlignment.Right));
+            Panel(tr, "ACTIVE TASK", Theme.Warn);
+            root.Add(Label(tr, c is null ? "Explore" : "No active job", 14, 40, 316, 14, Theme.Ink, bold: true));
+            root.Add(Wrapped(tr, c is null ? "Look around the district." : $"Your {job.Department.ToLowerInvariant()} job board has calls waiting. Press O to choose one.", 14, 66, 316, 40, 8.5f, Theme.Muted));
         }
 
-        // ---------------------------------------------------------------- radar
-        if (L.ShowRadar)
+        // ---------------------------------------------------------------- notifications (phone-style toasts)
+        var nr = L.Notes;
+        if (!PhoneOpen) {
+        Panel(nr, "NOTIFICATIONS", Theme.Sky, notifications.Count == 0 ? null : notifications.Count.ToString());
+        float ny = 38;
+        foreach (var note in notifications.Take(3))
         {
-            var r = L.Radar;
-            root.Add(Glass(r));
-            root.Add(Label(r, RegionalMap ? "REGION RADAR" : "LOCAL RADAR", 18, 14, 140, 9.5f, Theme.Ink, bold: true));
-            root.Add(Label(r, RegionalMap ? "24 KM  ·  N" : "3 KM  ·  N", 18, 32, 140, 7.5f, Theme.Faint));
-            root.Add(Button("radar/reflectivity", "REF", new(r.X + 168, r.Y + 14, 56, 24), RadarProduct == StormChaseRadarProduct.Reflectivity, 8.5f));
-            root.Add(Button("radar/velocity", "VEL", new(r.X + 228, r.Y + 14, 56, 24), RadarProduct == StormChaseRadarProduct.RadialVelocity, 8.5f));
+            var item = new GuiRect(nr.X + 10, nr.Y + ny, nr.Width - 20, 30);
+            root.Add(Fill(item, note.Color.WithAlpha(26), 7));
+            root.Add(Fill(new(item.X, item.Y + 4, 3, 22), note.Color, 2));
+            root.Add(Label(item, note.Time, 10, 7, 54, 8, Theme.Faint));
+            root.Add(Label(item, note.Text, 64, 6, item.Width - 72, 8.5f, Theme.Ink));
+            ny += 32;
+        }
+        if (notifications.Count == 0) root.Add(Label(nr, "Nothing new.", 14, 42, 300, 9, Theme.Faint));
         }
 
-        // ---------------------------------------------------------------- prompt bar
-        var p = L.Prompt;
-        string message = c?.Message ?? "Click to capture the mouse  ·  Shift boosts  ·  Esc releases the mouse";
-        root.Add(Glass(p));
-        root.Add(Label(p, string.IsNullOrWhiteSpace(message) ? "Storm chase in progress." : message, 16, 10, p.Width - 32, 9.5f, Theme.Ink, align: GuiTextAlignment.Center));
-        var hints = KeyHints(t);
-        var keyStyle = new GuiTextStyle(Theme.Bold, 8 * s, 1, Theme.Ink);
-        var hintStyle = new GuiTextStyle(Theme.Font, 8 * s, 1, Theme.Muted);
-        var measured = hints.Select(hint => (hint.Key, hint.Label,
-            Key: Math.Max(20, composer.Measure(hint.Key, keyStyle, GuiSize.Zero, GuiTextWrapMode.NoWrap).Width / s + 12),
-            Text: composer.Measure(hint.Label, hintStyle, GuiSize.Zero, GuiTextWrapMode.NoWrap).Width / s)).ToList();
-        while (measured.Count > 1 && measured.Sum(m => m.Key + m.Text + 20) > p.Width - 24) measured.RemoveAt(measured.Count - 1);
-        float hx = p.X + (p.Width - measured.Sum(m => m.Key + m.Text + 20) + 14) / 2;
-        foreach (var hint in measured)
+        // ---------------------------------------------------------------- minimap (Life Beyond)
+        if (!PhoneOpen)
         {
-            root.Add(Fill(new(hx, p.Y + 40, hint.Key, 20), Theme.KeyCap, 5));
-            root.Add(new GuiLabel { Text = hint.Item1, Translation = new(hx * s, (p.Y + 43) * s), Width = GuiLength.Pixels(hint.Key * s), Height = GuiLength.Pixels(16 * s),
-                TextAlignment = GuiTextAlignment.Center, WrapMode = GuiTextWrapMode.NoWrap, Style = keyStyle });
-            root.Add(new GuiLabel { Text = hint.Item2, Translation = new((hx + hint.Key + 6) * s, (p.Y + 43) * s), Width = GuiLength.Pixels((hint.Text + 4) * s),
-                Height = GuiLength.Pixels(16 * s), WrapMode = GuiTextWrapMode.NoWrap, Style = hintStyle });
-            hx += hint.Key + hint.Text + 20;
+            var mm = L.Minimap;
+            Panel(mm, "MINIMAP", Theme.Accent, "LIVE MAP");
+            root.Add(Fill(L.MinimapCanvas, new(8, 20, 25, 255), 4));
+            root.Add(Button("map/mini-in", "+", new(mm.X + 12, mm.Bottom - 40, 32, 28), size: 12));
+            root.Add(Button("map/mini-out", "-", new(mm.X + 48, mm.Bottom - 40, 32, 28), size: 12));
+            root.Add(Label(mm, $"Zoom {MiniZoom + 1}/{MiniZoomMeters.Length}  ·  NORTH ^", 88, mm.Height - 34, 110, 7.5f, Theme.Muted));
+            root.Add(Button("hud/map", "OPEN FULL MAP", new(mm.Right - 128, mm.Bottom - 40, 116, 28), size: 8.5f));
         }
 
-        // Developer readout, deliberately quiet.
-        root.Add(new GuiLabel { Text = $"{t.Fps:0} FPS  ·  GPU {t.GpuMilliseconds:0.0} MS", Translation = new((L.Width - 222) * s, (L.Height - 18) * s),
-            Width = GuiLength.Pixels(200 * s), Height = GuiLength.Pixels(14 * s), TextAlignment = GuiTextAlignment.Right, WrapMode = GuiTextWrapMode.NoWrap,
-            Style = new(Theme.Font, 7 * s, 1, Theme.Faint) });
+        // ---------------------------------------------------------------- vehicle (only while driving)
+        if (L.Vehicle is { } k && c is not null)
+        {
+            Panel(k, "VEHICLE", Theme.Accent, c.VehicleName.ToUpperInvariant());
+            root.Add(Label(k, $"{c.SpeedMph:0}", 14, 50, 110, 22, Theme.Ink, bold: true, align: GuiTextAlignment.Center));
+            root.Add(Label(k, "MPH", 14, 88, 110, 7.5f, Theme.Muted, align: GuiTextAlignment.Center));
+            root.Add(Label(k, "FUEL", 136, 44, 60, 7.5f, Theme.Faint));
+            root.Add(Label(k, $"{c.Fuel:0} / {c.FuelCapacity:0} L", 180, 42, 106, 8.5f, c.Fuel < c.FuelCapacity * .2f ? Theme.Warn : Theme.Ink, align: GuiTextAlignment.Right));
+            root.Add(Label(k, "CONDITION", 136, 74, 80, 7.5f, Theme.Faint));
+            root.Add(Label(k, $"{c.Health:0}%", 206, 72, 80, 8.5f, c.Health < 35 ? Theme.Danger : Theme.Ink, align: GuiTextAlignment.Right));
+            root.Add(Label(k, c.Anchored ? "ANCHORED  ·  K RELEASE" : c.Refueling ? "REFUELING  ·  R STOP" : "E EXIT  ·  K ANCHOR", 136, 104, 150, 7.5f, c.Anchored || c.Refueling ? Theme.Warn : Theme.Faint));
+        }
+
+        // ---------------------------------------------------------------- status pill + Tiny Clinic hotbar
+        var st = L.Status;
+        string message = LotStatus is { Length: > 0 } lotStatus ? lotStatus : c?.Message ?? "";
+        root.Add(Fill(st, Theme.Glass, 15, Theme.GlassEdge));
+        root.Add(Label(st, string.IsNullOrWhiteSpace(message) ? "Welcome to LifeCare." : message, 16, 7, st.Width - 200, 9, Theme.Ink));
+        root.Add(Label(st, HintText(t), st.Width - 200, 8, 186, 7.5f, Theme.Faint, align: GuiTextAlignment.Right));
+        var hb = L.Hotbar;
+        root.Add(Fill(hb, Theme.Glass, 12, Theme.GlassEdge));
+        var slots = Hotbar ?? DefaultHotbar;
+        for (int i = 0; i < 10; i++)
+        {
+            var r = new GuiRect(hb.X + 8 + i * 64, hb.Y + 8, 58, 62);
+            var slot = i < slots.Count ? slots[i] : new HudSlot("", false);
+            root.Add(Fill(r, slot.Selected ? new(26, 92, 140, 250) : Theme.Tile, 9, slot.Selected ? Theme.Accent : Theme.TileEdge, slot.Selected ? 2 : 1));
+            root.Add(Label(r, i == 9 ? "0" : (i + 1).ToString(), 5, 2, 20, 7.5f, Theme.Ink));
+            if (slot.Label.Length > 0) root.Add(Label(r, slot.Label.ToUpperInvariant(), 0, 44, 58, 7, Theme.Ink, bold: true, align: GuiTextAlignment.Center));
+            else root.Add(Label(r, "+", 0, 16, 58, 15, Theme.Faint, align: GuiTextAlignment.Center));
+        }
+
+        // ---------------------------------------------------------------- phone
+        if (PhoneOpen) BuildPhone(root, L, t);
 
         if (WorldOverlay is { } overlay) root.AddRange(overlay(w, h));
         return new(new GuiOverlayPanel { Width = GuiLength.Pixels(w), Height = GuiLength.Pixels(h), Items = root });
     }
 
-    private static IReadOnlyList<(string Key, string Label)> KeyHints(StormChaseTelemetry t)
+    private static string ClockText(float hour)
     {
-        if (t.Campaign is null)
-            return [("WASD", "Move"), ("C", "Walk / fly"), ("V", "Avatar"), ("B", "Probe"), ("F", "Photo"), ("TAB", "Views"), ("1-6", "Storm"), ("T", "Light"), ("H", "HUD")];
-        if (t.Campaign.ShopOpen) return [("UP / DOWN", "Select"), ("ENTER", "Buy"), ("ESC", "Close")];
-        return t.CameraMode == "DRIVING"
-            ? [("W/S", "Drive"), ("SPACE", "Brake"), ("E", "Exit"), ("K", "Anchor"), ("R", "Refuel"), ("B", "Probe"), ("N", "Map"), ("Z", "Forecast")]
-            : [("E", "Vehicle"), ("B", "Probe"), ("J", "Retrieve"), ("F", "Photo"), ("U", "Shop"), ("O", "Jobs"), ("N", "Map"), ("Z", "Forecast")];
+        int minutes = (int)(((hour % 24) + 24) % 24 * 60), h = minutes / 60, mm = minutes % 60;
+        return $"{(h % 12 == 0 ? 12 : h % 12)}:{mm:00} {(h < 12 ? "AM" : "PM")}";
     }
+
+    private static string TemperatureText(StormChaseCampaignTelemetry c) =>
+        c.Atmosphere is { } a ? $"  ·  {a.Diagnostics.SurfaceTemperatureCelsius * 9 / 5 + 32:0}°F" : "";
+
+    private string? NearestPlace(StormChaseCampaignTelemetry? c)
+    {
+        var best = c?.Settlements.OrderBy(town => StormChaseCareer.HorizontalDistance(observerPosition, town.Position)).FirstOrDefault();
+        return best is null ? null : StormChaseCareer.HorizontalDistance(observerPosition, best.Position) < Math.Max(1200, best.RadiusMeters * 1.6f) ? best.Name : null;
+    }
+
+    private static string HintText(StormChaseTelemetry t) => t.CameraMode == "DRIVING"
+        ? "W/S DRIVE  ·  E EXIT  ·  P PHONE"
+        : "E VEHICLE  ·  H INTERACT  ·  P PHONE";
 
     private IEnumerable<GuiElement> BuildShop(int w, int h, float s, StormChaseCampaignTelemetry c)
     {
@@ -303,7 +287,7 @@ internal sealed partial class StormChaseHud
                 BackgroundColor = selected ? new(84, 226, 198, 34) : new(255, 255, 255, 10), HoverBackgroundColor = new(255, 255, 255, 26),
                 PressedBackgroundColor = new(84, 226, 198, 70), BorderColor = selected ? Theme.Accent : new(255, 255, 255, 26),
             });
-            items.Add(Text(offer.Name, 42, top + 8, wide - 240, 11.5f, selected ? Theme.Ink : Theme.Ink, bold: true));
+            items.Add(Text(offer.Name, 42, top + 8, wide - 240, 11.5f, Theme.Ink, bold: true));
             bool affordable = offer.Price <= c.Cash;
             items.Add(Text(offer.Price == 0 ? "FREE" : $"${offer.Price:#,0}", wide - 176, top + 8, 134, 11.5f,
                 !affordable ? Theme.Danger : selected ? Theme.Accent : Theme.Muted, bold: true, GuiTextAlignment.Right));
@@ -330,99 +314,92 @@ internal sealed partial class StormChaseHud
         var c = t.Campaign;
         float X(float v) => v * s;
 
-        // Storm intensity bar: six EF segments lit up to the current peak wind.
-        {
-            var r = L.Storm;
-            float x0 = r.X + 18, y0 = r.Y + 116, total = 336, gap = 4, seg = (total - gap * 5) / 6;
-            for (int i = 0; i < 6; i++)
-            {
-                var (mph, label) = Theme.EfScale[i];
-                bool lit = t.HasFunnel && t.PeakWind >= mph;
-                float sx = x0 + i * (seg + gap);
-                mesh.FillRect(new(X(sx), X(y0), X(seg), X(6)), lit ? Theme.Threat(mph + 1) : Theme.Track, X(3));
-            }
-            // Bearing arrow to the nearest storm, relative to where the camera faces.
-            if (NearestStorm(frame) is { } storm && t.Distance > 0)
-            {
-                float rel = Bearing(frame.Camera.Position, storm.Position) - Heading(frame.Camera.Forward);
-                DrawArrow(mesh, X(r.X + 174 + 12), X(r.Y + 79), X(10), rel, t.HasFunnel ? Theme.Threat(t.PeakWind) : Theme.Ink);
-                if (MathF.Sqrt(storm.Velocity.X * storm.Velocity.X + storm.Velocity.Z * storm.Velocity.Z) > 1.3f)
-                {
-                    float motion = MathF.Atan2(storm.Velocity.X, storm.Velocity.Z) * 180 / MathF.PI;
-                    float mph = MathF.Sqrt(storm.Velocity.X * storm.Velocity.X + storm.Velocity.Z * storm.Velocity.Z) / .44704f;
-                    mesh.Text($"MOVING {Cardinal(motion)} {mph:0} MPH", X(r.X + 174), X(r.Y + 94), X(184), X(16), 8 * s, Theme.Muted, Theme.Font);
-                }
-            }
-        }
-
-        // Compass strip with heading ticks and storm markers.
+        // Compass strip with heading ticks and the job marker.
         {
             var r = L.Compass;
-            float heading = Heading(frame.Camera.Forward), cx = r.X + r.Width / 2, span = 120;
+            float heading = Heading(frame.Camera.Forward), cx = r.X + r.Width / 2, span = 140;
             for (int d = -180; d <= 540; d += 5)
             {
-                float rel = d - heading;
-                rel = (rel + 540) % 360 - 180;
+                float rel = d - heading; rel = (rel + 540) % 360 - 180;
                 if (MathF.Abs(rel) > span / 2) continue;
                 float x = cx + rel / span * (r.Width - 40);
                 bool major = d % 45 == 0, mid = d % 15 == 0;
-                mesh.Line(X(x), X(r.Y + (major ? 6 : mid ? 10 : 13)), X(x), X(r.Y + 17), major ? Theme.Ink : Theme.Faint, Math.Max(1, s * (major ? 1.6f : 1)));
+                mesh.Line(X(x), X(r.Y + (major ? 5 : mid ? 9 : 12)), X(x), X(r.Y + 15), major ? Theme.Ink : Theme.Faint, Math.Max(1, s * (major ? 1.6f : 1)));
                 if (major)
                 {
                     string name = Cardinal(d);
-                    mesh.Text(name, X(x - 20), X(r.Y + 19), X(40), X(18), (name.Length == 1 ? 10.5f : 8.5f) * s, name == "N" ? Theme.Accent : Theme.Ink, Theme.Bold, GuiTextAlignment.Center);
+                    mesh.Text(name, X(x - 20), X(r.Y + 16), X(40), X(16), (name.Length == 1 ? 10 : 8) * s, name == "N" ? Theme.Accent : Theme.Ink, Theme.Bold, GuiTextAlignment.Center);
                 }
             }
-            foreach (var storm in frame.Weather?.ActiveStorms ?? [])
+            if (c?.Mission is { } mission)
             {
-                float rel = Bearing(frame.Camera.Position, storm.Position) - heading;
+                float rel = Bearing(frame.Camera.Position, new(mission.TargetPosition.X, mission.TargetPosition.Y, mission.TargetPosition.Z)) - heading;
                 rel = (rel + 540) % 360 - 180;
                 float x = cx + Math.Clamp(rel / span, -.5f, .5f) * (r.Width - 40);
-                float wind = storm.Tornadoes.Count > 0 ? storm.Tornadoes.Max(tornado => tornado.WindSpeed) : 0;
-                var color = wind > 0 ? Theme.Threat(wind) : Theme.Warn;
-                DrawArrow(mesh, X(x), X(r.Y + 2), X(6), 180, color);
+                DrawArrow(mesh, X(x), X(r.Y + 2), X(6), 180, Theme.Warn);
             }
-            mesh.FillRect(new(X(cx - 1), X(r.Y + 2), Math.Max(2, X(2)), X(r.Height - 4)), Theme.Accent.WithAlpha(150));
+            mesh.FillRect(new(X(cx - 1), X(r.Y + 3), Math.Max(2, X(2)), X(r.Height - 6)), Theme.Accent.WithAlpha(160));
         }
 
-        // Tornado potential bar.
-        if (L.Outlook is { } o && c is not null)
+        // Icon glyphs on the Tiny Clinic tiles.
+        for (int i = 0; i < IconTiles.Length; i++)
+            DrawIcon(mesh, IconTiles[i].Id, X(L.Icons.X + i * 66 + 30), X(L.Icons.Y + 28), X(13), s);
+
+        // Mission progress.
+        if (c?.Mission is { } m)
         {
-            mesh.FillRect(new(X(o.X + 18), X(o.Y + 114), X(304), X(5)), Theme.Track, X(2.5f));
-            mesh.FillRect(new(X(o.X + 18), X(o.Y + 114), X(304 * Math.Clamp(c.Risk, .02f, 1)), X(5)), Theme.Risk(c.Risk), X(2.5f));
-        }
-        if (L.Mission is { } mr && c?.Mission is { } mission)
-        {
-            float progress = mission.RequiredWorkSeconds > 0 ? mission.WorkSeconds / mission.RequiredWorkSeconds
-                : (float)mission.Step / Math.Max(1, mission.StepCount);
-            mesh.FillRect(new(X(mr.X + 18), X(mr.Y + 124), X(304), X(4)), Theme.Track, X(2));
-            mesh.FillRect(new(X(mr.X + 18), X(mr.Y + 124), X(304 * Math.Clamp(progress, .02f, 1)), X(4)), Theme.Warn, X(2));
+            float progress = m.RequiredWorkSeconds > 0 ? m.WorkSeconds / m.RequiredWorkSeconds : (float)m.Step / Math.Max(1, m.StepCount);
+            Bar(mesh, L.Task.X + 14, L.Task.Y + 114, 316, progress, Theme.Warn, s);
         }
 
-        // Vehicle cluster: speed arc, fuel and body bars.
-        if (c is not null)
+        // The Life Beyond minimap.
+        if (!PhoneOpen && World is not null)
+            mapView!.Draw(mesh, new(X(L.MinimapCanvas.X), X(L.MinimapCanvas.Y), X(L.MinimapCanvas.Width), X(L.MinimapCanvas.Height)),
+                frame.Camera.Position.X, frame.Camera.Position.Z, MiniZoomMeters[MiniZoom], Markers(frame), s: s);
+
+        // Vehicle speed arc and bars, only while driving.
+        if (L.Vehicle is { } k && c is not null)
         {
-            var k = L.Cluster;
-            float gx = k.X + 84, gy = k.Y + 92, radius = 62, maxMph = 140;
-            Arc(mesh, X(gx), X(gy), X(radius), 135, 405, Theme.Track, X(7));
+            float gx = k.X + 69, gy = k.Y + 80, radius = 38, maxMph = 140;
+            Arc(mesh, X(gx), X(gy), X(radius), 135, 405, Theme.Track, X(6));
             float value = Math.Clamp(c.SpeedMph / maxMph, 0, 1);
-            if (value > .002f) Arc(mesh, X(gx), X(gy), X(radius), 135, 135 + 270 * value, c.SpeedMph > 100 ? Theme.Warn : Theme.Accent, X(7));
-            for (int mph = 0; mph <= maxMph; mph += 20)
-            {
-                float a = (135 + 270 * mph / maxMph) * MathF.PI / 180;
-                mesh.Line(X(gx + MathF.Cos(a) * (radius - 13)), X(gy + MathF.Sin(a) * (radius - 13)),
-                    X(gx + MathF.Cos(a) * (radius - 8)), X(gy + MathF.Sin(a) * (radius - 8)), Theme.Faint, Math.Max(1, s));
-            }
-            Bar(mesh, k.X + 166, k.Y + 78, 190, c.FuelCapacity <= 0 ? 0 : c.Fuel / c.FuelCapacity, c.Fuel < c.FuelCapacity * .2f ? Theme.Warn : Theme.Accent, s);
-            Bar(mesh, k.X + 166, k.Y + 108, 190, c.Health / 100, c.Health < 35 ? Theme.Danger : c.Health < 65 ? Theme.Warn : Theme.Accent, s);
+            if (value > .002f) Arc(mesh, X(gx), X(gy), X(radius), 135, 135 + 270 * value, c.SpeedMph > 100 ? Theme.Warn : Theme.Accent, X(6));
+            Bar(mesh, k.X + 136, k.Y + 62, 150, c.FuelCapacity <= 0 ? 0 : c.Fuel / c.FuelCapacity, c.Fuel < c.FuelCapacity * .2f ? Theme.Warn : Theme.Accent, s);
+            Bar(mesh, k.X + 136, k.Y + 92, 150, c.Health / 100, c.Health < 35 ? Theme.Danger : c.Health < 65 ? Theme.Warn : Theme.Accent, s);
         }
 
-        if (L.ShowRadar)
+        if (PhoneOpen) DrawPhoneInstruments(mesh, L, t, frame);
+    }
+
+    private static void DrawIcon(GuiDx12MeshBuilder mesh, string id, float x, float y, float r, float s)
+    {
+        var ink = Theme.Ink; float w = Math.Max(1.5f, 1.8f * s);
+        switch (id)
         {
-            var r = L.Radar;
-            int size = (int)X(256);
-            int rx = (int)X(r.X + 22), ry = (int)X(r.Y + 52);
-            DrawGpuRadar(mesh, rx, ry, size, frame, c, s);
+            case "hud/map":
+                mesh.Line(x - r, y - r * .7f, x - r * .33f, y - r, ink, w); mesh.Line(x - r * .33f, y - r, x + r * .33f, y - r * .7f, ink, w);
+                mesh.Line(x + r * .33f, y - r * .7f, x + r, y - r, ink, w); mesh.Line(x + r, y - r, x + r, y + r * .7f, ink, w);
+                mesh.Line(x + r, y + r * .7f, x + r * .33f, y + r, ink, w); mesh.Line(x + r * .33f, y + r, x - r * .33f, y + r * .7f, ink, w);
+                mesh.Line(x - r * .33f, y + r * .7f, x - r, y + r, ink, w); mesh.Line(x - r, y + r, x - r, y - r * .7f, ink, w);
+                mesh.Line(x - r * .33f, y - r, x - r * .33f, y + r * .7f, ink.WithAlpha(150), w * .7f); mesh.Line(x + r * .33f, y - r * .7f, x + r * .33f, y + r, ink.WithAlpha(150), w * .7f);
+                mesh.Disc(x + r * .1f, y - r * .1f, r * .22f, Theme.Danger); break;
+            case "hud/jobs":
+                mesh.BorderRect(new(x - r * .75f, y - r * .85f, r * 1.5f, r * 1.85f), ink, w, r * .15f);
+                mesh.FillRect(new(x - r * .35f, y - r * 1.05f, r * .7f, r * .4f), Theme.Warn, r * .1f);
+                for (int i = 0; i < 3; i++) mesh.Line(x - r * .45f, y - r * .2f + i * r * .4f, x + r * .45f, y - r * .2f + i * r * .4f, ink.WithAlpha(190), w * .8f);
+                break;
+            case "hud/phone":
+                mesh.BorderRect(new(x - r * .55f, y - r, r * 1.1f, r * 2), ink, w, r * .25f);
+                mesh.FillRect(new(x - r * .38f, y - r * .72f, r * .76f, r * 1.25f), Theme.Sky.WithAlpha(200), r * .08f);
+                mesh.Disc(x, y + r * .75f, r * .1f, ink); break;
+            case "hud/build":
+                mesh.Line(x - r * .8f, y + r * .8f, x + r * .35f, y - r * .35f, Theme.Warn, w * 1.6f);
+                mesh.FillRect(new(x + r * .05f, y - r * .95f, r * .9f, r * .5f), ink, r * .1f); break;
+            case "hud/shop":
+                mesh.BorderRect(new(x - r * .8f, y - r * .4f, r * 1.6f, r * 1.3f), ink, w, r * .15f);
+                mesh.Circle(x, y - r * .45f, r * .45f, ink, w); mesh.FillRect(new(x - r * .8f, y - r * .4f, r * 1.6f, r * .25f), Theme.Good, r * .1f); break;
+            default:
+                for (int i = -1; i <= 1; i++) mesh.FillRect(new(x - r * .8f, y + i * r * .55f - w / 2, r * 1.6f, w), ink, w / 2); break;
         }
     }
 

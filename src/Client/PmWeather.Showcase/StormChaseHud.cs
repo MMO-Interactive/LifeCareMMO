@@ -69,6 +69,8 @@ internal sealed partial class StormChaseHud : IDisposable
             if (ForecastOpen && !HousingOpen && telemetry.Campaign?.ShopOpen != true && telemetry.Campaign?.DispatchOpen != true
                 && telemetry.Campaign?.Atmosphere is { } atmosphere)
                 DrawGpuHodograph(mesh, w, h, atmosphere);
+            else if (MapOpen && World is not null && !HousingOpen && telemetry.Campaign?.DispatchOpen != true)
+                DrawWorldMapInstruments(mesh, frame);
             else if (!modal && telemetry.Campaign?.ShopOpen != true)
                 DrawInstruments(mesh, frame);
         });
@@ -155,6 +157,7 @@ internal sealed partial class StormChaseHud : IDisposable
     private GuiDocument BuildDocument(int w, int h, StormChaseTelemetry t)
     {
         if (HousingOpen) return BuildHousingDocument(w, h);
+        if (MapOpen && World is not null) return BuildWorldMapDocument(w, h, t);
         if (t.Campaign is { DispatchOpen: true } dispatch) return BuildDispatchDocument(w, h, dispatch);
         if (ForecastOpen && t.Campaign is { } forecast) return BuildForecastDocument(w, h, forecast);
         return BuildChaseDocument(w, h, t);

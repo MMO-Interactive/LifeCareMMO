@@ -251,51 +251,71 @@ internal sealed class StormChaseLotPlay : IDisposable
             foreach (var item in StormChaseLotRenderer.Ghost([LotGeometry.Furnishing(build.Session.Lot.Lot.LotId, ghost.Candidate, g.Base)], ghost.IsValid)) yield return item;
     }
 
-    /// <summary>The build-mode strip and the pie wheel, drawn into the chase HUD.</summary>
-    public IEnumerable<GuiElement> Overlay(int width, int height)
+    /// <summary>The status-pill line for the HUD: what build mode or the carried piece is doing, else the lot layer's last message.</summary>
+    public string? StatusLine => BuildMode && build is not null
+        ? $"BUILD · {build.Tool.ToString().ToUpperInvariant()} · {(build.Level == 0 ? "GROUND" : "FLOOR " + (build.Level + 1))}  —  {build.Preview.Status}"
+        : furnish?.Preview is { } ghost ? $"{(furnish.Gesture == FurnishingGesture.CarryingPackage ? "Carrying " + furnish.Carried!.Definition.Name : "Moving")}  —  {ghost.Status}  ·  R turn, click set down"
+        : unavailable;
+
+    /// <summary>Hotbar contents: build tools in build mode, the carried piece in hand, otherwise null (empty hands).</summary>
+    public IReadOnlyList<HudSlot>? Hotbar()
     {
-        string? line = BuildMode && build is not null
-            ? $"BUILD · {build.Tool.ToString().ToUpperInvariant()} · {(build.Level == 0 ? "GROUND" : "FLOOR " + (build.Level + 1))}   —   {build.Preview.Status}"
-            : furnish?.Preview is { } ghost ? $"{(furnish.Gesture == FurnishingGesture.CarryingPackage ? "CARRYING " + furnish.Carried!.Definition.Name.ToUpperInvariant() : "MOVING")}   —   {ghost.Status}   ·   R TURN · CLICK SET DOWN · ESC" : null;
-        string? status = BuildMode || furnish?.Gesture is FurnishingGesture.CarryingPackage or FurnishingGesture.MovingPiece ? Status : null;
-        if (line is not null)
+        if (BuildMode && build is not null)
+            return [new("Floor", build.Tool == LotBuildTool.Floor), new("Wall", build.Tool == LotBuildTool.Wall), new("Roof", build.Tool == LotBuildTool.Roof), new("Delete", build.Tool == LotBuildTool.Delete)];
+        if (furnish?.Gesture == FurnishingGesture.CarryingPackage) return [new(furnish.Carried!.Definition.Name, true)];
+        if (furnish?.Gesture == FurnishingGesture.MovingPiece) return [new("Moving", true)];
+        return null;
+    }
+
+    /// <summary>Lots for the map.</summary>
+    public IReadOnlyList<MapLot> MapLots() => lots.Values.Select(s =>
+    {
+        var d = s.Lot.Lot;
+        return new MapLot(d.LotId, d.MinimumTileX * BuildGrid.TileMeters, d.MinimumTileZ * BuildGrid.TileMeters, (d.MaximumTileX + 1) * BuildGrid.TileMeters,
+            (d.MaximumTileZ + 1) * BuildGrid.TileMeters, s.IsOwner, s.Lot.Floors.Length + s.Lot.Walls.Length + s.Lot.Furnishings.Length);
+    }).ToArray();
+
+    /// <summary>The interaction wheel. It behaves like Tiny Clinic's pie menu but is drawn with the HUD's own glass, tiles and type.</summary>
+    public IEnumerable<GuiElement> Overlay(int width, int height) => Pie is { } menu ? PieOverlay(menu, width, height) : [];
+
+    public static IEnumerable<GuiElement> PieOverlay(InteractionPieMenu menu, int width, int height)
+    {
+        var theme = (Glass: StormChaseHud.Theme.Glass, Edge: StormChaseHud.Theme.GlassEdge, Tile: StormChaseHud.Theme.Tile, TileEdge: StormChaseHud.Theme.TileEdge,
+            Header: StormChaseHud.Theme.Header, Accent: StormChaseHud.Theme.Accent, Ink: StormChaseHud.Theme.Ink, Muted: StormChaseHud.Theme.Muted, Faint: StormChaseHud.Theme.Faint);
+        float size = InteractionPieMenu.WheelSize;
+        yield return new GuiButton { Id = "lot/pie/outside", Text = "", Width = GuiLength.Pixels(width), Height = GuiLength.Pixels(height), BackgroundColor = new(2, 8, 14, 90),
+            HoverBackgroundColor = new(2, 8, 14, 90), PressedBackgroundColor = new(2, 8, 14, 110) };
+        yield return new GuiOverlayPanel { Translation = new(menu.X, menu.Y), Width = GuiLength.Pixels(size), Height = GuiLength.Pixels(size),
+            BackgroundColor = theme.Glass, BorderColor = theme.Edge, BorderThickness = 1, CornerRadius = size / 2 };
+        yield return new GuiOverlayPanel { Translation = new(menu.X + 60, menu.Y + 60), Width = GuiLength.Pixels(size - 120), Height = GuiLength.Pixels(size - 120),
+            BorderColor = theme.Edge.WithAlpha(50), BorderThickness = 1, CornerRadius = (size - 120) / 2 };
+        for (int i = 0; i < Math.Min(menu.Actions.Count, InteractionPieMenu.VisibleSlotCount); i++)
         {
-            yield return new GuiOverlayPanel { Translation = new(width / 2f - 360, height - 118), Width = GuiLength.Pixels(720), Height = GuiLength.Pixels(54),
-                BackgroundColor = StormChaseHud.Theme.Glass, BorderColor = StormChaseHud.Theme.GlassEdge, BorderThickness = 1, CornerRadius = 10 };
-            yield return Text(line, width / 2f - 348, height - 112, 696, 10.5f, StormChaseHud.Theme.Ink, true);
-            if (status is { Length: > 0 }) yield return Text(status, width / 2f - 348, height - 88, 696, 9, StormChaseHud.Theme.Muted, false);
+            var slot = menu.Slot(i); var action = menu.Actions[i];
+            yield return new GuiButton { Id = "lot/pie/" + i, Text = action.HasChildren ? action.Label + "  ›" : action.Label, Translation = new(slot.X, slot.Y),
+                Width = GuiLength.Pixels(slot.Width), Height = GuiLength.Pixels(slot.Height), TextStyle = new(StormChaseHud.Theme.Bold, 9.5f, 1, theme.Ink),
+                TextAlignment = GuiTextAlignment.Center, Padding = new(6, (slot.Height - 9.5f * 1.35f) / 2), CornerRadius = 9,
+                BackgroundColor = theme.Tile, HoverBackgroundColor = new(34, 104, 156, 250), PressedBackgroundColor = new(10, 40, 70, 255), BorderColor = theme.TileEdge, BorderThickness = 1 };
         }
-        if (Pie is { } menu)
+        var center = menu.Center;
+        yield return new GuiButton { Id = "lot/pie/center", Text = "", Translation = new(center.X, center.Y), Width = GuiLength.Pixels(center.Width), Height = GuiLength.Pixels(center.Height),
+            CornerRadius = center.Width / 2, BackgroundColor = theme.Header, HoverBackgroundColor = new(20, 44, 66, 250), PressedBackgroundColor = new(10, 26, 40, 255),
+            BorderColor = theme.Accent, BorderThickness = 2 };
+        yield return Text(menu.Category, center.X, center.Y + 26, center.Width, 7.5f, theme.Faint, true, GuiTextAlignment.Center);
+        yield return Text(menu.DisplayName, center.X + 4, center.Y + 42, center.Width - 8, 10, theme.Ink, true, GuiTextAlignment.Center);
+        yield return Text(menu.CanNavigateBack ? "‹ BACK" : "CLOSE", center.X, center.Y + 64, center.Width, 7.5f, theme.Accent, true, GuiTextAlignment.Center);
+        if (menu.Feedback is { Length: > 0 } feedback)
         {
-            yield return new GuiButton { Id = "lot/pie/outside", Text = "", Width = GuiLength.Pixels(width), Height = GuiLength.Pixels(height), BackgroundColor = new(0, 0, 0, 40),
-                HoverBackgroundColor = new(0, 0, 0, 40), PressedBackgroundColor = new(0, 0, 0, 60) };
-            yield return new GuiOverlayPanel { Translation = new(menu.X, menu.Y), Width = GuiLength.Pixels(InteractionPieMenu.WheelSize), Height = GuiLength.Pixels(InteractionPieMenu.WheelSize),
-                BackgroundColor = new(3, 12, 24, 150), BorderColor = StormChaseHud.Theme.GlassEdge, BorderThickness = 1, CornerRadius = InteractionPieMenu.WheelSize / 2 };
-            for (int i = 0; i < Math.Min(menu.Actions.Count, InteractionPieMenu.VisibleSlotCount); i++)
-            {
-                var slot = menu.Slot(i); var action = menu.Actions[i];
-                yield return new GuiButton { Id = "lot/pie/" + i, Text = action.HasChildren ? action.Label + " ›" : action.Label, Translation = new(slot.X, slot.Y),
-                    Width = GuiLength.Pixels(slot.Width), Height = GuiLength.Pixels(slot.Height), TextStyle = new(StormChaseHud.Theme.Bold, 9.5f, 1, StormChaseHud.Theme.Ink),
-                    TextAlignment = GuiTextAlignment.Center, CornerRadius = 10, BackgroundColor = new(20, 32, 44, 248), HoverBackgroundColor = StormChaseHud.Theme.Accent.WithAlpha(180),
-                    PressedBackgroundColor = StormChaseHud.Theme.Accent.WithAlpha(120), BorderColor = StormChaseHud.Theme.Accent.WithAlpha(190), BorderThickness = 1 };
-            }
-            var center = menu.Center;
-            yield return new GuiButton { Id = "lot/pie/center", Text = menu.Category + "\n" + (menu.CanNavigateBack ? "Back" : "Close"), Translation = new(center.X, center.Y),
-                Width = GuiLength.Pixels(center.Width), Height = GuiLength.Pixels(center.Height), TextStyle = new(StormChaseHud.Theme.Bold, 8.5f, 1.2f, StormChaseHud.Theme.Ink),
-                TextAlignment = GuiTextAlignment.Center, CornerRadius = center.Width / 2, BackgroundColor = new(8, 14, 20, 252), HoverBackgroundColor = new(30, 44, 56, 252),
-                PressedBackgroundColor = new(40, 56, 70, 252), BorderColor = StormChaseHud.Theme.Accent, BorderThickness = 2 };
-            float cardX = menu.X + InteractionPieMenu.WheelSize + 12 + 300 > width ? menu.X - 312 : menu.X + InteractionPieMenu.WheelSize + 12;
-            yield return new GuiOverlayPanel { Translation = new(cardX, menu.Y + 110), Width = GuiLength.Pixels(300), Height = GuiLength.Pixels(120),
-                BackgroundColor = StormChaseHud.Theme.Glass, BorderColor = StormChaseHud.Theme.Accent.WithAlpha(190), BorderThickness = 1, CornerRadius = 9 };
-            yield return Text(menu.DisplayName, cardX + 12, menu.Y + 120, 276, 12, StormChaseHud.Theme.Ink, true);
-            yield return new GuiLabel { Text = menu.Feedback ?? "Choose an action.", Translation = new(cardX + 12, menu.Y + 148), Width = GuiLength.Pixels(276), Height = GuiLength.Pixels(76),
-                WrapMode = GuiTextWrapMode.Wrap, Style = new(StormChaseHud.Theme.Font, 9.5f, 1.2f, StormChaseHud.Theme.Muted) };
+            yield return new GuiOverlayPanel { Translation = new(menu.X + 10, menu.Y + size + 10), Width = GuiLength.Pixels(size - 20), Height = GuiLength.Pixels(54),
+                BackgroundColor = theme.Glass, BorderColor = theme.Edge, BorderThickness = 1, CornerRadius = 12 };
+            yield return new GuiLabel { Text = feedback, Translation = new(menu.X + 24, menu.Y + size + 18), Width = GuiLength.Pixels(size - 48), Height = GuiLength.Pixels(42),
+                WrapMode = GuiTextWrapMode.Wrap, Style = new(StormChaseHud.Theme.Font, 9, 1.2f, theme.Muted) };
         }
     }
 
-    private static GuiLabel Text(string text, float x, float y, float width, float size, GuiColor color, bool bold) => new()
+    private static GuiLabel Text(string text, float x, float y, float width, float size, GuiColor color, bool bold, GuiTextAlignment align = GuiTextAlignment.Left) => new()
     {
-        Text = text, Translation = new(x, y), Width = GuiLength.Pixels(width), Height = GuiLength.Pixels(size * 1.9f), WrapMode = GuiTextWrapMode.NoWrap,
+        Text = text, Translation = new(x, y), Width = GuiLength.Pixels(width), Height = GuiLength.Pixels(size * 1.9f), WrapMode = GuiTextWrapMode.NoWrap, TextAlignment = align,
         Style = new(bold ? StormChaseHud.Theme.Bold : StormChaseHud.Theme.Font, size, 1.1f, color),
     };
 

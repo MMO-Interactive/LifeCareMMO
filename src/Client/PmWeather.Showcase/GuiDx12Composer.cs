@@ -361,6 +361,18 @@ internal sealed class GuiDx12MeshBuilder
         }
     }
 
+    /// <summary>Vertices emitted so far; map layers use it to stay inside the renderer's UI vertex budget.</summary>
+    public int VertexCount => vertices.Count;
+
+    /// <summary>A small octagonal dot (24 vertices), for dense map markers where a smooth disc would be wasted.</summary>
+    public void Dot(float centerX, float centerY, float radius, GuiColor color)
+    {
+        if (radius <= 0 || color.A == 0) return;
+        var center = new Vector2(centerX, centerY);
+        for (int i = 0; i < 8; i++)
+            Triangle(center, center + Direction(i * MathF.Tau / 8) * radius, center + Direction((i + 1) * MathF.Tau / 8) * radius, color);
+    }
+
     public void Disc(float centerX, float centerY, float radius, GuiColor color)
     {
         if (radius <= 0 || color.A == 0) return;
