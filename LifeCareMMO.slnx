@@ -9,11 +9,13 @@
     <Project Path="src/Servers/StormChase.Server/StormChase.Server.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/LifeCare.Construction/LifeCare.Construction.csproj" />
     <Project Path="src/Shared/StormChase.Networking/StormChase.Networking.csproj" />
     <Project Path="src/Shared/StormChase.Npc/StormChase.Npc.csproj" />
     <Project Path="src/Shared/StormChase.Protocol/StormChase.Protocol.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/LifeCare.Construction.Tests/LifeCare.Construction.Tests.csproj" />
     <Project Path="tests/LifeCare.Phase0Probe/LifeCare.Phase0Probe.csproj" />
     <Project Path="tests/StormChase.Networking.Tests/StormChase.Networking.Tests.csproj" />
   </Folder>
