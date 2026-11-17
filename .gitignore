@@ -61,3 +61,6 @@ Desktop.ini
 
 # Machine-specific build overrides
 Directory.Build.local.props
+
+# Local server runs
+server-data/
