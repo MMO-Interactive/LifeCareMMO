@@ -4,17 +4,6 @@ using LifeCare.Construction;
 
 namespace LifeCare.Construction.Service;
 
-/// <summary>The wire and disk form of one lot. Revision increases by one with every accepted change.</summary>
-public sealed record LotDocument(LotDeed Lot, long Revision, FloorCell[] Floors, WallSegment[] Walls, RoofArea[] Roofs, PlacedFurnishing[] Furnishings)
-{
-    public BuildingPlan ToPlan() => new BuildingPlan(Lot, Floors.ToHashSet(), Walls.ToHashSet(), Roofs) { Furnishings = Furnishings };
-    public static LotDocument From(BuildingPlan plan, long revision) =>
-        new(plan.Lot, revision, plan.Floors.OrderBy(f => f.Level).ThenBy(f => f.TileZ).ThenBy(f => f.TileX).ToArray(),
-            plan.Walls.OrderBy(w => w.Level).ThenBy(w => w.EdgeZ).ThenBy(w => w.EdgeX).ThenBy(w => w.Axis).ToArray(), plan.Roofs.ToArray(), plan.Furnishings.ToArray());
-}
-
-public sealed record ChangeResult(bool Accepted, LotDocument Lot, string ErrorCode = "", string Message = "");
-
 /// <summary>
 /// The Construction service's authority over lots. Each lot changes under its own lock and is written to disk before the
 /// change is acknowledged, so every player and district host reading a revision sees the same building.
@@ -36,6 +25,10 @@ public sealed class LotStore
     }
 
     public LotDocument? Get(string lotId) => lots.TryGetValue(lotId, out var e) ? Volatile.Read(ref e.Document) : null;
+
+    /// <summary>Every lot with its current revision, in id order.</summary>
+    public IReadOnlyList<LotSummary> List() => lots.Values.Select(e => Volatile.Read(ref e.Document)).OrderBy(d => d.Lot.LotId, StringComparer.Ordinal)
+        .Select(d => new LotSummary(d.Lot, d.Revision)).ToArray();
 
     public LotDocument Create(LotDeed deed)
     {

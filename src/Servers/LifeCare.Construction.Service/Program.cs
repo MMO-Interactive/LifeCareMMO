@@ -48,9 +48,11 @@ try
             ? await next(ctx) : Results.Unauthorized());
     internalApi.MapPost("/lots", (LotDeed deed, LotStore store) => Results.Ok(store.Create(deed)));
     internalApi.MapGet("/lots/{lotId}", (string lotId, LotStore store) => store.Get(lotId) is { } lot ? Results.Ok(lot) : Results.NotFound());
+    internalApi.MapGet("/lots", (LotStore store) => Results.Ok(store.List()));
 
     // ---- players (through the Gateway)
     var lots = app.MapGroup("/api/lots").RequireAuthorization();
+    lots.MapGet("", (LotStore store) => Results.Ok(store.List()));
     lots.MapGet("/{lotId}", (string lotId, LotStore store) => store.Get(lotId) is { } lot ? Results.Ok(lot) : Results.NotFound());
     lots.MapPost("/{lotId}/build", async (string lotId, BuildRequest request, ClaimsPrincipal user, LotStore store, IHttpClientFactory http) =>
         await Owns(user, request.CharacterId, http) ? Reply(store.Change(lotId, request.ExpectedRevision, plan => BuildingEditor.Apply(plan, request.CharacterId, request.Edit))) : Results.Forbid());
@@ -83,9 +85,6 @@ catch (Exception error)
     Console.Error.WriteLine("LifeCare Construction stopped: " + error.Message);
     return 1;
 }
-
-public sealed record BuildRequest(string CharacterId, BuildEdit Edit, long? ExpectedRevision = null);
-public sealed record FurnishingRequest(string CharacterId, PlacedFurnishing? Piece = null, string? InstanceId = null, long? ExpectedRevision = null);
 
 /// <summary>Accepts the player's accounts bearer token by asking the accounts service who it belongs to.</summary>
 internal sealed class AccountsBearerHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, IHttpClientFactory http)
