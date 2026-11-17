@@ -143,6 +143,13 @@ try
     Check(await Until(() => Task.FromResult(peers.All(p => p.Accepted)), TimeSpan.FromSeconds(30)), "Both players are admitted to the district through the Gateway",
         peers.Select(p => p.Rejected).Where(r => r is not null).ToArray() is { Length: > 0 } why ? new { why } : null);
     await Task.Delay(2000);
+    // ---- chat through the Gateway: World reaches everyone, and the district announces arrivals
+    peers[0].Chat(ChatChannel.World, "Shelter is open at the school.");
+    bool heard = await Until(() => Task.FromResult(peers.All(p => p.Heard.Any(m => m.Text == "Shelter is open at the school." && m.Channel == ChatChannel.World))), TimeSpan.FromSeconds(10));
+    Check(heard, "A World chat line reaches both players through the Gateway");
+    Check(peers[0].Heard.Any(m => m.FromPlayerId == 0 && m.Text.Contains("arrived")), "The district announces arrivals in chat");
+    peers[1].Chat(ChatChannel.Local, "  hi\u0007 there  ");
+    Check(await Until(() => Task.FromResult(peers[1].Heard.Any(m => m.Text == "hi there")), TimeSpan.FromSeconds(10)), "The host cleans chat text (control characters and extra spaces)");
     string prefix = "lot/" + LotId + "/";
     Check(peers.All(p => p.LotPieces(prefix).Count == 0), "Before the storm no lot piece is debris");
 
@@ -187,6 +194,9 @@ sealed class Peer : IDisposable
     private readonly Thread pump;
     private readonly ConcurrentDictionary<int, DebrisBodyState> bodies = new();
     private volatile bool stop;
+    private readonly ConcurrentQueue<ChatSend> outgoing = new();
+    public ConcurrentBag<ChatMessage> Heard { get; } = [];
+    public void Chat(ChatChannel channel, string text) => outgoing.Enqueue(new(channel, text));
     public bool Accepted { get; private set; }
     public string? Rejected { get; private set; }
 
@@ -209,9 +219,11 @@ sealed class Peer : IDisposable
                         case MessageKind.JoinAccepted: Accepted = true; break;
                         case MessageKind.JoinRejected: Rejected = m.Get<JoinRejected>().Reason; break;
                         case MessageKind.DebrisEvent: Record(m.Get<DebrisEvent>().Body); break;
+                        case MessageKind.ChatMessage: Heard.Add(m.Get<ChatMessage>()); break;
                         case MessageKind.DebrisSnapshot: foreach (var body in m.Get<DebrisSnapshot>().Bodies) Record(body); break;
                     }
                 }
+                if (Accepted && outgoing.TryDequeue(out var line)) client.Send(connection, MessageKind.ChatSend, line);
                 if (Accepted && clock.Elapsed >= nextInput) { client.Send(connection, MessageKind.ClientInput, new ClientInput(++n, default, 0, 0, PlayerMovementMode.OnFoot, 0, false), false); nextInput += TimeSpan.FromMilliseconds(50); }
                 Thread.Sleep(1);
             }

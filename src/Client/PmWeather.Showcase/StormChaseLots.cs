@@ -162,15 +162,6 @@ internal sealed class StormChaseLotPlay : IDisposable
             }
         }
         if (furnish is null) return false;
-        if (key == 0x49 && !BuildMode && furnish.Gesture == FurnishingGesture.None)
-        {
-            // Stand-in for Pedizon delivery until the shop ships packages: unpack the next catalogue item.
-            var entry = FurnishingCatalog.Entries[packageCursor++ % FurnishingCatalog.Entries.Count];
-            string prefix = $"pkg-{characterId[..Math.Min(8, characterId.Length)]}-{entry.Definition.DefinitionId}-";
-            int n = 1; while (furnish.Session.Lot.Furnishings.Any(f => f.InstanceId == prefix + n)) n++;
-            furnish.BeginCarry(new(prefix + n, entry.Definition), ActiveLevel);
-            return true;
-        }
         if (key == 0x52 && furnish.Gesture != FurnishingGesture.None) { furnish.Rotate(); return true; }
         return false;
     }
@@ -266,6 +257,32 @@ internal sealed class StormChaseLotPlay : IDisposable
         if (furnish?.Gesture == FurnishingGesture.MovingPiece) return [new("Moving", true)];
         return null;
     }
+
+    /// <summary>
+    /// Packages waiting to be unpacked. Until the shop delivers real orders this is a stand-in: one of each catalogue
+    /// piece, available once you own a lot.
+    /// </summary>
+    public IReadOnlyList<HudItem> Deliveries() => furnish is null ? [] : FurnishingCatalog.Entries
+        .Select(e => new HudItem(e.Definition.DefinitionId, e.Definition.Name, $"{e.Definition.FootprintWidthSubCells * BuildGrid.SubCellMeters:0.#} × {e.Definition.FootprintDepthSubCells * BuildGrid.SubCellMeters:0.#} m  ·  set it down on your lot's floor", "delivery")).ToArray();
+
+    /// <summary>Unpacks a delivered piece into your hands, ready to set down.</summary>
+    public bool Unpack(string definitionId)
+    {
+        if (furnish is null || build is null || FurnishingCatalog.Find(definitionId) is not { } entry) return false;
+        if (BuildMode) { BuildMode = false; build.CancelGesture(); }
+        furnish.Cancel();
+        string prefix = $"pkg-{characterId[..Math.Min(8, characterId.Length)]}-{entry.Definition.DefinitionId}-";
+        int n = 1; while (furnish.Session.Lot.Furnishings.Any(f => f.InstanceId == prefix + n)) n++;
+        return furnish.BeginCarry(new(prefix + n, entry.Definition), ActiveLevel);
+    }
+
+    /// <summary>What is in the avatar's hands.</summary>
+    public string Carrying => furnish?.Gesture switch
+    {
+        FurnishingGesture.CarryingPackage => furnish.Carried!.Definition.Name + " (package)",
+        FurnishingGesture.MovingPiece => "Furniture being moved",
+        _ => "Empty hands",
+    };
 
     /// <summary>Lots for the map.</summary>
     public IReadOnlyList<MapLot> MapLots() => lots.Values.Select(s =>

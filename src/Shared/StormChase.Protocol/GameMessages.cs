@@ -1,6 +1,6 @@
 namespace StormChase.Protocol;
 
-public enum MessageKind : ushort { JoinRequest = 1, JoinAccepted, JoinRejected, ClientInput, WorldSnapshot, GameplayAction, ActionResult, Ping, Pong, DebrisEvent, DebrisSnapshot, AtmosphereSnapshot }
+public enum MessageKind : ushort { JoinRequest = 1, JoinAccepted, JoinRejected, ClientInput, WorldSnapshot, GameplayAction, ActionResult, Ping, Pong, DebrisEvent, DebrisSnapshot, AtmosphereSnapshot, ChatSend, ChatMessage }
 public enum PlayerMovementMode { OnFoot, Driving, Fly }
 public enum GameplayActionKind { EnterVehicle, ExitVehicle, DeployProbe, TakePhoto, RepairVehicle, BuyProbe, RecoverProbe, Respawn, Purchase, SelectVehicle, Refuel, ToggleAnchors, RecoverVehicle, AcceptContract, ContractInteract, CancelContract, Salvage, BuyHouse, BuyFurniture, PlaceFurniture, VisitHome, SetHomeVisits, SelectJob }
 public readonly record struct NetVector3(float X, float Y, float Z)
@@ -36,3 +36,9 @@ public sealed record WorldSnapshot(long ServerTick, double SimulationSeconds, in
 public sealed record GameplayAction(long RequestId, GameplayActionKind Kind, int TargetId, NetVector3 Position, int Slot = -1,float PlacementYaw = 0);
 public sealed record ActionResult(long RequestId, bool Success, string Message, CareerProgress? Career = null);
 public sealed record Ping(long Timestamp);
+
+/// <summary>Chat: Local reaches players near the sender, World everyone in the district.</summary>
+public enum ChatChannel { Local, World }
+public sealed record ChatSend(ChatChannel Channel, string Text);
+/// <summary>A chat line as the district host delivers it. FromPlayerId 0 is the district itself (joins, leaves).</summary>
+public sealed record ChatMessage(long MessageId, ChatChannel Channel, uint FromPlayerId, string From, string Text, double SimulationSeconds);

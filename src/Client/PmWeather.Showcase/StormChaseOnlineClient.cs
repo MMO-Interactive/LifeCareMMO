@@ -20,6 +20,8 @@ internal sealed class StormChaseOnlineClient : IDisposable
     private readonly ConcurrentQueue<GameplayAction> actions = new();
     private readonly ConcurrentQueue<ActionResult> receipts = new();
     private readonly ConcurrentQueue<DestructionDelta> flashes = new();
+    private readonly ConcurrentQueue<ChatMessage> chatIn = new();
+    private readonly ConcurrentQueue<ChatSend> chatOut = new();
     private readonly CancellationTokenSource lifetime = new();
     private readonly TaskCompletionSource<OnlineChaseState> admission = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Thread worker;
@@ -37,6 +39,16 @@ internal sealed class StormChaseOnlineClient : IDisposable
     public string? Error => Volatile.Read(ref failure)?.Message;
     public IReadOnlyList<ActionResult> DrainReceipts()
     { var result = new List<ActionResult>(); while (receipts.TryDequeue(out var item)) result.Add(item); return result; }
+    /// <summary>Chat lines the district delivered since the last call.</summary>
+    public IReadOnlyList<ChatMessage> DrainChat()
+    { var result = new List<ChatMessage>(); while (chatIn.TryDequeue(out var item)) result.Add(item); return result; }
+    /// <summary>Queues a chat line for the district; false when it is empty, too long or too many are waiting.</summary>
+    public bool SendChat(ChatChannel channel, string text)
+    {
+        text = text.Trim();
+        if (text.Length is 0 or > ProtocolCodec.ChatLimit || chatOut.Count >= 8) return false;
+        chatOut.Enqueue(new(channel, text)); return true;
+    }
     public IReadOnlyList<DestructionDelta> DrainPowerFlashes()
     { var result = new List<DestructionDelta>(); while (flashes.TryDequeue(out var item)) result.Add(item); return result; }
 
@@ -125,6 +137,9 @@ internal sealed class StormChaseOnlineClient : IDisposable
                                 if (debris.Apply(message.Get<DebrisEvent>()) == DebrisApplyResult.Invalid)
                                     throw new InvalidDataException("Invalid authoritative debris release.");
                                 changed=true; break;
+                            case MessageKind.ChatMessage:
+                                if (chatIn.Count < 256) chatIn.Enqueue(message.Get<ChatMessage>());
+                                break;
                             case MessageKind.ActionResult:
                                 var result = message.Get<ActionResult>(); if (receipts.Count < 128) receipts.Enqueue(result);
                                 if (Current is { } prior) Volatile.Write(ref current, prior with { Career = result.Career ?? prior.Career, Message = result.Message });
@@ -146,6 +161,7 @@ internal sealed class StormChaseOnlineClient : IDisposable
                         Volatile.Read(ref requestedInput) with { ClientTick = Interlocked.Increment(ref inputTick) }, false);
                     nextInput = seconds + .05;
                 }
+                if (accepted && chatOut.TryPeek(out var chat) && transport.Send(connection, MessageKind.ChatSend, chat)) chatOut.TryDequeue(out _);
                 if (accepted && seconds >= nextAction)
                 {
                     if (pending is null && actions.TryDequeue(out pending)) Interlocked.Decrement(ref actionCount);

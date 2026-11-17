@@ -56,6 +56,8 @@ internal static partial class Showcase
                 while(surface.TryGetStormKey(out int key))
                 {
                     if(play is null)continue;
+                    if(key==0x12){hud.CursorMode=!hud.CursorMode;continue;}
+                    if(key==0x0D&&!play.ShopOpen){hud.BeginChat();surface.ReleaseMouseLook();continue;}
                     if(key==0x1B)
                     {
                         if(play.Lots?.Cancel()==true){}
@@ -105,7 +107,12 @@ internal static partial class Showcase
                         {
                             var admitted=loading.GetAwaiter().GetResult();lock(photoGate)play=admitted;
                             paused=false;hud.RegionalMap=false;hud.ForecastOpen=false;hud.MapOpen=false;hud.PhoneOpen=false;
-                            hud.AttachWorld(play.Session.World);hud.MapLots=play.Lots is { } mapLots?mapLots.MapLots:null;
+                            hud.AttachWorld(play.Session.World);
+                            var chatSession=play;hud.SendChat=(channel,text)=>
+                            {
+                                if(chatSession.Online)return chatSession.SendChat(channel,text);
+                                hud.AddChat(new(DateTime.Now.ToString("h:mm"),channel,"System","Chat needs an online district.",true));return true;
+                            };hud.MapLots=play.Lots is { } mapLots?mapLots.MapLots:null;
                             audio?.ConfigureWarningSites(play.Session.World.Settlements.Select(site=>site.Position with{Y=site.Position.Y+15}));
                             surface.GuiInputEnabled=false;
                             Console.WriteLine(play.Online?"Native multiplayer admitted: complete reliable debris baseline and server environment.":"Authenticated single-player session loaded.");
@@ -118,6 +125,8 @@ internal static partial class Showcase
                 {
                     foreach(var key in keyboard)
                     {
+                        if(hud.ChatTyping){hud.ChatKey(key);continue;}
+                        if(key.Key==0x0D&&!play.ShopOpen&&!paused){hud.BeginChat();continue;}
                         if(key.Key==0x1B)
                         {if(play.Lots?.Cancel()==true){}else if(hud.MapOpen)hud.MapOpen=false;else if(hud.PhoneOpen)hud.PhoneOpen=false;else if(hud.ForecastOpen)hud.ForecastOpen=false;else if(play.ShopOpen||play.DispatchOpen||play.HousingOpen){play.ShopOpen=false;play.DispatchOpen=false;play.HousingOpen=false;}else paused=!paused;}
                         else if(HudKey(key.Key)){}
@@ -125,7 +134,10 @@ internal static partial class Showcase
                         else if(key.Key==0x51)hud.HandleWeatherGuiAction("radar/toggle");
                         else if(!paused&&key.Key is 0x26 or 0x28 or 0x0D or 0x55 or 0x4F or 0x48 or 0x59)play.HandleKey(key.Key);
                     }
-                    surface.GuiInputEnabled=paused||play.ShopOpen||play.DispatchOpen||play.HousingOpen||hud.ForecastOpen||hud.MapOpen||hud.PhoneOpen||play.Lots?.Pie is not null;
+                    surface.GuiInputEnabled=paused||play.ShopOpen||play.DispatchOpen||play.HousingOpen||hud.ForecastOpen||hud.WantsCursor||play.Lots?.Pie is not null;
+                    foreach(var line in play.DrainChat())
+                        hud.AddChat(new(DateTime.Now.ToString("h:mm"),line.Channel,line.From,line.Text,line.FromPlayerId==0));
+                    if(hud.InventoryOpen)hud.Inventory=play.Inventory();
                     hud.WorldOverlay=play.Lots is { } lotLayer?lotLayer.Overlay:null;
                     hud.Hotbar=play.Lots?.Hotbar();hud.LotStatus=play.Lots?.StatusLine;hud.LotMessage=play.Lots?.Status;hud.PlayerName=play.PlayerName;
                     if(profiler is not null){profiler.Mark("InputAndKeys");play.Session.FrameTimingSink??=profiler.Prefixed("Game.");}
@@ -164,6 +176,7 @@ internal static partial class Showcase
                                 case "build":play.HandleKey(0x59);break;
                                 case "menu":paused=true;break;
                                 case "forecast":hud.ForecastOpen=true;hud.MapOpen=false;break;
+                                case { } unpack when unpack.StartsWith("unpack:",StringComparison.Ordinal):play.Lots?.Unpack(unpack[7..]);break;
                             }
                         }
                         else if(action.StartsWith("lot/",StringComparison.Ordinal))play.Lots?.HandleGuiAction(action);
@@ -201,6 +214,7 @@ internal static partial class Showcase
                 {
                     case 0x4E:hud.MapOpen=!hud.MapOpen;hud.PhoneOpen=false;hud.MapCenter=null;surface.ReleaseMouseLook();return true;
                     case 0x50:hud.PhoneOpen=!hud.PhoneOpen;hud.PhoneApp=null;hud.MapOpen=false;surface.ReleaseMouseLook();return true;
+                    case 0x49:hud.InventoryOpen=!hud.InventoryOpen;hud.InventorySelection=-1;surface.ReleaseMouseLook();return true;
                     case 0xDB:hud.HandleHudAction("map/mini-in",out _);return true;
                     case 0xDD:hud.HandleHudAction("map/mini-out",out _);return true;
                     default:return false;

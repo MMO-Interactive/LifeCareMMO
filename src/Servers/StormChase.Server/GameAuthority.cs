@@ -365,6 +365,7 @@ public sealed partial class GameAuthority:BackgroundService
                     player.LastInputUtc=DateTimeOffset.UtcNow;break;
                 case MessageKind.GameplayAction:HandleAction(player,message.Get<GameplayAction>());break;
                 case MessageKind.Ping:transport.Send(player.Connection,MessageKind.Pong,message.Get<Ping>(),false);break;
+                case MessageKind.ChatSend:HandleChat(player,message.Get<ChatSend>());break;
             }
         }
         foreach(var p in players.Values)p.MessagesThisTick=0;
@@ -392,6 +393,7 @@ public sealed partial class GameAuthority:BackgroundService
         player.AtmosphereDay=welcome.Snapshot.Atmosphere!.DayNumber;
         SendFullDebrisBaseline(connection);
         Console.WriteLine("Player admitted: "+id+" / "+character.Name);
+        AnnounceToDistrict(character.Name+" arrived in the district.");
     }
     private Vector3f AdmissionParking()
     {
@@ -427,6 +429,7 @@ public sealed partial class GameAuthority:BackgroundService
         p.Vehicle.Dispose();
         foreach(var probe in probes.Where(probe=>probe.OwnerId==p.Id)){probe.Detached=true;probe.Active=false;}
         Console.WriteLine("Player disconnected: "+p.Id);
+        chatBudget.Remove(connection);AnnounceToDistrict(p.Character.Name+" left the district.");
     }
     public string[] ActiveCharacterIds()=>Volatile.Read(ref publishedCharacters);
     internal object NativeProofPerformance()

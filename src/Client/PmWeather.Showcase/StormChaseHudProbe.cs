@@ -37,12 +37,22 @@ internal static partial class Showcase
 
         using var hud = new StormChaseHud(surface.WindowHandle);
         hud.AttachWorld(world); hud.PlayerName = "Jamie Rivera"; hud.MapLots = () => lots;
+        hud.AddChat(new("3:20", StormChase.Protocol.ChatChannel.World, "District", "Sam Okafor arrived in the district.", true));
+        hud.AddChat(new("3:21", StormChase.Protocol.ChatChannel.Local, "Sam Okafor", "Anyone heading to the hardware store? The front windows are gone.", false));
+        hud.AddChat(new("3:22", StormChase.Protocol.ChatChannel.Local, "Jamie Rivera", "On my way, taping it off now.", false));
+        hud.AddChat(new("3:23", StormChase.Protocol.ChatChannel.World, "Lena Marlow", "Shelter at Meridian school is open.", false));
+        hud.Inventory = new("Empty hands",
+            FurnishingCatalog.Entries.Take(5).Select(e => new HudItem(e.Definition.DefinitionId, e.Definition.Name, "Set it down on your lot's floor", "delivery")).ToArray(),
+            [new("furniture-3", "Floor lamp", "Stored at your home", "stored")],
+            [new("vehicle", "Police cruiser", "Your assigned vehicle", "equipment"), new("phone", "Phone", "Weather, jobs, home and more", "equipment")]);
         await using var backend = new Dx12RenderBackend(options, surface, catalog, logger);
         await backend.InitializeAsync(default);
         var bed = PlacedFurnishing.Of("bed-1", FurnishingCatalog.Find("exam-bed")!.Definition, 0, 0, 0, 0, 0, 0);
         long number = 0; var saved = new List<string>();
-        foreach (string page in new[] { "hud", "build", "pie", "phone", "weather", "map", "driving" })
+        foreach (string page in new[] { "hud", "dock", "inventory", "build", "pie", "phone", "weather", "map", "driving" })
         {
+            hud.DockOpen = page is "dock" or "inventory"; hud.SnapDock(); hud.InventoryOpen = page == "inventory"; hud.InventorySelection = page == "inventory" ? 1 : -1;
+            hud.CursorMode = page == "dock";
             hud.PhoneOpen = page is "phone" or "weather"; hud.PhoneApp = page == "weather" ? "weather" : null; hud.MapOpen = page == "map";
             hud.Hotbar = page == "build" ? [new("Floor", false), new("Wall", true), new("Roof", false), new("Delete", false)] : null;
             hud.LotStatus = page == "build" ? "BUILD · WALL · GROUND  —  Build 3 walls." : null;

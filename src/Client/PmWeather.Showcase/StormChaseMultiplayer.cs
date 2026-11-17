@@ -37,6 +37,25 @@ internal sealed class StormChasePlaySession : IDisposable
     public StormChasePhotos Photos { get; }
     /// <summary>LifeCare lots, build mode and world furniture; online through the Gateway only.</summary>
     public StormChaseLotPlay? Lots { get; private set; }
+    /// <summary>Chat lines the district delivered; single player has no one to talk to.</summary>
+    public IReadOnlyList<ChatMessage> DrainChat() => client?.DrainChat() ?? [];
+    public bool SendChat(ChatChannel channel, string text) => client?.SendChat(channel, text) ?? false;
+
+    /// <summary>Everything the inventory window lists, from authoritative state only.</summary>
+    public HudInventory Inventory()
+    {
+        var housing = Session.HousingState;
+        var stored = housing?.Furniture.Where(f => !f.Placed && housing.Home is { Mine: true } home && f.HomeId == home.HomeId)
+            .Select(f => new HudItem("furniture-" + f.FurnitureId, StormChaseHousing.Furniture(f.Sku)?.Offer.Name ?? f.Sku, "Stored at your home  ·  place it from Home", "stored")).ToArray() ?? [];
+        var state = client?.Current; var equipment = new List<HudItem>();
+        string vehicleName = state?.Vehicle is { } v ? StormChaseCareer.Vehicles[Math.Clamp(v.VehicleType, 0, StormChaseCareer.Vehicles.Length - 1)].Name : career?.SelectedVehicle.Name ?? "Vehicle";
+        equipment.Add(new("vehicle", vehicleName, "Your assigned vehicle  ·  E to enter", "equipment"));
+        int probes = state?.Career.Probes ?? career?.ProbeCapacity ?? 0;
+        if (probes > 0) equipment.Add(new("probes", $"Field probes ×{probes}", "Deploy with B", "equipment"));
+        equipment.Add(new("phone", "Phone", "Weather, jobs, home and more  ·  P", "equipment"));
+        return new(Lots?.Carrying ?? "Empty hands", Lots?.Deliveries() ?? [], stored, equipment);
+    }
+
     public void SuspendInput()
     {var facing=Camera.Forward;client?.SetInput(MathF.Atan2(facing.X,facing.Z),MathF.Asin(Math.Clamp(facing.Y,-1,1)),0,0,0,false,true,false);}
     public StormChasePlaySession(StormChaseSession session, StormChaseCareer localCareer,

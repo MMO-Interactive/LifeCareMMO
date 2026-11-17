@@ -75,7 +75,7 @@ internal sealed partial class StormChaseHud
     /// </summary>
     public bool HandleHudAction(string action, out string? request)
     {
-        request = null;
+        if (HandleWindowAction(action, out request)) return true;
         switch (action)
         {
             case "hud/map": MapOpen = !MapOpen; PhoneOpen = false; MapCenter = null; return true;
@@ -338,8 +338,15 @@ internal sealed partial class StormChaseHud
     private static string Capital(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     /// <summary>Panel helpers in design units, shared by the phone and the world map.</summary>
-    private sealed class HudKit(float s)
+    private sealed class HudKit(float s, GuiDx12Composer? composer = null)
     {
+        public float Scale => s;
+        public GuiLabel Wrapped(GuiRect panel, string text, float x, float y, float width, float height, float size, GuiColor color, GuiTextAlignment align = GuiTextAlignment.Left) => new()
+        {
+            TextAlignment = align,
+            Text = text, Translation = new((panel.X + x) * s, (panel.Y + y) * s), Width = GuiLength.Pixels(width * s), Height = GuiLength.Pixels(height * s),
+            WrapMode = GuiTextWrapMode.Wrap, Style = new(Theme.Font, size * s, 1.18f, color),
+        };
         public GuiLabel Label(GuiRect panel, string text, float x, float y, float width, float size, GuiColor color, bool bold = false, GuiTextAlignment align = GuiTextAlignment.Left) => new()
         {
             Text = text, Translation = new((panel.X + x) * s, (panel.Y + y) * s), Width = GuiLength.Pixels(width * s), Height = GuiLength.Pixels(size * 1.9f * s),

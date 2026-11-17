@@ -1020,6 +1020,8 @@ internal sealed class NativeSurface : IRenderSurfaceHost, IDisposable
                 bool altEnter = message.Id == 0x0104 && key == 0x0D && (message.LParam.ToInt64() & (1L << 29)) != 0;
                 if (key == 0x7A || altEnter)
                 { if (!repeated) ToggleFullscreen(); continue; }
+                // Alt toggles the HUD cursor in play, in or out of GUI mode; it never opens the window menu.
+                if (key == 0x12 && GameControlsEnabled) { if (!repeated) stormKeys.Enqueue(0x12); continue; }
                 if (MenuControlsEnabled && GuiInputEnabled && message.Id == 0x0100)
                 {
                     // Navigation and text editing repeat normally. Holding Enter

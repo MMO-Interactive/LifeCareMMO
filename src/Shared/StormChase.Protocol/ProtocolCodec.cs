@@ -98,9 +98,10 @@ public static class ProtocolCodec
         MessageKind.JoinRequest => typeof(JoinRequest), MessageKind.JoinAccepted => typeof(JoinAccepted), MessageKind.JoinRejected => typeof(JoinRejected),
         MessageKind.ClientInput => typeof(ClientInput), MessageKind.WorldSnapshot => typeof(WorldSnapshot), MessageKind.GameplayAction => typeof(GameplayAction),
         MessageKind.ActionResult => typeof(ActionResult), MessageKind.Ping or MessageKind.Pong => typeof(Ping), MessageKind.DebrisEvent => typeof(DebrisEvent), MessageKind.DebrisSnapshot => typeof(DebrisSnapshot),
-        MessageKind.AtmosphereSnapshot => typeof(AtmosphereSnapshot), _ => throw new ArgumentOutOfRangeException(nameof(kind))
+        MessageKind.AtmosphereSnapshot => typeof(AtmosphereSnapshot), MessageKind.ChatSend => typeof(ChatSend), MessageKind.ChatMessage => typeof(ChatMessage), _ => throw new ArgumentOutOfRangeException(nameof(kind))
     };
 
+    public const int ChatLimit = 200;
     private static bool Text(string? value, int limit) => value is not null && value.Length <= limit;
     private static bool Vector(NetVector3 value) => value.IsFinite && Math.Abs(value.X) <= 1_000_000 && Math.Abs(value.Y) <= 1_000_000 && Math.Abs(value.Z) <= 1_000_000;
     private static bool Body(DebrisBodyState? body) => body is not null && body.BodyId > 0 && Vector(body.Position) && Vector(body.LinearVelocity) && Vector(body.AngularVelocity) && body.Rotation.IsFinite && Text(body.StablePartId, 128) && (!body.Collected || (body.Archived && body.Sleeping && !body.CollisionEnabled));
@@ -172,7 +173,10 @@ public static class ProtocolCodec
         GameplayAction x => x.RequestId >= 0 && Enum.IsDefined(x.Kind) && Vector(x.Position)&&x.Slot is >=-1 and <=24&&float.IsFinite(x.PlacementYaw),
         ActionResult x => x.RequestId >= 0 && Text(x.Message, 256) && (x.Career is null || Career(x.Career)),
         DebrisEvent x => x.EventId >= 0 && x.BaselineRevision >= 0 && Enum.IsDefined(x.Kind) && Body(x.Body) && (x.Kind != DebrisEventKind.Removed || x.Body.Collected),
-        DebrisSnapshot x => Debris(x), Ping => true, _ => false
+        DebrisSnapshot x => Debris(x), Ping => true,
+        ChatSend x => Enum.IsDefined(x.Channel) && Text(x.Text, ChatLimit) && x.Text.Length > 0,
+        ChatMessage x => x.MessageId > 0 && Enum.IsDefined(x.Channel) && Text(x.From, 64) && Text(x.Text, ChatLimit) && double.IsFinite(x.SimulationSeconds),
+        _ => false
     };
 }
 public sealed record ProtocolMessage(MessageKind Kind, ulong Sequence, object Payload)

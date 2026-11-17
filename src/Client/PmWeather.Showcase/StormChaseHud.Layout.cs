@@ -28,30 +28,33 @@ internal sealed partial class StormChaseHud
     }
 
     /// <summary>Design-space rectangles shared by the GUI document and the GPU instruments.</summary>
-    private sealed record HudLayout(float Scale, float Width, float Height, GuiRect Character, GuiRect Compass, GuiRect Clock, GuiRect Icons,
-        GuiRect Task, GuiRect Notes, GuiRect Minimap, GuiRect MinimapCanvas, GuiRect Hotbar, GuiRect Status, GuiRect? Vehicle, GuiRect Phone);
+    private sealed record HudLayout(float Scale, float Width, float Height, GuiRect Character, GuiRect Compass, GuiRect Clock, GuiRect Dock,
+        GuiRect Task, GuiRect Notes, GuiRect Minimap, GuiRect MinimapCanvas, GuiRect Hotbar, GuiRect Status, GuiRect? Vehicle, GuiRect Phone, GuiRect Chat, GuiRect Inventory);
 
-    private static readonly (string Id, string Key, string Label)[] IconTiles =
-        [("hud/map", "N", "Map"), ("hud/jobs", "O", "Jobs"), ("hud/phone", "P", "Phone"), ("hud/build", "Y", "Build"), ("hud/shop", "U", "Shop"), ("hud/menu", "Esc", "Menu")];
 
     private static float HudScale(int w, int h) => Math.Clamp(Math.Min(w / 1500f, h / 850f), .78f, 2.4f);
 
     private HudLayout ComputeLayout(int w, int h, StormChaseTelemetry t)
     {
         float s = HudScale(w, h), W = w / s, H = h / s, m = 16;
-        var character = new GuiRect(m, m, 344, 170);
+        // Everything that sits at the bottom stays above the dock's live top edge, so opening the dock pushes it up.
+        float dockTop = H - DockReserve(), floor = dockTop - 10;
+        var dock = new GuiRect(0, dockTop, W, H - dockTop);
+        var character = Place("character", new GuiRect(m, m, 344, 170), W, floor);
         var compass = new GuiRect(W / 2 - 240, m, 480, 34);
         var clock = new GuiRect(W / 2 - 210, compass.Bottom + 6, 420, 60);
-        var icons = new GuiRect(W - m - 390, m, 390, 66);
-        var task = new GuiRect(W - m - 344, icons.Bottom + 10, 344, 124);
-        var notes = new GuiRect(W - m - 344, task.Bottom + 10, 344, 136);
-        var minimap = new GuiRect(W - m - 320, H - m - 278, 320, 278);
+        var homeTask = new GuiRect(W - m - 344, m, 344, 124);
+        var task = Place("task", homeTask, W, floor);
+        var notes = Place("notes", new GuiRect(W - m - 344, homeTask.Bottom + 10, 344, 136), W, floor);
+        var minimap = Place("minimap", new GuiRect(W - m - 320, floor - 278, 320, 278), W, floor);
         var canvas = new GuiRect(minimap.X + 12, minimap.Y + 44, 296, 186);
-        var hotbar = new GuiRect(W / 2 - 325, H - m - 78, 650, 78);
+        var hotbar = new GuiRect(W / 2 - 325, floor - 78, 650, 78);
         var status = new GuiRect(hotbar.X, hotbar.Y - 38, hotbar.Width, 30);
-        GuiRect? vehicle = t.CameraMode == "DRIVING" && t.Campaign is not null ? new GuiRect(m, H - m - 136, 300, 136) : null;
-        var phone = new GuiRect(W - m - 312, task.Bottom + 12, 312, Math.Min(640, H - m - task.Bottom - 12));
-        return new(s, W, H, character, compass, clock, icons, task, notes, minimap, canvas, hotbar, status, vehicle, phone);
+        GuiRect? vehicle = t.CameraMode == "DRIVING" && t.Campaign is not null ? Place("vehicle", new GuiRect(m, floor - 136, 300, 136), W, floor) : null;
+        var phone = Place("phone", new GuiRect(W - m - 312, homeTask.Bottom + 12, 312, Math.Min(640, floor - homeTask.Bottom - 12)), W, floor);
+        var chat = Place("chat", new GuiRect(m, floor - 136 - 12 - 270, 400, 270), W, floor);
+        var inventory = Place("inventory", new GuiRect(W / 2 - 215, 140, 430, 470), W, floor);
+        return new(s, W, H, character, compass, clock, dock, task, notes, minimap, canvas, hotbar, status, vehicle, phone, chat, inventory);
     }
 
     private HudLayout? layoutForInstruments;
@@ -67,6 +70,8 @@ internal sealed partial class StormChaseHud
         if (c?.ShopOpen == true)
             return new(new GuiOverlayPanel { Width = GuiLength.Pixels(w), Height = GuiLength.Pixels(h), Items = BuildShop(w, h, s, c).ToList() });
         TrackNotifications(t);
+        dragHandles.Clear();
+        var kit = new HudKit(s, composer);
 
         GuiLabel Label(GuiRect panel, string text, float x, float y, float width, float size, GuiColor color,
             bool bold = false, GuiTextAlignment align = GuiTextAlignment.Left) => new()
@@ -106,7 +111,8 @@ internal sealed partial class StormChaseHud
         // ---------------------------------------------------------------- character
         var ch = L.Character;
         var job = StormChaseJobs.Get(c?.Job);
-        Panel(ch, "CHARACTER", Theme.Accent, c is null ? null : job.Department.ToUpperInvariant());
+        if (CharacterOpen) {
+        Panel(ch, "CHARACTER", Theme.Accent, c is null ? null : job.Department.ToUpperInvariant()); RegisterHandle("character", ch);
         root.Add(Fill(new(ch.X + 14, ch.Y + 42, 58, 58), new(16, 46, 70, 250), 10, Theme.TileEdge));
         string name = string.IsNullOrWhiteSpace(PlayerName) ? "Citizen" : PlayerName;
         root.Add(Label(new(ch.X + 14, ch.Y + 42, 58, 58), name[..1].ToUpperInvariant(), 0, 12, 58, 20, Theme.Ink, bold: true, align: GuiTextAlignment.Center));
@@ -125,6 +131,8 @@ internal sealed partial class StormChaseHud
             }
         }
 
+        }
+
         // ---------------------------------------------------------------- compass + clock (weather is one quiet line; the rest is on the phone)
         root.Add(Fill(L.Compass, Theme.Glass, 17, Theme.GlassEdge));
         var clockRect = L.Clock;
@@ -136,23 +144,12 @@ internal sealed partial class StormChaseHud
         root.Add(Label(clockRect, NearestPlace(c) ?? "Open country", 214, 10, 190, 11, Theme.Ink, bold: true, align: GuiTextAlignment.Right));
         root.Add(Label(clockRect, $"Tile {tile.X}, {tile.Z}", 214, 32, 190, 8.5f, Theme.Faint, align: GuiTextAlignment.Right));
 
-        // ---------------------------------------------------------------- Tiny Clinic icon tiles
-        for (int i = 0; i < IconTiles.Length; i++)
-        {
-            var r = new GuiRect(L.Icons.X + i * 66, L.Icons.Y, 60, 66);
-            bool lit = (IconTiles[i].Id == "hud/phone" && PhoneOpen) || (IconTiles[i].Id == "hud/map" && MapOpen);
-            root.Add(new GuiButton
-            {
-                Id = IconTiles[i].Id, Text = "", Translation = new(r.X * s, r.Y * s), Width = GuiLength.Pixels(r.Width * s), Height = GuiLength.Pixels(r.Height * s),
-                CornerRadius = 9 * s, BorderThickness = Math.Max(1, (lit ? 2 : 1) * s), BackgroundColor = lit ? new(26, 92, 140, 250) : Theme.Tile,
-                HoverBackgroundColor = new(34, 104, 156, 250), PressedBackgroundColor = new(10, 40, 70, 255), BorderColor = lit ? Theme.Accent : Theme.TileEdge,
-            });
-            root.Add(Label(r, IconTiles[i].Key, 5, 2, 30, 7, Theme.Sky));
-            root.Add(Label(r, IconTiles[i].Label, 0, 46, 60, 8.5f, Theme.Ink, align: GuiTextAlignment.Center));
-        }
+        // ---------------------------------------------------------------- bottom dock
+        BuildDock(root, L, kit);
 
         // ---------------------------------------------------------------- active task
         var tr = L.Task;
+        if (TaskOpen) { RegisterHandle("task", tr);
         if (c?.Mission is { } mission)
         {
             float meters = StormChaseCareer.HorizontalDistance(observerPosition, new(mission.TargetPosition.X, mission.TargetPosition.Y, mission.TargetPosition.Z));
@@ -169,9 +166,11 @@ internal sealed partial class StormChaseHud
             root.Add(Wrapped(tr, c is null ? "Look around the district." : $"Your {job.Department.ToLowerInvariant()} job board has calls waiting. Press O to choose one.", 14, 66, 316, 40, 8.5f, Theme.Muted));
         }
 
+        }
+
         // ---------------------------------------------------------------- notifications (phone-style toasts)
         var nr = L.Notes;
-        if (!PhoneOpen) {
+        if (NotesOpen && !PhoneOpen) { RegisterHandle("notes", nr);
         Panel(nr, "NOTIFICATIONS", Theme.Sky, notifications.Count == 0 ? null : notifications.Count.ToString());
         float ny = 38;
         foreach (var note in notifications.Take(3))
@@ -187,9 +186,9 @@ internal sealed partial class StormChaseHud
         }
 
         // ---------------------------------------------------------------- minimap (Life Beyond)
-        if (!PhoneOpen)
+        if (MinimapOpen && !PhoneOpen)
         {
-            var mm = L.Minimap;
+            var mm = L.Minimap; RegisterHandle("minimap", mm);
             Panel(mm, "MINIMAP", Theme.Accent, "LIVE MAP");
             root.Add(Fill(L.MinimapCanvas, new(8, 20, 25, 255), 4));
             root.Add(Button("map/mini-in", "+", new(mm.X + 12, mm.Bottom - 40, 32, 28), size: 12));
@@ -201,7 +200,7 @@ internal sealed partial class StormChaseHud
         // ---------------------------------------------------------------- vehicle (only while driving)
         if (L.Vehicle is { } k && c is not null)
         {
-            Panel(k, "VEHICLE", Theme.Accent, c.VehicleName.ToUpperInvariant());
+            Panel(k, "VEHICLE", Theme.Accent, c.VehicleName.ToUpperInvariant()); RegisterHandle("vehicle", k);
             root.Add(Label(k, $"{c.SpeedMph:0}", 14, 50, 110, 22, Theme.Ink, bold: true, align: GuiTextAlignment.Center));
             root.Add(Label(k, "MPH", 14, 88, 110, 7.5f, Theme.Muted, align: GuiTextAlignment.Center));
             root.Add(Label(k, "FUEL", 136, 44, 60, 7.5f, Theme.Faint));
@@ -230,8 +229,11 @@ internal sealed partial class StormChaseHud
             else root.Add(Label(r, "+", 0, 16, 58, 15, Theme.Faint, align: GuiTextAlignment.Center));
         }
 
-        // ---------------------------------------------------------------- phone
-        if (PhoneOpen) BuildPhone(root, L, t);
+        // ---------------------------------------------------------------- windows the player opens
+        if (ChatOpen) { BuildChat(root, kit, L.Chat); RegisterHandle("chat", L.Chat); }
+        if (InventoryOpen) { BuildInventory(root, kit, L.Inventory, t); RegisterHandle("inventory", L.Inventory); }
+        if (PhoneOpen) { BuildPhone(root, L, t); dragHandles.Add(("phone", new(L.Phone.X + 30, L.Phone.Y, L.Phone.Width - 90, 40))); }
+        if (CursorMode && !ChatTyping) root.Add(Label(new(L.Width / 2 - 200, L.Status.Y - 30, 400, 22), "CURSOR MODE  ·  DRAG WINDOWS BY THEIR TITLE  ·  ALT TO RETURN", 0, 2, 400, 8, Theme.Accent, bold: true, align: GuiTextAlignment.Center));
 
         if (WorldOverlay is { } overlay) root.AddRange(overlay(w, h));
         return new(new GuiOverlayPanel { Width = GuiLength.Pixels(w), Height = GuiLength.Pixels(h), Items = root });
@@ -253,8 +255,8 @@ internal sealed partial class StormChaseHud
     }
 
     private static string HintText(StormChaseTelemetry t) => t.CameraMode == "DRIVING"
-        ? "W/S DRIVE  ·  E EXIT  ·  P PHONE"
-        : "E VEHICLE  ·  H INTERACT  ·  P PHONE";
+        ? "W/S DRIVE  ·  E EXIT  ·  ALT CURSOR"
+        : "E VEHICLE  ·  H INTERACT  ·  ALT CURSOR";
 
     private IEnumerable<GuiElement> BuildShop(int w, int h, float s, StormChaseCampaignTelemetry c)
     {
@@ -341,19 +343,17 @@ internal sealed partial class StormChaseHud
             mesh.FillRect(new(X(cx - 1), X(r.Y + 3), Math.Max(2, X(2)), X(r.Height - 6)), Theme.Accent.WithAlpha(160));
         }
 
-        // Icon glyphs on the Tiny Clinic tiles.
-        for (int i = 0; i < IconTiles.Length; i++)
-            DrawIcon(mesh, IconTiles[i].Id, X(L.Icons.X + i * 66 + 30), X(L.Icons.Y + 28), X(13), s);
+        DrawDockInstruments(mesh, L);
 
         // Mission progress.
-        if (c?.Mission is { } m)
+        if (TaskOpen && c?.Mission is { } m)
         {
             float progress = m.RequiredWorkSeconds > 0 ? m.WorkSeconds / m.RequiredWorkSeconds : (float)m.Step / Math.Max(1, m.StepCount);
             Bar(mesh, L.Task.X + 14, L.Task.Y + 114, 316, progress, Theme.Warn, s);
         }
 
         // The Life Beyond minimap.
-        if (!PhoneOpen && World is not null)
+        if (MinimapOpen && !PhoneOpen && World is not null)
             mapView!.Draw(mesh, new(X(L.MinimapCanvas.X), X(L.MinimapCanvas.Y), X(L.MinimapCanvas.Width), X(L.MinimapCanvas.Height)),
                 frame.Camera.Position.X, frame.Camera.Position.Z, MiniZoomMeters[MiniZoom], Markers(frame), s: s);
 
@@ -398,6 +398,31 @@ internal sealed partial class StormChaseHud
             case "hud/shop":
                 mesh.BorderRect(new(x - r * .8f, y - r * .4f, r * 1.6f, r * 1.3f), ink, w, r * .15f);
                 mesh.Circle(x, y - r * .45f, r * .45f, ink, w); mesh.FillRect(new(x - r * .8f, y - r * .4f, r * 1.6f, r * .25f), Theme.Good, r * .1f); break;
+            case "hud/character":
+                mesh.Circle(x, y - r * .45f, r * .38f, ink, w);
+                mesh.Line(x - r * .75f, y + r * .9f, x - r * .55f, y + r * .2f, ink, w); mesh.Line(x - r * .55f, y + r * .2f, x + r * .55f, y + r * .2f, ink, w);
+                mesh.Line(x + r * .55f, y + r * .2f, x + r * .75f, y + r * .9f, ink, w); break;
+            case "hud/task":
+                mesh.Line(x - r * .6f, y - r, x - r * .6f, y + r, ink, w);
+                mesh.FillRect(new(x - r * .6f, y - r, r * 1.3f, r * .9f), Theme.Warn, r * .1f); break;
+            case "hud/notes":
+                mesh.Circle(x, y - r * .1f, r * .65f, ink, w); mesh.FillRect(new(x - r * .85f, y + r * .35f, r * 1.7f, w), ink, w / 2);
+                mesh.Disc(x, y + r * .7f, r * .18f, ink); mesh.Disc(x + r * .55f, y - r * .6f, r * .22f, Theme.Danger); break;
+            case "hud/minimap":
+                mesh.Circle(x, y, r * .9f, ink, w);
+                mesh.Line(x, y - r * .6f, x - r * .3f, y + r * .3f, Theme.Accent, w); mesh.Line(x, y - r * .6f, x + r * .3f, y + r * .3f, Theme.Accent, w); break;
+            case "hud/home":
+                mesh.Line(x - r, y - r * .05f, x, y - r * .9f, ink, w); mesh.Line(x, y - r * .9f, x + r, y - r * .05f, ink, w);
+                mesh.BorderRect(new(x - r * .7f, y - r * .15f, r * 1.4f, r * 1.05f), ink, w); mesh.FillRect(new(x - r * .18f, y + r * .35f, r * .36f, r * .55f), Theme.Good, r * .05f); break;
+            case "hud/inventory":
+                mesh.BorderRect(new(x - r * .8f, y - r * .5f, r * 1.6f, r * 1.4f), ink, w, r * .3f);
+                mesh.Circle(x, y - r * .55f, r * .38f, ink, w);
+                mesh.FillRect(new(x - r * .45f, y + r * .1f, r * .9f, r * .4f), Theme.Warn, r * .1f); break;
+            case "hud/chat":
+                mesh.BorderRect(new(x - r * .9f, y - r * .75f, r * 1.8f, r * 1.2f), ink, w, r * .35f);
+                mesh.Line(x - r * .4f, y + r * .45f, x - r * .7f, y + r * .9f, ink, w); mesh.Line(x - r * .7f, y + r * .9f, x, y + r * .45f, ink, w);
+                for (int i = -1; i <= 1; i++) mesh.Disc(x + i * r * .45f, y - r * .15f, r * .12f, Theme.Sky);
+                break;
             default:
                 for (int i = -1; i <= 1; i++) mesh.FillRect(new(x - r * .8f, y + i * r * .55f - w / 2, r * 1.6f, w), ink, w / 2); break;
         }

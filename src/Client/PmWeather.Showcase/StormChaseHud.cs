@@ -63,6 +63,7 @@ internal sealed partial class StormChaseHud : IDisposable
             if (input is { } guiInput) input = new(guiInput.Pointer with { X = guiInput.Pointer.X / scale, Y = guiInput.Pointer.Y / scale });
         }
         observerPosition = frame.Camera.Position;
+        if (!modal && !MapOpen) ProcessDrag(input ?? GuiInputState.Empty, HudScale(w, h));
         LastFrame = layout.BuildFrame(BuildDocument(w, h, telemetry), new(w, h), input ?? GuiInputState.Empty, LastFrame.Interaction);
         Ui = composer.Build(LastFrame, ++revision, mesh =>
         {
