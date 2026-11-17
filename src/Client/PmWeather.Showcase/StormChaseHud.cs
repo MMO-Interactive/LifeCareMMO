@@ -19,7 +19,7 @@ internal sealed record StormChaseCampaignTelemetry(int Day, float Hour, string F
     IReadOnlyList<ChaseFieldProbe> Probes, Shared.Contracts.World.Vector3f VehiclePosition,
     IReadOnlyList<StormChaseRoadRoute>? Roads = null, int Popularity = 0,
     MissionState? Mission = null, ActivityState[]? Activities = null, bool DispatchOpen = false,
-    AtmosphereSnapshot? Atmosphere = null, StormChaseBoundary? Boundary = null, string Job = StormChaseJobs.Chaser);
+    AtmosphereSnapshot? Atmosphere = null, StormChaseBoundary? Boundary = null, string Job = StormChaseJobs.Chaser, int? Seed = null);
 
 /// <summary>Engine.GUI layout and interaction submitted with the native game frame.</summary>
 internal sealed partial class StormChaseHud : IDisposable

@@ -182,6 +182,18 @@ internal static class StormChaseAtmosphere
         return result.MoveToImmutable();
     }
 
+    /// <summary>
+    /// <paramref name="days"/> daily outlooks starting at <paramref name="dayNumber"/>, made exactly as the server's three-day
+    /// outlook is (same targets, same deterministic model), so a client can extend it to a week.
+    /// </summary>
+    public static ImmutableArray<AtmosphereDayForecast> CreateForecast(int campaignSeed, int dayNumber, int days)
+    {
+        var result = ImmutableArray.CreateBuilder<AtmosphereDayForecast>(Math.Max(0, days));
+        for (int day = dayNumber; day < dayNumber + days; day++)
+            result.Add(DayForecast(campaignSeed, day, OutlookPoint(campaignSeed, day), OutlookPoint(campaignSeed, day, 26)));
+        return result.MoveToImmutable();
+    }
+
     /// <summary>Server/client-identical snapshot for the day's outlook target (current sounding at the 15:00 target point).</summary>
     public static AtmosphereSnapshot OutlookSnapshot(int campaignSeed, int dayNumber, float hour,
         double campaignSeconds, long serverTick, ImmutableArray<AtmosphereDayForecast>? forecast = null)

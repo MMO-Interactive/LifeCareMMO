@@ -296,6 +296,7 @@ internal sealed class StormChasePlaySession : IDisposable
             Boundary:(state?.World.Seed??campaign?.Seed) is int boundarySeed&&(atmosphere?.DayNumber??campaign?.DayNumber) is int boundaryDay
                 ?StormChaseAtmosphere.ActiveBoundary(boundarySeed,boundaryDay,Math.Clamp(environment.TimeOfDayHours,0,23.999f)):null,
             // Online, the server-issued department vehicle (types 4-6) identifies the job.
+            Seed:state?.World.Seed??campaign?.Seed,
             Job:state is null?career?.Save.Contracts.Job??StormChaseJobs.Chaser:vehicle?.VehicleType switch{4=>StormChaseJobs.Police,5=>StormChaseJobs.Fire,6=>StormChaseJobs.Ems,_=>StormChaseJobs.Chaser})};
     }
     public void Dispose(){Lots?.Dispose();client?.Dispose();if(career is not null&&Session.FurniturePhysics is { } furniture)career.SaveFurniturePoses(furniture.States);career?.Flush();vehicles?.Dispose();Session.Dispose();}

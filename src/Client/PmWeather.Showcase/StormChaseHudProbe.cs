@@ -27,7 +27,8 @@ internal static partial class Showcase
             new(feet.X + 180, feet.Y, feet.Z + 260), false, 12, 40);
         var c = new StormChaseCampaignTelemetry(atmosphere.DayNumber, 15.4f, atmosphere.ThreeDayForecast[0].Name, "",
             atmosphere.Diagnostics.TornadoPotential01, 2, 12450, "Police cruiser", 38, 41, 60, 82, false, false, 0, "Shift started. Check the job board.", false,
-            world.Settlements, world.GasStations, [], feet, world.RoadRoutes, Popularity: 34, Mission: mission, Atmosphere: atmosphere, Job: StormChaseJobs.Police);
+            world.Settlements, world.GasStations, [], feet, world.RoadRoutes, Popularity: 34, Mission: mission, Atmosphere: atmosphere, Job: StormChaseJobs.Police, Seed: source.Seed,
+            Boundary: StormChaseAtmosphere.ActiveBoundary(source.Seed, atmosphere.DayNumber, 15.4f));
         var tornado = parent.Tornadoes.FirstOrDefault();
         var t = new StormChaseTelemetry(source.Phase, tornado?.SmoothedWindSpeed ?? 140, tornado?.SmoothedWidthMeters ?? 180, 5200, "Thunderstorm", 1, 60, 10,
             "ON FOOT", "AFTERNOON", 0, 0, 0, false, FunnelEpisode: 1, Touchdowns: 1, HasFunnel: true, Campaign: c);
@@ -49,12 +50,13 @@ internal static partial class Showcase
         await backend.InitializeAsync(default);
         var bed = PlacedFurnishing.Of("bed-1", FurnishingCatalog.Find("exam-bed")!.Definition, 0, 0, 0, 0, 0, 0);
         long number = 0; var saved = new List<string>();
-        foreach (string page in new[] { "hud", "dock", "inventory", "build", "pie", "phone", "weather", "map", "driving" })
+        foreach (string page in new[] { "hud", "dock", "inventory", "build", "pie", "phone", "weather", "today", "week", "map", "driving" })
         {
             hud.DockOpen = page is "dock" or "inventory"; hud.SnapDock(); hud.InventoryOpen = page == "inventory"; hud.InventorySelection = page == "inventory" ? 0 : -1;
             if (page == "inventory") { hud.OpenContainer(crate); hud.ContainerSelection = 1; } else hud.HandleHudAction("container/close", out _);
             hud.CursorMode = page == "dock";
-            hud.PhoneOpen = page is "phone" or "weather"; hud.PhoneApp = page == "weather" ? "weather" : null; hud.MapOpen = page == "map";
+            hud.PhoneOpen = page is "phone" or "weather" or "today" or "week"; hud.PhoneApp = page is "weather" or "today" or "week" ? "weather" : null;
+            hud.WeatherTab = page is "today" or "week" ? page : "now"; hud.MapOpen = page == "map";
             hud.Hotbar = page == "build" ? [new("Floor", false), new("Wall", true), new("Roof", false), new("Delete", false)] : null;
             hud.LotStatus = page == "build" ? "BUILD · WALL · GROUND  —  Build 3 walls." : null;
             hud.LotMessage = page == "build" ? "Lay 9 floor tiles done." : null;

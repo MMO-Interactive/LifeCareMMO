@@ -147,7 +147,12 @@ internal sealed partial class StormChaseHud
     private void DrawGpuHodograph(GuiDx12MeshBuilder mesh, int w, int h, AtmosphereSnapshot atmosphere)
     {
         var bounds = ForecastBounds(w, h);
-        float centerX = bounds.X + bounds.Width - 180, centerY = bounds.Y + 230, radius = 101;
+        DrawHodograph(mesh, bounds.X + bounds.Width - 180, bounds.Y + 230, 101, atmosphere, 1);
+    }
+
+    /// <summary>Wind with height (0-1, 1-3, 3-6, 6+ km colours) and the storm-motion cross, centred at (centerX, centerY).</summary>
+    private static void DrawHodograph(GuiDx12MeshBuilder mesh, float centerX, float centerY, float radius, AtmosphereSnapshot atmosphere, float s)
+    {
         float maximum = Math.Max(30, atmosphere.Sounding.Select(level => MathF.Sqrt(level.WindEastMetersPerSecond
             * level.WindEastMetersPerSecond + level.WindNorthMetersPerSecond * level.WindNorthMetersPerSecond)).DefaultIfEmpty(0).Max());
         float limit = MathF.Ceiling(maximum / 10) * 10;
@@ -155,22 +160,21 @@ internal sealed partial class StormChaseHud
         for (int ring = 1; ring <= 3; ring++) mesh.Circle(centerX, centerY, radius * ring / 3, grid);
         mesh.Line(centerX - radius, centerY, centerX + radius, centerY, grid);
         mesh.Line(centerX, centerY - radius, centerX, centerY + radius, grid);
-        mesh.Text($"{limit:0} m/s", centerX + 58, centerY + 2, 70, 14, 8, new(150, 175, 184));
-        mesh.Text("N", centerX - 4, centerY - radius - 16, 16, 14, 8, new(150, 175, 184));
-        mesh.Text("E", centerX + radius + 3, centerY - 7, 16, 14, 8, new(150, 175, 184));
+        mesh.Text($"{limit:0} m/s", centerX + radius * .57f, centerY + 2 * s, 70 * s, 14 * s, 8 * s, new(150, 175, 184));
+        mesh.Text("N", centerX - 4 * s, centerY - radius - 16 * s, 16 * s, 14 * s, 8 * s, new(150, 175, 184));
+        mesh.Text("E", centerX + radius + 3 * s, centerY - 7 * s, 16 * s, 14 * s, 8 * s, new(150, 175, 184));
         for (int i = 1; i < atmosphere.Sounding.Length; i++)
         {
             var from = atmosphere.Sounding[i - 1]; var to = atmosphere.Sounding[i];
             GuiColor color = to.HeightMeters <= 1000 ? new(255, 197, 79) : to.HeightMeters <= 3000 ? new(75, 232, 181)
                 : to.HeightMeters <= 6000 ? new(90, 169, 255) : new(207, 134, 241);
             float x = centerX + to.WindEastMetersPerSecond / limit * radius, y = centerY - to.WindNorthMetersPerSecond / limit * radius;
-            mesh.Line(centerX + from.WindEastMetersPerSecond / limit * radius, centerY - from.WindNorthMetersPerSecond / limit * radius, x, y, color, 2);
-            mesh.Disc(x, y, 2, color);
+            mesh.Line(centerX + from.WindEastMetersPerSecond / limit * radius, centerY - from.WindNorthMetersPerSecond / limit * radius, x, y, color, 2 * s);
+            mesh.Dot(x, y, 2 * s, color);
         }
         var motion = atmosphere.Diagnostics.StormMotion;
         float mx = centerX + motion.X / limit * radius, my = centerY - motion.Z / limit * radius;
-        mesh.Line(mx - 4, my - 4, mx + 4, my + 4, new(255, 255, 255), 2);
-        mesh.Line(mx - 4, my + 4, mx + 4, my - 4, new(255, 255, 255), 2);
-        mesh.Text("X STORM", centerX - 105, centerY + radius + 9, 115, 14, 8, new(208, 225, 232));
+        mesh.Line(mx - 4 * s, my - 4 * s, mx + 4 * s, my + 4 * s, new(255, 255, 255), 2 * s);
+        mesh.Line(mx - 4 * s, my + 4 * s, mx + 4 * s, my - 4 * s, new(255, 255, 255), 2 * s);
     }
 }

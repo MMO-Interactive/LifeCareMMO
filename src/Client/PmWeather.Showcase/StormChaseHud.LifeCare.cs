@@ -95,7 +95,10 @@ internal sealed partial class StormChaseHud
             case "phone/weather/ref": RadarProduct = StormChaseRadarProduct.Reflectivity; return true;
             case "phone/weather/vel": RadarProduct = StormChaseRadarProduct.RadialVelocity; return true;
             case "phone/weather/range": RegionalMap = !RegionalMap; InvalidateRadar(); return true;
-            case "phone/weather/forecast": PhoneOpen = false; request = "forecast"; return true;
+            case "phone/weather/forecast": WeatherTab = "today"; return true;
+            case "phone/weather/tab/now": WeatherTab = "now"; return true;
+            case "phone/weather/tab/today": WeatherTab = "today"; return true;
+            case "phone/weather/tab/week": WeatherTab = "week"; return true;
             case "map/mini-in": MiniZoom = Math.Max(0, MiniZoom - 1); return true;
             case "map/mini-out": MiniZoom = Math.Min(MiniZoomMeters.Length - 1, MiniZoom + 1); return true;
             case "map/close": MapOpen = false; return true;
@@ -172,40 +175,6 @@ internal sealed partial class StormChaseHud
         }
     }
 
-    private void BuildWeatherApp(List<GuiElement> root, HudKit k, GuiRect screen, StormChaseTelemetry t)
-    {
-        var c = t.Campaign;
-        root.Add(k.Button("phone/home", "‹ Home", new(screen.X + 12, screen.Y + 30, 64, 24), size: 8.5f, fill: new(255, 255, 255, 14)));
-        root.Add(k.Label(screen, "Weather", 0, 32, screen.Width, 12, Theme.Ink, bold: true, align: GuiTextAlignment.Center));
-        var now = new GuiRect(screen.X + 12, screen.Y + 64, screen.Width - 24, 70);
-        root.Add(k.Fill(now, new(255, 255, 255, 12), 12));
-        root.Add(k.Label(now, c?.Forecast ?? t.LocalWeather, 12, 8, 170, 13, Theme.Ink, bold: true));
-        root.Add(k.Label(now, c is null ? "" : TemperatureText(c).TrimStart(' ', '·'), now.Width - 102, 6, 90, 16, Theme.Ink, bold: true, align: GuiTextAlignment.Right));
-        string here = t.LocalStorm is { } local && local.Summary(t.Gust) is { Length: > 0 } summary ? summary : "Calm where you are";
-        root.Add(k.Label(now, here, 12, 34, now.Width - 24, 8.5f, Theme.Muted));
-        root.Add(k.Label(now, c is null ? "" : $"Tornado potential {c.Risk:P0}  ·  {c.StormCount} active cell{(c.StormCount == 1 ? "" : "s")}", 12, 50, now.Width - 24, 7.5f, c is null ? Theme.Faint : Theme.Risk(c.Risk)));
-
-        var storm = new GuiRect(screen.X + 12, screen.Y + 142, screen.Width - 24, 92);
-        bool quiet = c?.StormCount == 0 || t.Distance <= 0, active = t.HasFunnel && t.PeakWind > 0;
-        var threat = active ? Theme.Threat(t.PeakWind) : Theme.Sky;
-        root.Add(k.Fill(storm, threat.WithAlpha(24), 12, threat.WithAlpha(120)));
-        root.Add(k.Label(storm, quiet ? "NO ACTIVE CELLS" : active ? "NEAREST TORNADO" : "NEAREST STORM", 12, 8, 160, 7.5f, threat, bold: true));
-        if (quiet) root.Add(k.Label(storm, "Clear skies", 12, 26, storm.Width - 24, 15, Theme.Ink, bold: true));
-        else
-        {
-            root.Add(k.Label(storm, active ? $"{t.PeakWind:0} mph" : $"{t.Distance / 1000:0.0} km", 12, 24, 140, 16, Theme.Ink, bold: true));
-            root.Add(k.Label(storm, active ? $"{t.Width:0} m wide  ·  {t.Distance / 1000:0.0} km" : t.Phase, 150, 28, storm.Width - 162, 8.5f, Theme.Muted, align: GuiTextAlignment.Right));
-        }
-        root.Add(k.Label(storm, $"{t.FunnelEpisode} funnel{(t.FunnelEpisode == 1 ? "" : "s")}  ·  {t.Touchdowns} touchdown{(t.Touchdowns == 1 ? "" : "s")}", 12, 68, storm.Width - 24, 7.5f, Theme.Faint));
-
-        float y = screen.Bottom - 64;
-        float bw = (screen.Width - 24 - 18) / 4;
-        root.Add(k.Button("phone/weather/ref", "REF", new(screen.X + 12, y, bw, 26), RadarProduct == StormChaseRadarProduct.Reflectivity, 8));
-        root.Add(k.Button("phone/weather/vel", "VEL", new(screen.X + 18 + bw, y, bw, 26), RadarProduct == StormChaseRadarProduct.RadialVelocity, 8));
-        root.Add(k.Button("phone/weather/range", RegionalMap ? "REGION" : "LOCAL", new(screen.X + 24 + bw * 2, y, bw, 26), size: 8));
-        root.Add(k.Button("phone/weather/forecast", "OUTLOOK", new(screen.X + 30 + bw * 3, y, bw, 26), size: 8));
-    }
-
     private void DrawPhoneInstruments(GuiDx12MeshBuilder mesh, HudLayout L, StormChaseTelemetry t, RenderFrame frame)
     {
         float s = L.Scale; var screen = PhoneScreen(L.Phone);
@@ -229,18 +198,7 @@ internal sealed partial class StormChaseHud
             }
             return;
         }
-        // Weather app: EF bar, bearing to the storm and the radar scope.
-        var storm = new GuiRect(screen.X + 12, screen.Y + 142, screen.Width - 24, 92);
-        float seg = (storm.Width - 24 - 20) / 6;
-        for (int i = 0; i < 6; i++)
-        {
-            var (mph, _) = Theme.EfScale[i];
-            mesh.FillRect(new((storm.X + 12 + i * (seg + 4)) * s, (storm.Y + 56) * s, seg * s, 5 * s), t.HasFunnel && t.PeakWind >= mph ? Theme.Threat(mph + 1) : Theme.Track, 2.5f * s);
-        }
-        if (NearestStorm(frame) is { } cell && t.Distance > 0)
-            DrawArrow(mesh, (storm.Right - 22) * s, (storm.Y + 16) * s, 7 * s, Bearing(frame.Camera.Position, cell.Position) - Heading(frame.Camera.Forward), Theme.Ink);
-        float scope = Math.Clamp(screen.Height - 244 - 64 - 42, 140, 232);
-        DrawGpuRadar(mesh, (int)((screen.X + (screen.Width - scope) / 2) * s), (int)((screen.Y + 244) * s), (int)(scope * s), frame, t.Campaign, s * .9f);
+        DrawWeatherAppInstruments(mesh, screen, s, t, frame);
     }
 
     private static void DrawWeatherIcon(GuiDx12MeshBuilder mesh, float cx, float cy, float r, float s)

@@ -68,7 +68,7 @@ internal static partial class Showcase
                         else paused=!paused;
                     }
                     else if(HudKey(key)){}
-                    else if(key==0x5A){hud.ForecastOpen=!hud.ForecastOpen;surface.ReleaseMouseLook();}
+                    else if(key==0x5A){if(hud.PhoneOpen&&hud.PhoneApp=="weather"&&hud.WeatherTab=="today")hud.PhoneOpen=false;else hud.OpenOutlook();surface.ReleaseMouseLook();}
                     else if(key==0x51)hud.HandleWeatherGuiAction("radar/toggle");
                     else if(key==0x4D)audio?.ToggleMuted();
                     else if(!paused)play.HandleKey(key);
@@ -130,7 +130,7 @@ internal static partial class Showcase
                         if(key.Key==0x1B)
                         {if(play.Lots?.Cancel()==true){}else if(hud.MapOpen)hud.MapOpen=false;else if(hud.PhoneOpen)hud.PhoneOpen=false;else if(hud.ForecastOpen)hud.ForecastOpen=false;else if(play.ShopOpen||play.DispatchOpen||play.HousingOpen){play.ShopOpen=false;play.DispatchOpen=false;play.HousingOpen=false;}else paused=!paused;}
                         else if(HudKey(key.Key)){}
-                        else if(key.Key==0x5A){hud.ForecastOpen=!hud.ForecastOpen;surface.ReleaseMouseLook();}
+                        else if(key.Key==0x5A){if(hud.PhoneOpen&&hud.PhoneApp=="weather"&&hud.WeatherTab=="today")hud.PhoneOpen=false;else hud.OpenOutlook();surface.ReleaseMouseLook();}
                         else if(key.Key==0x51)hud.HandleWeatherGuiAction("radar/toggle");
                         else if(!paused&&key.Key is 0x26 or 0x28 or 0x0D or 0x55 or 0x4F or 0x48 or 0x59)play.HandleKey(key.Key);
                     }
@@ -180,7 +180,7 @@ internal static partial class Showcase
                                 case "shop":if(!play.ShopOpen)play.HandleKey(0x55);break;
                                 case "build":play.HandleKey(0x59);break;
                                 case "menu":paused=true;break;
-                                case "forecast":hud.ForecastOpen=true;hud.MapOpen=false;break;
+                                case "forecast":hud.OpenOutlook();break;
                                 case { } take when take.StartsWith("take:"+StormChaseLotPlay.DeliveryCrateId+":",StringComparison.Ordinal):
                                     play.Lots?.Unpack(take[("take:"+StormChaseLotPlay.DeliveryCrateId+":").Length..]);break;
                             }
