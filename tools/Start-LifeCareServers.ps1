@@ -10,6 +10,7 @@ param(
     [int]$WorldSeed = 73019,
     [int]$AccountsPort = 5080,
     [int]$ClimatePort = 5300,
+    [int]$ConstructionPort = 5400,
     [int]$DistrictHttpPort = 5180,
     [int]$DistrictRelayPort = 5190,
     [int]$GatewayHttpPort = 5000,
@@ -39,7 +40,9 @@ Wait-Http "http://127.0.0.1:$AccountsPort/health" 60
 $env:LIFECARE_MASTER_KEY = (Get-Content (Join-Path $DataRoot 'accounts\master-server.key') -Raw).Trim()
 Start-Role 'district' (Dll 'StormChase.Server') @('--http-port', $DistrictHttpPort, '--relay-port', $DistrictRelayPort, '--climate', "127.0.0.1:$ClimatePort",
     '--master-url', "http://127.0.0.1:$AccountsPort", '--master-key-env', 'LIFECARE_MASTER_KEY', '--world-seed', $WorldSeed, '--server-name', 'LifeCare district', '--data-root', (Join-Path $DataRoot 'district'))
-Start-Role 'gateway' (Dll 'LifeCare.Gateway') @('--http-port', $GatewayHttpPort, '--game-port', $GatewayGamePort, '--accounts', "http://127.0.0.1:$AccountsPort", '--data-root', (Join-Path $DataRoot 'gateway'))
+Start-Role 'construction' (Dll 'LifeCare.Construction.Service') @('--http-port', $ConstructionPort, '--accounts', "http://127.0.0.1:$AccountsPort", '--accounts-key-env', 'LIFECARE_MASTER_KEY', '--data-root', (Join-Path $DataRoot 'construction'))
+Start-Role 'gateway' (Dll 'LifeCare.Gateway') @('--http-port', $GatewayHttpPort, '--game-port', $GatewayGamePort, '--accounts', "http://127.0.0.1:$AccountsPort",
+    '--construction', "http://127.0.0.1:$ConstructionPort", '--data-root', (Join-Path $DataRoot 'gateway'))
 Wait-Http "http://127.0.0.1:$GatewayHttpPort/gateway/health" 60
 "Gateway ready at http://127.0.0.1:$GatewayHttpPort (game port $GatewayGamePort). Logs: $DataRoot\logs"
 "Point the client at it:  `$env:MMOI_STORM_CHASE_ACCOUNTS_API = 'http://127.0.0.1:$GatewayHttpPort'"
