@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EngineRoot Condition="'$(EngineRoot)' == ''">C:\Users\reviv\youradventure\Old Engine</EngineRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(EngineRoot)\src\Engine.Rendering\Engine.Rendering.csproj" />
+    <ProjectReference Include="..\..\Shared\StormChase.Npc\StormChase.Npc.csproj" />
+    <ProjectReference Include="$(EngineRoot)\src\Engine.UniStorm\Engine.UniStorm.csproj" />
+    <ProjectReference Include="$(EngineRoot)\src\Engine.CrestWater\Engine.CrestWater.csproj" />
+    <ProjectReference Include="$(EngineRoot)\src\Engine.GUI\Engine.GUI.csproj" />
+    <ProjectReference Include="$(EngineRoot)\src\Engine.ECS\Engine.ECS.csproj" />
+    <ProjectReference Include="$(EngineRoot)\src\Engine.Paths\Engine.Paths.csproj" />
+    <ProjectReference Include="$(EngineRoot)\src\Engine.Splines\Engine.Splines.csproj" />
+    <ProjectReference Include="$(EngineRoot)\src\Engine.Physics.PhysX\Engine.Physics.PhysX.csproj" />
+    <ProjectReference Include="..\..\Shared\StormChase.Networking\StormChase.Networking.csproj" />
+    <ProjectReference Include="$(EngineRoot)\src\HumanSimulation\Tools.Avatar.UMA\Tools.Avatar.UMA.csproj" />
+    <Compile Include="$(EngineRoot)\src\Engine.Rendering.Smoke\RenderGpuDebugValidation.cs" Link="RenderGpuDebugValidation.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(StormChaseAssetsRoot)\StormChase\**\*" Link="Assets\StormChase\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="client-config.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="CopyVerifiedPhysicsRuntime" AfterTargets="Build;Publish" Condition="'$(EnginePhysicsRuntime)' != ''">
+    <Copy SourceFiles="$(EnginePhysicsRuntime)" DestinationFolder="$(TargetDir)" />
+    <Copy SourceFiles="$(EnginePhysicsRuntime)" DestinationFolder="$(PublishDir)" Condition="'$(PublishDir)' != ''" />
+  </Target>
+</Project>

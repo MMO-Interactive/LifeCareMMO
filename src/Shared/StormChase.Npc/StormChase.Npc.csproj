@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- NPC population simulation: residents, schedules, sidewalk pathing and BiologyLib bodies.
+       Engine-free so the same code runs in the single-player client and in NPC worker processes. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>StormChase.Npc</RootNamespace>
+    <BiologyLibRoot Condition="'$(BiologyLibRoot)' == ''">C:\Users\reviv\BiologyLib</BiologyLibRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(BiologyLibRoot)\src\BiologyLib\BiologyLib.csproj" />
+  </ItemGroup>
+</Project>

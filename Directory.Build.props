@@ -7,9 +7,10 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
 
-    <!-- External checkouts this repo builds against. Override on the command line or in
+    <!-- External checkouts and art this repo builds against. Art stays outside git until its hosting and licences are settled. Override on the command line or in
          Directory.Build.local.props (ignored by git) when they live somewhere else. -->
     <EngineRoot Condition="'$(EngineRoot)' == ''">$(USERPROFILE)\youradventure\Old Engine</EngineRoot>
+    <StormChaseAssetsRoot Condition="'$(StormChaseAssetsRoot)' == ''">$(USERPROFILE)\Tornadoes\Assets</StormChaseAssetsRoot>
     <BiologyLibRoot Condition="'$(BiologyLibRoot)' == ''">$(USERPROFILE)\BiologyLib</BiologyLibRoot>
   </PropertyGroup>
 

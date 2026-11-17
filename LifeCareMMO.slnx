@@ -1,2 +1,39 @@
 <Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Client/">
+    <Project Path="src/Client/PmWeather.Showcase/PmWeather.Showcase.csproj" />
+  </Folder>
+  <Folder Name="/src/Servers/">
+    <Project Path="src/Servers/StormChase.Server/StormChase.Server.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/StormChase.Networking/StormChase.Networking.csproj" />
+    <Project Path="src/Shared/StormChase.Npc/StormChase.Npc.csproj" />
+    <Project Path="src/Shared/StormChase.Protocol/StormChase.Protocol.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/StormChase.Networking.Tests/StormChase.Networking.Tests.csproj" />
+  </Folder>
+  <Project Path="../BiologyLib/src/BiologyLib/BiologyLib.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Animation/Engine.Animation.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Audio/Engine.Audio.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Content/Engine.Content.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Core/Engine.Core.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.CrestWater/Engine.CrestWater.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.ECS/Engine.ECS.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Environment/Engine.Environment.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.GUI/Engine.GUI.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Particles/Engine.Particles.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Paths/Engine.Paths.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Physics.PhysX/Engine.Physics.PhysX.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Physics/Engine.Physics.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Rendering/Engine.Rendering.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Splines/Engine.Splines.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.Terrain/Engine.Terrain.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Engine.UniStorm/Engine.UniStorm.csproj" />
+  <Project Path="../youradventure/Old Engine/src/HumanSimulation/Engine.Anatomy/Engine.Anatomy.csproj" />
+  <Project Path="../youradventure/Old Engine/src/HumanSimulation/Engine.Avatar.Generation/Engine.Avatar.Generation.csproj" />
+  <Project Path="../youradventure/Old Engine/src/HumanSimulation/Engine.Avatar/Engine.Avatar.csproj" />
+  <Project Path="../youradventure/Old Engine/src/HumanSimulation/Tools.Avatar.UMA/Tools.Avatar.UMA.csproj" />
+  <Project Path="../youradventure/Old Engine/src/Shared.Contracts/Shared.Contracts.csproj" />
 </Solution>
