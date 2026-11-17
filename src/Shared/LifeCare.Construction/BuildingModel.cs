@@ -1,14 +1,15 @@
 namespace LifeCare.Construction;
 
 /// <summary>
-/// The Sims-style building grid, following Life Beyond's model: structure snaps to 4 m tiles, furnishing to a 1 m sub-grid.
-/// Level 0 is the ground story. Pure data and rules, shared by the Construction service, the district host and the client.
+/// The Sims-style building grid. Structure snaps to Life Beyond's 4 m tiles; furniture snaps to Tiny Clinic's 0.5 m
+/// sub-cells, eight per tile. Level 0 is the ground story. Pure data and rules, shared by the Construction service,
+/// the district host and the client.
 /// </summary>
 public static class BuildGrid
 {
     public const float TileMeters = 4;
-    public const float FurnishingMeters = 1;
-    public const int FurnishingCellsPerTile = 4;
+    public const float SubCellMeters = 0.5f;
+    public const int SubCellsPerTile = 8;
 }
 
 public readonly record struct TileCell(int X, int Z);
@@ -54,5 +55,35 @@ public sealed record LotDeed(string LotId, string OwnerCharacterId, int MinimumT
 /// <summary>Everything built on one lot.</summary>
 public sealed record BuildingPlan(LotDeed Lot, IReadOnlySet<FloorCell> Floors, IReadOnlySet<WallSegment> Walls, IReadOnlyList<RoofArea> Roofs)
 {
+    public IReadOnlyList<PlacedFurnishing> Furnishings { get; init; } = [];
     public static BuildingPlan Empty(LotDeed lot) => new(lot, new HashSet<FloorCell>(), new HashSet<WallSegment>(), []);
 }
+
+/// <summary>A furnishing definition (Tiny Clinic style): its footprint in 0.5 m sub-cells before rotation.</summary>
+public sealed record FurnishingDefinition(string DefinitionId, string Name, int FootprintWidthSubCells, int FootprintDepthSubCells);
+
+/// <summary>
+/// A placed furnishing, anchored like Tiny Clinic: a tile plus a sub-cell (0..7) inside it marks the footprint's minimum
+/// corner, and odd quarter turns swap width and depth.
+/// </summary>
+public sealed record PlacedFurnishing(string InstanceId, string DefinitionId, int Level, int TileX, int TileZ, int SubCellX, int SubCellZ,
+    int YawQuarterTurns, int FootprintWidthSubCells, int FootprintDepthSubCells)
+{
+    public static PlacedFurnishing Of(string instanceId, FurnishingDefinition definition, int level, int tileX, int tileZ, int subCellX, int subCellZ, int yawQuarterTurns) =>
+        new(instanceId, definition.DefinitionId, level, tileX, tileZ, subCellX, subCellZ, yawQuarterTurns, definition.FootprintWidthSubCells, definition.FootprintDepthSubCells);
+
+    public int SpanX => (YawQuarterTurns & 1) == 0 ? FootprintWidthSubCells : FootprintDepthSubCells;
+    public int SpanZ => (YawQuarterTurns & 1) == 0 ? FootprintDepthSubCells : FootprintWidthSubCells;
+    /// <summary>Absolute sub-cell of the minimum corner.</summary>
+    public int MinimumX => checked(TileX * BuildGrid.SubCellsPerTile + SubCellX);
+    public int MinimumZ => checked(TileZ * BuildGrid.SubCellsPerTile + SubCellZ);
+    public IEnumerable<(int X, int Z)> SubCells()
+    {
+        for (int z = MinimumZ; z < MinimumZ + SpanZ; z++) for (int x = MinimumX; x < MinimumX + SpanX; x++) yield return (x, z);
+    }
+    public static TileCell TileOf(int subCellX, int subCellZ) => new(FloorDiv(subCellX), FloorDiv(subCellZ));
+    private static int FloorDiv(int value) => (int)Math.Floor(value / (double)BuildGrid.SubCellsPerTile);
+}
+
+/// <summary>The ghost shown while a piece is carried or moved: whether it may be set down here, and why not.</summary>
+public sealed record FurnishingPlacementPreview(PlacedFurnishing Candidate, bool IsValid, string Status, string ErrorCode = "");

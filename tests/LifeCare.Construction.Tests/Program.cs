@@ -61,5 +61,32 @@ plan = Must(BuildingEditor.Apply(plan, "owner", new(BuildEditKind.AddRoof, 3, 2,
 Check(!BuildingEditor.Apply(plan, "owner", new(BuildEditKind.AddRoof, 4, 2, 2, 4, 4, RoofId: "roof-b")).Accepted, "A roof above the supported height is refused");
 Check(BuildingEditor.Apply(plan, "owner", new(BuildEditKind.RemoveRoof, 3, RoofId: "roof-a")).Accepted, "A roof can be removed");
 
+// ---- Tiny Clinic-style furniture: 0.5 m sub-cells, tile + sub-cell anchor, quarter turns, ghost preview
+var furnished = BuildingPlan.Empty(lot);
+furnished = Must(BuildingEditor.Apply(furnished, "owner", new(BuildEditKind.AddFloor, 0, 0, 0, 1, 0)), "Lay two floor tiles for furniture");
+var bed = new FurnishingDefinition("exam-bed", "Exam bed", 4, 2);   // 2 m x 1 m
+var chair = new FurnishingDefinition("chair", "Chair", 1, 1);
+var placed = PlacedFurnishing.Of("bed-1", bed, 0, 0, 0, 2, 3, 0);
+Check(placed.SubCells().Count() == 8 && placed.MinimumX == 2 && placed.MinimumZ == 3, "A 4x2 sub-cell bed covers eight 0.5 m cells from its tile + sub-cell anchor");
+Check(PlacedFurnishing.Of("t", bed, 0, 0, 0, 0, 0, 1) is { SpanX: 2, SpanZ: 4 }, "A quarter turn swaps width and depth");
+Check(FurnishingEditor.Preview(furnished, "owner", placed) is { IsValid: true, Status: "Place here." }, "Ghost preview says the bed may be set down");
+furnished = Must(FurnishingEditor.Place(furnished, "owner", placed), "Set the bed down");
+Check(FurnishingEditor.Preview(furnished, "owner", PlacedFurnishing.Of("chair-1", chair, 0, 0, 0, 3, 4, 0)).ErrorCode == "furnishing_overlap", "Ghost preview flags an overlap");
+Check(FurnishingEditor.Preview(furnished, "owner", PlacedFurnishing.Of("chair-1", chair, 0, 0, 1, 0, 0, 0)).ErrorCode == "furnishing_requires_floor", "Ghost preview flags missing floor");
+Check(FurnishingEditor.Preview(furnished, "stranger", PlacedFurnishing.Of("chair-1", chair, 0, 1, 0, 0, 0, 0)).ErrorCode == "not_owner", "Only the owner may furnish");
+var straddle = PlacedFurnishing.Of("bed-2", bed, 0, 0, 0, 6, 5, 0);   // runs from tile 0 into tile 1
+Check(FurnishingEditor.Preview(furnished, "owner", straddle).IsValid, "A piece may span two tiles with no wall between");
+var walled = BuildingEditor.Apply(furnished, "owner", new(BuildEditKind.AddWall, 0, Walls: [new WallSegment(1, 0, WallAxis.AlongZ, 0)])).Plan;
+Check(FurnishingEditor.Preview(walled, "owner", straddle).ErrorCode == "furnishing_crosses_wall", "A piece cannot straddle a wall");
+var moved = placed with { TileX = 1, SubCellX = 0, YawQuarterTurns = 1 };
+furnished = Must(FurnishingEditor.Move(furnished, "owner", moved), "Pick the bed up, turn it and set it on the other tile");
+Check(!FurnishingEditor.Move(furnished, "owner", moved with { FootprintWidthSubCells = 1 }).Accepted, "A move cannot change the furnishing's size");
+var undercut = BuildingEditor.Apply(furnished, "owner", new(BuildEditKind.RemoveFloor, 0, 1, 0, 1, 0));
+Check(undercut.ErrorCode == "furnishing_in_the_way", "Removing the floor under furniture is refused");
+var splitting = BuildingEditor.Apply(furnished with { Furnishings = [straddle] }, "owner", new(BuildEditKind.AddWall, 0, Walls: [new WallSegment(1, 0, WallAxis.AlongZ, 0)]));
+Check(splitting.ErrorCode == "furnishing_in_the_way", "A wall through furniture is refused");
+furnished = Must(FurnishingEditor.PickUp(furnished, "owner", "bed-1"), "Pick the bed back up into its package");
+Check(furnished.Furnishings.Count == 0, "The lot is empty again");
+
 Console.WriteLine($"{passed}/{passed + failed} construction checks passed");
 return failed == 0 ? 0 : 1;

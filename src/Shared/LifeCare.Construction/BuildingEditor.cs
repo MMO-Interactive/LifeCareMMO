@@ -55,6 +55,9 @@ public static class BuildingEditor
         }
 
         var candidate = plan with { Floors = floors, Walls = walls, Roofs = roofs };
+        if (edit.Kind is BuildEditKind.RemoveFloor or BuildEditKind.AddWall
+            && candidate.Furnishings.FirstOrDefault(f => FurnishingEditor.Problem(candidate, f) is not null) is { } blocked)
+            return Reject("furnishing_in_the_way", $"Move the {blocked.DefinitionId} first; this edit would leave it {(edit.Kind == BuildEditKind.AddWall ? "crossed by a wall" : "without a floor")}.");
         if (StructuralSupport.FindWorsenedViolation(plan, candidate) is { } violation) return Reject("insufficient_structural_support", violation.Message);
         return new(true, candidate);
     }
