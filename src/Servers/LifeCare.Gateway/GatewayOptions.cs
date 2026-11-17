@@ -12,6 +12,8 @@ public sealed record GatewayOptions
     public string AdvertiseHost { get; init; } = "127.0.0.1";
     public string? PublicUrl { get; init; }
     public string AccountsUrl { get; init; } = "http://127.0.0.1:5080";
+    /// <summary>The Construction service behind /construction/…; null leaves that route unavailable.</summary>
+    public string? ConstructionUrl { get; init; }
     public string DataRoot { get; init; } = Path.Combine(AppContext.BaseDirectory, "gateway-data");
     public string? CertificatePath { get; init; }
     public string? CertificatePasswordEnvironment { get; init; }
@@ -33,6 +35,7 @@ public sealed record GatewayOptions
             AdvertiseHost = Read("--advertise-host", "127.0.0.1"),
             PublicUrl = Read("--public-url", "") is { Length: > 0 } url ? url : null,
             AccountsUrl = Read("--accounts", "http://127.0.0.1:5080").TrimEnd('/'),
+            ConstructionUrl = Read("--construction", "") is { Length: > 0 } construction ? construction.TrimEnd('/') : null,
             DataRoot = Path.GetFullPath(Read("--data-root", Path.Combine(AppContext.BaseDirectory, "gateway-data"))),
             CertificatePath = Read("--certificate", "") is { Length: > 0 } cert ? Path.GetFullPath(cert) : null,
             CertificatePasswordEnvironment = Read("--certificate-password-env", "") is { Length: > 0 } env ? env : null,

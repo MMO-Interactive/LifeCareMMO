@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/src/Servers/">
     <Project Path="src/Servers/LifeCare.Climate/LifeCare.Climate.csproj" />
+    <Project Path="src/Servers/LifeCare.Construction.Service/LifeCare.Construction.Service.csproj" />
     <Project Path="src/Servers/LifeCare.Gateway/LifeCare.Gateway.csproj" />
     <Project Path="src/Servers/StormChase.Server/StormChase.Server.csproj" />
   </Folder>

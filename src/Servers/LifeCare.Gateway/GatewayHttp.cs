@@ -35,6 +35,11 @@ public static class GatewayHttp
             client = clients.CreateClient("hosts");
             target = route.ApiAddress.TrimEnd('/') + (slash < 0 ? "/" : path[slash..]);
         }
+        else if (path.StartsWith("/construction/", StringComparison.Ordinal))
+        {
+            if (options.ConstructionUrl is null) { context.Response.StatusCode = 404; return; }
+            client = clients.CreateClient("hosts"); target = options.ConstructionUrl + path["/construction".Length..];
+        }
         else { client = clients.CreateClient("accounts"); target = options.AccountsUrl + path; }
         target += context.Request.QueryString.Value;
 
