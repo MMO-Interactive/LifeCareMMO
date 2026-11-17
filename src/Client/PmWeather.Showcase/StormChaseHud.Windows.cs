@@ -8,8 +8,11 @@ internal sealed record HudChatLine(string Time, ChatChannel Channel, string From
 /// <summary>One item tile in the inventory window.</summary>
 internal sealed record HudItem(string Id, string Name, string Detail, string Kind);
 
-/// <summary>What the inventory window lists, gathered by the game each frame.</summary>
-internal sealed record HudInventory(string Carrying, IReadOnlyList<HudItem> Deliveries, IReadOnlyList<HudItem> Stored, IReadOnlyList<HudItem> Equipment);
+/// <summary>What the avatar has on them: the Bag window. Containers in the world are separate.</summary>
+internal sealed record HudInventory(string Carrying, IReadOnlyList<HudItem> Items);
+
+/// <summary>A container opened in the world (a delivery crate, a cabinet, a car trunk…): its own window and contents.</summary>
+internal sealed record HudContainer(string Id, string Title, string Subtitle, IReadOnlyList<HudItem> Items, string? TakeVerb = "TAKE");
 
 /// <summary>
 /// HUD windows: the panels the player can drag by their title bar (character, task, notifications, minimap, chat,
@@ -38,7 +41,7 @@ internal sealed partial class StormChaseHud
     public HudInventory? Inventory { get; set; }
     public int InventorySelection { get; set; } = -1;
     /// <summary>True while any window or text box needs the cursor and keyboard.</summary>
-    public bool WantsCursor => CursorMode || ChatTyping || InventoryOpen || PhoneOpen || MapOpen || dragging is not null;
+    public bool WantsCursor => CursorMode || ChatTyping || InventoryOpen || Container is not null || PhoneOpen || MapOpen || dragging is not null;
 
     private static string LayoutPath => Path.Combine(ChaseClientPreferences.DataRoot, "hud-layout.json");
 
@@ -157,48 +160,62 @@ internal sealed partial class StormChaseHud
         root.Add(k.Button("chat/send", "SEND", new(r.Right - 74, r.Bottom - 38, 62, 28), size: 8.5f));
     }
 
-    // ==================================================================== inventory
-    private IReadOnlyList<HudItem> InventoryItems => Inventory is null ? [] : [.. Inventory.Deliveries, .. Inventory.Stored, .. Inventory.Equipment];
-
-    private void BuildInventory(List<GuiElement> root, HudKit k, GuiRect r, StormChaseTelemetry t)
+    // ==================================================================== inventory (on the player) and containers (in the world)
+    /// <summary>One grid of item tiles; <paramref name="prefix"/> names the buttons (inventory/item/n, container/item/n).</summary>
+    private float ItemGrid(List<GuiElement> root, HudKit k, GuiRect r, float y, IReadOnlyList<HudItem> items, string prefix, int selection, string empty)
     {
-        WindowFrame(root, k, r, "INVENTORY", "inventory/close", Theme.Warn, t.Campaign is { } c ? $"${c.Cash:#,0}" : null);
-        var inv = Inventory ?? new HudInventory("Hands", [], [], []);
-        root.Add(k.Label(r, "IN HAND", 14, 40, 120, 7.5f, Theme.Faint));
-        root.Add(k.Label(r, inv.Carrying, 14, 54, 300, 11, Theme.Ink, bold: true));
-        float y = 82; int index = 0;
-        void Section(string title, IReadOnlyList<HudItem> items, string empty)
+        if (items.Count == 0) { root.Add(k.Label(r, empty, 14, y, r.Width - 28, 8.5f, Theme.Faint)); return y + 26; }
+        for (int i = 0; i < items.Count; i++)
         {
-            root.Add(k.Label(r, $"{title}  ·  {items.Count}", 14, y, 300, 8, Theme.Warn, bold: true)); y += 20;
-            if (items.Count == 0) { root.Add(k.Label(r, empty, 14, y, r.Width - 28, 8.5f, Theme.Faint)); y += 24; return; }
-            for (int i = 0; i < items.Count; i++)
-            {
-                int slot = index++;
-                var tile = new GuiRect(r.X + 14 + i % 6 * 66, r.Y + y + i / 6 * 70, 60, 64);
-                bool selected = slot == InventorySelection;
-                root.Add(new GuiButton { Id = "inventory/item/" + slot, Text = "", Translation = new(tile.X * k.Scale, tile.Y * k.Scale), Width = GuiLength.Pixels(tile.Width * k.Scale),
-                    Height = GuiLength.Pixels(tile.Height * k.Scale), CornerRadius = 9 * k.Scale, BackgroundColor = selected ? new(26, 92, 140, 250) : Theme.Tile,
-                    HoverBackgroundColor = new(34, 104, 156, 250), PressedBackgroundColor = new(10, 40, 70, 255), BorderColor = selected ? Theme.Accent : Theme.TileEdge,
-                    BorderThickness = Math.Max(1, (selected ? 2 : 1) * k.Scale) });
-                root.Add(k.Wrapped(tile, items[i].Name.ToUpperInvariant(), 3, 22, 54, 34, 6.5f, Theme.Ink, GuiTextAlignment.Center));
-            }
-            y += (items.Count + 5) / 6 * 70 + 8;
+            var tile = new GuiRect(r.X + 14 + i % 6 * 66, r.Y + y + i / 6 * 70, 60, 64);
+            bool selected = i == selection;
+            root.Add(new GuiButton { Id = prefix + i, Text = "", Translation = new(tile.X * k.Scale, tile.Y * k.Scale), Width = GuiLength.Pixels(tile.Width * k.Scale),
+                Height = GuiLength.Pixels(tile.Height * k.Scale), CornerRadius = 9 * k.Scale, BackgroundColor = selected ? new(26, 92, 140, 250) : Theme.Tile,
+                HoverBackgroundColor = new(34, 104, 156, 250), PressedBackgroundColor = new(10, 40, 70, 255), BorderColor = selected ? Theme.Accent : Theme.TileEdge,
+                BorderThickness = Math.Max(1, (selected ? 2 : 1) * k.Scale) });
+            root.Add(k.Wrapped(tile, items[i].Name.ToUpperInvariant(), 3, 22, 54, 34, 6.5f, Theme.Ink, GuiTextAlignment.Center));
         }
-        Section("DELIVERIES", inv.Deliveries, "No packages waiting.");
-        Section("STORED AT HOME", inv.Stored, "Nothing stored. Furniture you buy for your home waits here until you place it.");
-        Section("EQUIPMENT", inv.Equipment, "No equipment.");
-        var detail = new GuiRect(r.X + 12, r.Bottom - 74, r.Width - 24, 62);
-        root.Add(k.Fill(detail, new(255, 255, 255, 10), 8));
-        if (InventoryItems.ElementAtOrDefault(InventorySelection) is { } item)
-        {
-            root.Add(k.Label(detail, item.Name, 10, 6, detail.Width - 150, 11, Theme.Ink, bold: true));
-            root.Add(k.Label(detail, item.Detail, 10, 30, detail.Width - 150, 8.5f, Theme.Muted));
-            string? verb = item.Kind switch { "delivery" => "UNPACK", "stored" => "OPEN HOME", _ => null };
-            if (verb is not null) root.Add(k.Button("inventory/use", verb, new(detail.Right - 130, detail.Y + 16, 118, 30), true, 9));
-        }
-        else root.Add(k.Label(detail, "Select an item.", 10, 22, detail.Width - 20, 9, Theme.Faint));
+        return y + (items.Count + 5) / 6 * 70 + 8;
     }
 
+    private void ItemDetail(List<GuiElement> root, HudKit k, GuiRect r, HudItem? item, string useId, string? verb, string hint)
+    {
+        var detail = new GuiRect(r.X + 12, r.Bottom - 74, r.Width - 24, 62);
+        root.Add(k.Fill(detail, new(255, 255, 255, 10), 8));
+        if (item is null) { root.Add(k.Label(detail, hint, 10, 22, detail.Width - 20, 9, Theme.Faint)); return; }
+        root.Add(k.Label(detail, item.Name, 10, 6, detail.Width - 150, 11, Theme.Ink, bold: true));
+        root.Add(k.Label(detail, item.Detail, 10, 30, detail.Width - 150, 8.5f, Theme.Muted));
+        if (verb is not null) root.Add(k.Button(useId, verb, new(detail.Right - 130, detail.Y + 16, 118, 30), true, 9));
+    }
+
+    /// <summary>The Bag: only what the avatar has on them. Everything else lives in containers in the world.</summary>
+    private void BuildInventory(List<GuiElement> root, HudKit k, GuiRect r, StormChaseTelemetry t)
+    {
+        WindowFrame(root, k, r, "BAG", "inventory/close", Theme.Warn, t.Campaign is { } c ? $"${c.Cash:#,0}" : null);
+        var inv = Inventory ?? new HudInventory("Empty hands", []);
+        root.Add(k.Label(r, "IN HAND", 14, 40, 120, 7.5f, Theme.Faint));
+        root.Add(k.Label(r, inv.Carrying, 14, 54, r.Width - 28, 11, Theme.Ink, bold: true));
+        root.Add(k.Label(r, $"ON YOU  ·  {inv.Items.Count}", 14, 82, 300, 8, Theme.Warn, bold: true));
+        ItemGrid(root, k, r, 102, inv.Items, "inventory/item/", InventorySelection, "Your pockets are empty.");
+        var item = inv.Items.ElementAtOrDefault(InventorySelection);
+        ItemDetail(root, k, r, item, "inventory/use", item?.Kind == "phone" ? "OPEN" : null, "Select an item. Containers in the world open their own window.");
+    }
+
+    /// <summary>A container in the world, opened by interacting with it. Each container gets its own window.</summary>
+    public HudContainer? Container { get; private set; }
+    public int ContainerSelection { get; set; } = -1;
+    public void OpenContainer(HudContainer container) { Container = container; ContainerSelection = -1; }
+    /// <summary>Refreshes the open container's contents without closing it.</summary>
+    public void UpdateContainer(HudContainer container) { if (Container?.Id == container.Id) Container = container; }
+
+    private void BuildContainer(List<GuiElement> root, HudKit k, GuiRect r, HudContainer box)
+    {
+        WindowFrame(root, k, r, box.Title.ToUpperInvariant(), "container/close", Theme.Sky);
+        root.Add(k.Label(r, box.Subtitle, 14, 40, r.Width - 28, 8.5f, Theme.Muted));
+        root.Add(k.Label(r, $"CONTENTS  ·  {box.Items.Count}", 14, 62, 300, 8, Theme.Sky, bold: true));
+        ItemGrid(root, k, r, 82, box.Items, "container/item/", ContainerSelection, "This container is empty.");
+        ItemDetail(root, k, r, box.Items.ElementAtOrDefault(ContainerSelection), "container/take", box.TakeVerb, "Select an item to take it.");
+    }
     /// <summary>The shared window frame: glass panel, title strip (the drag handle) and a close button.</summary>
     private void WindowFrame(List<GuiElement> root, HudKit k, GuiRect r, string title, string? closeId, GuiColor accent, string? right = null)
     {
@@ -227,14 +244,16 @@ internal sealed partial class StormChaseHud
             case "hud/inventory": InventoryOpen = !InventoryOpen; return true;
             case "inventory/close": InventoryOpen = false; return true;
             case "inventory/use":
-                if (InventoryItems.ElementAtOrDefault(InventorySelection) is { } item)
-                {
-                    request = item.Kind == "delivery" ? "unpack:" + item.Id : item.Kind == "stored" ? "home" : null;
-                    if (request is not null) { InventoryOpen = false; InventorySelection = -1; }
-                }
+                if (Inventory?.Items.ElementAtOrDefault(InventorySelection) is { Kind: "phone" }) { InventoryOpen = false; PhoneOpen = true; PhoneApp = null; }
+                return true;
+            case "container/close": Container = null; return true;
+            case "container/take":
+                if (Container is { } box && box.Items.ElementAtOrDefault(ContainerSelection) is { } taken)
+                { request = "take:" + box.Id + ":" + taken.Id; Container = null; ContainerSelection = -1; }
                 return true;
         }
         if (action.StartsWith("inventory/item/", StringComparison.Ordinal) && int.TryParse(action.AsSpan(15), out int slot)) { InventorySelection = slot; return true; }
+        if (action.StartsWith("container/item/", StringComparison.Ordinal) && int.TryParse(action.AsSpan(15), out int boxSlot)) { ContainerSelection = boxSlot; return true; }
         return false;
     }
 }

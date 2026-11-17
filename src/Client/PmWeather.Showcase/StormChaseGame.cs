@@ -138,6 +138,11 @@ internal static partial class Showcase
                     foreach(var line in play.DrainChat())
                         hud.AddChat(new(DateTime.Now.ToString("h:mm"),line.Channel,line.From,line.Text,line.FromPlayerId==0));
                     if(hud.InventoryOpen)hud.Inventory=play.Inventory();
+                    if(play.Lots is { } crateLots)
+                    {
+                        if(crateLots.ContainerRequest==StormChaseLotPlay.DeliveryCrateId){crateLots.ContainerRequest=null;hud.OpenContainer(crateLots.DeliveryCrate());}
+                        else if(hud.Container?.Id==StormChaseLotPlay.DeliveryCrateId)hud.UpdateContainer(crateLots.DeliveryCrate());
+                    }
                     hud.WorldOverlay=play.Lots is { } lotLayer?lotLayer.Overlay:null;
                     hud.Hotbar=play.Lots?.Hotbar();hud.LotStatus=play.Lots?.StatusLine;hud.LotMessage=play.Lots?.Status;hud.PlayerName=play.PlayerName;
                     if(profiler is not null){profiler.Mark("InputAndKeys");play.Session.FrameTimingSink??=profiler.Prefixed("Game.");}
@@ -176,7 +181,8 @@ internal static partial class Showcase
                                 case "build":play.HandleKey(0x59);break;
                                 case "menu":paused=true;break;
                                 case "forecast":hud.ForecastOpen=true;hud.MapOpen=false;break;
-                                case { } unpack when unpack.StartsWith("unpack:",StringComparison.Ordinal):play.Lots?.Unpack(unpack[7..]);break;
+                                case { } take when take.StartsWith("take:"+StormChaseLotPlay.DeliveryCrateId+":",StringComparison.Ordinal):
+                                    play.Lots?.Unpack(take[("take:"+StormChaseLotPlay.DeliveryCrateId+":").Length..]);break;
                             }
                         }
                         else if(action.StartsWith("lot/",StringComparison.Ordinal))play.Lots?.HandleGuiAction(action);

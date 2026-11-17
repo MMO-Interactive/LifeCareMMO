@@ -41,17 +41,18 @@ internal static partial class Showcase
         hud.AddChat(new("3:21", StormChase.Protocol.ChatChannel.Local, "Sam Okafor", "Anyone heading to the hardware store? The front windows are gone.", false));
         hud.AddChat(new("3:22", StormChase.Protocol.ChatChannel.Local, "Jamie Rivera", "On my way, taping it off now.", false));
         hud.AddChat(new("3:23", StormChase.Protocol.ChatChannel.World, "Lena Marlow", "Shelter at Meridian school is open.", false));
-        hud.Inventory = new("Empty hands",
-            FurnishingCatalog.Entries.Take(5).Select(e => new HudItem(e.Definition.DefinitionId, e.Definition.Name, "Set it down on your lot's floor", "delivery")).ToArray(),
-            [new("furniture-3", "Floor lamp", "Stored at your home", "stored")],
-            [new("vehicle", "Police cruiser", "Your assigned vehicle", "equipment"), new("phone", "Phone", "Weather, jobs, home and more", "equipment")]);
+        hud.Inventory = new("Empty hands", [new("phone", "Phone", "Weather, jobs, home and more  ·  P", "phone"), new("keys", "Keys", "Police cruiser  ·  E to enter", "equipment"),
+            new("probes", "Field probes ×2", "Deploy with B", "equipment")]);
+        var crate = new HudContainer("delivery-crate", "Delivery crate", "Packages delivered to your lot. Take one to carry it and set it down.",
+            FurnishingCatalog.Entries.Select(e => new HudItem(e.Definition.DefinitionId, e.Definition.Name, "Set it down on your lot's floor", "delivery")).ToArray());
         await using var backend = new Dx12RenderBackend(options, surface, catalog, logger);
         await backend.InitializeAsync(default);
         var bed = PlacedFurnishing.Of("bed-1", FurnishingCatalog.Find("exam-bed")!.Definition, 0, 0, 0, 0, 0, 0);
         long number = 0; var saved = new List<string>();
         foreach (string page in new[] { "hud", "dock", "inventory", "build", "pie", "phone", "weather", "map", "driving" })
         {
-            hud.DockOpen = page is "dock" or "inventory"; hud.SnapDock(); hud.InventoryOpen = page == "inventory"; hud.InventorySelection = page == "inventory" ? 1 : -1;
+            hud.DockOpen = page is "dock" or "inventory"; hud.SnapDock(); hud.InventoryOpen = page == "inventory"; hud.InventorySelection = page == "inventory" ? 0 : -1;
+            if (page == "inventory") { hud.OpenContainer(crate); hud.ContainerSelection = 1; } else hud.HandleHudAction("container/close", out _);
             hud.CursorMode = page == "dock";
             hud.PhoneOpen = page is "phone" or "weather"; hud.PhoneApp = page == "weather" ? "weather" : null; hud.MapOpen = page == "map";
             hud.Hotbar = page == "build" ? [new("Floor", false), new("Wall", true), new("Roof", false), new("Delete", false)] : null;

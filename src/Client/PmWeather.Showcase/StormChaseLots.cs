@@ -207,7 +207,17 @@ internal sealed class StormChaseLotPlay : IDisposable
             else if (click == WorldClick.SecondaryDown && furnish.Gesture == FurnishingGesture.None && aim is { } at)
             {
                 var session = lots.Values.FirstOrDefault(s => LotFurnishingController.HitTest(s.Lot, at.X, at.Z, playerLevel) is not null);
-                if (session is null) continue;
+                if (session is null)
+                {
+                    // Your own lot's ground: its wheel opens the delivery crate (an interim spot until the crate is a placed object) or build mode.
+                    var tile = LotBuildController.TileAt(at.X, at.Z);
+                    if (furnish.Session.IsOwner && furnish.Session.Lot.Lot.Contains(tile))
+                        Pie = InteractionPieMenu.Create(DeliveryCrateId, "lot", "Your lot",
+                            [PieMenuAction.Leaf("Open crate", "Open the delivery crate: packages delivered to your lot wait here.", OpenCrateAction),
+                             PieMenuAction.Leaf("Build", "Edit floors, walls and roofs.", BuildModeAction)],
+                            viewportWidth / 2, viewportHeight / 2, viewportWidth, viewportHeight);
+                    continue;
+                }
                 var piece = LotFurnishingController.HitTest(session.Lot, at.X, at.Z, playerLevel)!;
                 string name = FurnishingCatalog.Find(piece.DefinitionId)?.Definition.Name ?? piece.DefinitionId;
                 Pie = InteractionPieMenu.ForFurnishing(piece, name, session.IsOwner && session == furnish.Session, viewportWidth / 2, viewportHeight / 2, viewportWidth, viewportHeight);
@@ -229,6 +239,8 @@ internal sealed class StormChaseLotPlay : IDisposable
             case InteractionPieMenu.MoveAction: furnish.BeginMove(invocation.TargetId); break;
             case InteractionPieMenu.RotateAction: furnish.RotateInPlace(invocation.TargetId); break;
             case InteractionPieMenu.PickUpAction: furnish.PickUp(invocation.TargetId); break;
+            case OpenCrateAction: ContainerRequest = DeliveryCrateId; break;
+            case BuildModeAction: HandleKey(0x59); break;
         }
     }
 
@@ -275,6 +287,18 @@ internal sealed class StormChaseLotPlay : IDisposable
         int n = 1; while (furnish.Session.Lot.Furnishings.Any(f => f.InstanceId == prefix + n)) n++;
         return furnish.BeginCarry(new(prefix + n, entry.Definition), ActiveLevel);
     }
+
+    public const string DeliveryCrateId = "delivery-crate";
+    public const string OpenCrateAction = "lifecare.lot.open-crate", BuildModeAction = "lifecare.lot.build";
+
+    /// <summary>A container the player asked to open this frame (from the interaction wheel); the game opens its window.</summary>
+    public string? ContainerRequest { get; set; }
+
+    /// <summary>The delivery crate on your lot as a container window.</summary>
+    public HudContainer DeliveryCrate() => new(DeliveryCrateId, "Delivery crate", "Packages delivered to your lot. Take one to carry it and set it down.", Deliveries(), "TAKE");
+
+    /// <summary>The carried package as a Bag item, if any.</summary>
+    public HudItem? CarriedItem => furnish?.Gesture == FurnishingGesture.CarryingPackage ? new("carried", furnish.Carried!.Definition.Name, "In your hands  ·  click to set it down, R to turn, Esc to put it back", "carried") : null;
 
     /// <summary>What is in the avatar's hands.</summary>
     public string Carrying => furnish?.Gesture switch

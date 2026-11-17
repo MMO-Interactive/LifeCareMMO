@@ -29,7 +29,7 @@ internal sealed partial class StormChaseHud
 
     /// <summary>Design-space rectangles shared by the GUI document and the GPU instruments.</summary>
     private sealed record HudLayout(float Scale, float Width, float Height, GuiRect Character, GuiRect Compass, GuiRect Clock, GuiRect Dock,
-        GuiRect Task, GuiRect Notes, GuiRect Minimap, GuiRect MinimapCanvas, GuiRect Hotbar, GuiRect Status, GuiRect? Vehicle, GuiRect Phone, GuiRect Chat, GuiRect Inventory);
+        GuiRect Task, GuiRect Notes, GuiRect Minimap, GuiRect MinimapCanvas, GuiRect Hotbar, GuiRect Status, GuiRect? Vehicle, GuiRect Phone, GuiRect Chat, GuiRect Inventory, GuiRect Container);
 
 
     private static float HudScale(int w, int h) => Math.Clamp(Math.Min(w / 1500f, h / 850f), .78f, 2.4f);
@@ -53,8 +53,9 @@ internal sealed partial class StormChaseHud
         GuiRect? vehicle = t.CameraMode == "DRIVING" && t.Campaign is not null ? Place("vehicle", new GuiRect(m, floor - 136, 300, 136), W, floor) : null;
         var phone = Place("phone", new GuiRect(W - m - 312, homeTask.Bottom + 12, 312, Math.Min(640, floor - homeTask.Bottom - 12)), W, floor);
         var chat = Place("chat", new GuiRect(m, floor - 136 - 12 - 270, 400, 270), W, floor);
-        var inventory = Place("inventory", new GuiRect(W / 2 - 215, 140, 430, 470), W, floor);
-        return new(s, W, H, character, compass, clock, dock, task, notes, minimap, canvas, hotbar, status, vehicle, phone, chat, inventory);
+        var inventory = Place("inventory", new GuiRect(W / 2 - 440, 140, 430, 360), W, floor);
+        var container = Place("container", new GuiRect(W / 2 + 10, 140, 430, 360), W, floor);
+        return new(s, W, H, character, compass, clock, dock, task, notes, minimap, canvas, hotbar, status, vehicle, phone, chat, inventory, container);
     }
 
     private HudLayout? layoutForInstruments;
@@ -232,6 +233,7 @@ internal sealed partial class StormChaseHud
         // ---------------------------------------------------------------- windows the player opens
         if (ChatOpen) { BuildChat(root, kit, L.Chat); RegisterHandle("chat", L.Chat); }
         if (InventoryOpen) { BuildInventory(root, kit, L.Inventory, t); RegisterHandle("inventory", L.Inventory); }
+        if (Container is { } openBox) { BuildContainer(root, kit, L.Container, openBox); RegisterHandle("container", L.Container); }
         if (PhoneOpen) { BuildPhone(root, L, t); dragHandles.Add(("phone", new(L.Phone.X + 30, L.Phone.Y, L.Phone.Width - 90, 40))); }
         if (CursorMode && !ChatTyping) root.Add(Label(new(L.Width / 2 - 200, L.Status.Y - 30, 400, 22), "CURSOR MODE  ·  DRAG WINDOWS BY THEIR TITLE  ·  ALT TO RETURN", 0, 2, 400, 8, Theme.Accent, bold: true, align: GuiTextAlignment.Center));
 
