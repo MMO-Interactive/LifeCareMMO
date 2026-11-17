@@ -29,7 +29,7 @@ public sealed partial class GameAuthority:BackgroundService
     private readonly Dictionary<string,DebrisBodyState> publishedParts=new(StringComparer.Ordinal);
     private readonly List<Probe> probes=[];
     private readonly DefaultRenderFrameBuilder frameBuilder=new();
-    private readonly StormChaseCampaignWeather weather;
+    private readonly IClimateFeed weather;
     private StormChaseWorld? world;
     private StormChaseDestruction? destruction;
     private StormChaseContracts? contracts;
@@ -57,7 +57,18 @@ public sealed partial class GameAuthority:BackgroundService
     {
         this.options=options;this.store=store;ServerId=store.GetOrCreateServerId();
         var args=new[]{"--demo","--campaign-seed",options.CampaignSeed.ToString(),"--campaign-start-hour",options.CampaignStartHour.ToString(System.Globalization.CultureInfo.InvariantCulture)};
-        weather=new(new(args),args,store.LoadCampaignSeconds());environment=weather.Current;PublishInfo();
+        weather=CreateClimate(options,args,store);environment=weather.Current;PublishInfo();
+    }
+    /// <summary>A separate climate process when --climate host:port is given (accounts-only never needs weather); otherwise the model runs here.</summary>
+    private static IClimateFeed CreateClimate(ServerOptions options,string[] args,CareerStore store)
+    {
+        if(options.ClimateAddress is null||options.AccountsOnly)return new LocalClimate(new(new(args),args,store.LoadCampaignSeconds()));
+        int colon=options.ClimateAddress.LastIndexOf(':');
+        if(colon<1||!int.TryParse(options.ClimateAddress[(colon+1)..],out int port))throw new ArgumentException("--climate must be host:port.");
+        var feed=new ClimateLinkClient(options.ClimateAddress[..colon],port,options.LinkKeyEnvironment is null?null:Environment.GetEnvironmentVariable(options.LinkKeyEnvironment),
+            options.CampaignSeed,TimeSpan.FromSeconds(30));
+        Console.WriteLine($"Weather from climate process {options.ClimateAddress}: day {feed.DayNumber} {feed.Hour:00.00}h.");
+        return feed;
     }
     public ServerInfoDto ServerInfo
     {
@@ -228,7 +239,7 @@ public sealed partial class GameAuthority:BackgroundService
                 Ready=false;PublishInfo();PersistProgress();DisposeHousing();
                 foreach(var connection in players.Keys.ToArray())RemovePlayer(connection);
                 if(store is RemoteCareerStore remote)remote.Post<bool>("/api/internal/servers/stop",new{});
-                players.Clear();transport?.Dispose();transport=null;destruction?.Dispose();destruction=null;
+                players.Clear();transport?.Dispose();transport=null;destruction?.Dispose();destruction=null;weather.Dispose();
             }
         }
     }
