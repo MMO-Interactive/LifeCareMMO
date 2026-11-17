@@ -38,6 +38,16 @@ public sealed class ConstructionClient : ILotAuthority, IDisposable
         return await reply.Content.ReadFromJsonAsync<LotDocument>(Json, cancel);
     }
 
+    /// <summary>Claims a dev starter lot; null when the service does not offer them. Throws with the service's reason on a conflict.</summary>
+    public async Task<LotDocument?> ClaimStarterAsync(StarterLotRequest request, CancellationToken cancel = default)
+    {
+        using var reply = await http.PostAsJsonAsync("api/lots/claim-starter", request, Json, cancel);
+        if (reply.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed) return null;
+        if (reply.StatusCode == HttpStatusCode.Conflict) throw new InvalidOperationException((await reply.Content.ReadFromJsonAsync<JsonElement>(Json, cancel)).GetProperty("error").GetString());
+        reply.EnsureSuccessStatusCode();
+        return await reply.Content.ReadFromJsonAsync<LotDocument>(Json, cancel);
+    }
+
     public Task<ChangeResult> BuildAsync(string lotId, BuildRequest request, CancellationToken cancel = default) => Change(lotId, "build", request, cancel);
     public Task<ChangeResult> PlaceAsync(string lotId, FurnishingRequest request, CancellationToken cancel = default) => Change(lotId, "furnishings/place", request, cancel);
     public Task<ChangeResult> MoveAsync(string lotId, FurnishingRequest request, CancellationToken cancel = default) => Change(lotId, "furnishings/move", request, cancel);

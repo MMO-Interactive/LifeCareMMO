@@ -83,9 +83,19 @@ internal sealed class StormChaseLotPlay : IDisposable
     public IEnumerable<LotPiece> Pieces => geometry.Values.SelectMany(g => g.Pieces);
     public LotPiece? Piece(string pieceId) => pieceId.StartsWith("lot/", StringComparison.Ordinal) ? Pieces.FirstOrDefault(p => p.PieceId == pieceId) : null;
 
+    private Task<LotDocument?>? claim;
+    private Vector3f lastFeet;
+
     public void Tick(double seconds)
     {
         foreach (var session in lots.Values) session.Tick();
+        if (claim is { IsCompleted: true } claimed)
+        {
+            claim = null;
+            unavailable = claimed.IsFaulted ? claimed.Exception!.GetBaseException().Message
+                : claimed.Result is null ? "No lot to build on: deeds come from buying a home." : "Starter lot claimed just ahead of you. Press Y to build.";
+            nextRefresh = 0;
+        }
         if (refresh is { IsCompleted: true } done)
         {
             refresh = null;
@@ -128,7 +138,13 @@ internal sealed class StormChaseLotPlay : IDisposable
     {
         if (key == 0x59)
         {
-            if (build is null) { unavailable ??= "You have no lot to build on yet."; return true; }
+            if (build is null)
+            {
+                // Play-testing: ask for a dev starter lot just ahead of where you stand (only if the service offers them).
+                if (claim is null || claim.IsCompleted) claim = client.ClaimStarterAsync(new(characterId, (int)MathF.Floor(lastFeet.X / BuildGrid.TileMeters), (int)MathF.Floor(lastFeet.Z / BuildGrid.TileMeters)));
+                unavailable = "Claiming a starter lot…"; nextRefresh = 0;
+                return true;
+            }
             BuildMode = !BuildMode; build.CancelGesture(); furnish?.Cancel(); Pie = null;
             build.Session.Status = BuildMode ? "Build mode: 1 floor · 2 wall · 3 roof · 4 delete · PgUp/PgDn level · click or drag to build." : "Left build mode.";
             return true;
@@ -175,6 +191,7 @@ internal sealed class StormChaseLotPlay : IDisposable
     /// <summary>Aims at the build plane with the crosshair and applies world clicks.</summary>
     public void Update(CameraState camera, Vector3f feet, IEnumerable<WorldClick> clicks, int viewportWidth, int viewportHeight)
     {
+        lastFeet = feet;
         if (build is null || furnish is null) { foreach (var _ in clicks) { } return; }
         float baseY = geometry.TryGetValue(build.Session.Lot.Lot.LotId, out var g) ? g.Base : feet.Y;
         playerLevel = Math.Clamp((int)MathF.Round((feet.Y - baseY) / LotGeometry.StoryMeters), 0, LotBuildController.MaximumLevels - 1);

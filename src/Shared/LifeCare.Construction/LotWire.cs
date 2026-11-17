@@ -16,4 +16,7 @@ public sealed record ChangeResult(bool Accepted, LotDocument Lot, string ErrorCo
 
 public sealed record BuildRequest(string CharacterId, BuildEdit Edit, long? ExpectedRevision = null);
 
+/// <summary>Play-testing only: claim a starter lot next to the given tile (the service must run with --dev-starter-lots).</summary>
+public sealed record StarterLotRequest(string CharacterId, int TileX, int TileZ);
+
 public sealed record FurnishingRequest(string CharacterId, PlacedFurnishing? Piece = null, string? InstanceId = null, long? ExpectedRevision = null);

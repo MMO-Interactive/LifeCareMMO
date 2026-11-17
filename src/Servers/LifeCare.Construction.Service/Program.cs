@@ -53,6 +53,21 @@ try
     // ---- players (through the Gateway)
     var lots = app.MapGroup("/api/lots").RequireAuthorization();
     lots.MapGet("", (LotStore store) => Results.Ok(store.List()));
+    // Play-testing only (--dev-starter-lots): a player claims a 10x10 lot where they stand. Real deeds come from housing purchases.
+    if (args.Contains("--dev-starter-lots"))
+    {
+        Console.WriteLine("Dev starter lots are ON: any signed-in player can claim one 10x10 lot. Never enable this on a public server.");
+        lots.MapPost("/claim-starter", async (StarterLotRequest request, ClaimsPrincipal user, LotStore store, IHttpClientFactory http) =>
+        {
+            if (!await Owns(user, request.CharacterId, http)) return Results.Forbid();
+            if (store.List().FirstOrDefault(l => l.Lot.OwnerCharacterId == request.CharacterId) is { } existing) return Results.Ok(store.Get(existing.Lot.LotId));
+            var deed = new LotDeed("starter-" + new string(request.CharacterId.Where(char.IsAsciiLetterOrDigit).Take(24).ToArray()), request.CharacterId,
+                request.TileX - 5, request.TileZ + 1, request.TileX + 4, request.TileZ + 10);   // just ahead (+Z) of where the player stands
+            if (store.List().Any(l => l.Lot.MinimumTileX <= deed.MaximumTileX && deed.MinimumTileX <= l.Lot.MaximumTileX && l.Lot.MinimumTileZ <= deed.MaximumTileZ && deed.MinimumTileZ <= l.Lot.MaximumTileZ))
+                return Results.Conflict(new { error = "Another lot is already here. Walk somewhere open and try again." });
+            return Results.Ok(store.Create(deed));
+        });
+    }
     lots.MapGet("/{lotId}", (string lotId, LotStore store) => store.Get(lotId) is { } lot ? Results.Ok(lot) : Results.NotFound());
     lots.MapPost("/{lotId}/build", async (string lotId, BuildRequest request, ClaimsPrincipal user, LotStore store, IHttpClientFactory http) =>
         await Owns(user, request.CharacterId, http) ? Reply(store.Change(lotId, request.ExpectedRevision, plan => BuildingEditor.Apply(plan, request.CharacterId, request.Edit))) : Results.Forbid());
