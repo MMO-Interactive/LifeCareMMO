@@ -35,15 +35,23 @@ internal sealed class GuiDx12Composer : IGuiTextMeasurer, IDisposable
         }
     }
 
-    public RenderUiFrame Build(GuiFrame frame, long revision, Action<GuiDx12MeshBuilder>? extra = null)
+    /// <summary>
+    /// Composes the frame. <paramref name="extra"/> GPU geometry is drawn after the commands before
+    /// <paramref name="topLayerStart"/> and before the rest, so windows in the top layer cover it; <paramref name="extraTop"/>
+    /// is drawn last, for geometry that belongs to a top-layer window.
+    /// </summary>
+    public RenderUiFrame Build(GuiFrame frame, long revision, Action<GuiDx12MeshBuilder>? extra = null,
+        Action<GuiDx12MeshBuilder>? extraTop = null, int topLayerStart = int.MaxValue)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         ArgumentNullException.ThrowIfNull(frame);
         int width = Math.Max(1, (int)Math.Ceiling(frame.ViewportSize.Width));
         int height = Math.Max(1, (int)Math.Ceiling(frame.ViewportSize.Height));
         var builder = new GuiDx12MeshBuilder(this, width, height);
+        int index = 0; bool extraDone = false;
         foreach (var command in frame.DrawCommands)
         {
+            if (index++ == topLayerStart) { extra?.Invoke(builder); extraDone = true; }
             switch (command)
             {
                 case GuiFillRectangleCommand fill:
@@ -59,7 +67,8 @@ internal sealed class GuiDx12Composer : IGuiTextMeasurer, IDisposable
                     throw new NotSupportedException("This GPU UI composer supports shapes and font glyphs; image commands need an image atlas.");
             }
         }
-        extra?.Invoke(builder);
+        if (!extraDone) extra?.Invoke(builder);
+        extraTop?.Invoke(builder);
         if (publishedAtlas is null || publishedAtlas.Revision != atlasRevision)
             publishedAtlas = new(atlasId, atlasRevision, AtlasSize, AtlasSize, (byte[])atlasPixels.Clone());
         return new(width, height, revision, builder.Complete(), publishedAtlas);

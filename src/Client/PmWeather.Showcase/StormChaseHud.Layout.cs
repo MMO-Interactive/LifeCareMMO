@@ -58,6 +58,8 @@ internal sealed partial class StormChaseHud
         return new(s, W, H, character, compass, clock, dock, task, notes, minimap, canvas, hotbar, status, vehicle, phone, chat, inventory, container);
     }
 
+    /// <summary>An invisible one-pixel fill that marks where the top layer (opened windows) starts in the draw commands.</summary>
+    private static readonly GuiColor TopLayerMarker = new(1, 2, 3, 1);
     private HudLayout? layoutForInstruments;
     private StormChaseTelemetry? telemetryForInstruments;
 
@@ -171,7 +173,7 @@ internal sealed partial class StormChaseHud
 
         // ---------------------------------------------------------------- notifications (phone-style toasts)
         var nr = L.Notes;
-        if (NotesOpen && !PhoneOpen) { RegisterHandle("notes", nr);
+        if (NotesOpen) { RegisterHandle("notes", nr);
         Panel(nr, "NOTIFICATIONS", Theme.Sky, notifications.Count == 0 ? null : notifications.Count.ToString());
         float ny = 38;
         foreach (var note in notifications.Take(3))
@@ -187,7 +189,7 @@ internal sealed partial class StormChaseHud
         }
 
         // ---------------------------------------------------------------- minimap (Life Beyond)
-        if (MinimapOpen && !PhoneOpen)
+        if (MinimapOpen)
         {
             var mm = L.Minimap; RegisterHandle("minimap", mm);
             Panel(mm, "MINIMAP", Theme.Accent, "LIVE MAP");
@@ -230,7 +232,8 @@ internal sealed partial class StormChaseHud
             else root.Add(Label(r, "+", 0, 16, 58, 15, Theme.Faint, align: GuiTextAlignment.Center));
         }
 
-        // ---------------------------------------------------------------- windows the player opens
+        // ---------------------------------------------------------------- windows the player opens (top layer)
+        root.Add(new GuiOverlayPanel { Width = GuiLength.Pixels(1), Height = GuiLength.Pixels(1), BackgroundColor = TopLayerMarker });
         if (ChatOpen) { BuildChat(root, kit, L.Chat); RegisterHandle("chat", L.Chat); }
         if (InventoryOpen) { BuildInventory(root, kit, L.Inventory, t); RegisterHandle("inventory", L.Inventory); }
         if (Container is { } openBox) { BuildContainer(root, kit, L.Container, openBox); RegisterHandle("container", L.Container); }
@@ -355,7 +358,7 @@ internal sealed partial class StormChaseHud
         }
 
         // The Life Beyond minimap.
-        if (MinimapOpen && !PhoneOpen && World is not null)
+        if (MinimapOpen && World is not null)
             mapView!.Draw(mesh, new(X(L.MinimapCanvas.X), X(L.MinimapCanvas.Y), X(L.MinimapCanvas.Width), X(L.MinimapCanvas.Height)),
                 frame.Camera.Position.X, frame.Camera.Position.Z, MiniZoomMeters[MiniZoom], Markers(frame), s: s);
 
@@ -370,7 +373,7 @@ internal sealed partial class StormChaseHud
             Bar(mesh, k.X + 136, k.Y + 92, 150, c.Health / 100, c.Health < 35 ? Theme.Danger : c.Health < 65 ? Theme.Warn : Theme.Accent, s);
         }
 
-        if (PhoneOpen) DrawPhoneInstruments(mesh, L, t, frame);
+
     }
 
     private static void DrawIcon(GuiDx12MeshBuilder mesh, string id, float x, float y, float r, float s)

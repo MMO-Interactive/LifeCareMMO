@@ -65,6 +65,11 @@ internal sealed partial class StormChaseHud : IDisposable
         observerPosition = frame.Camera.Position;
         if (!modal && !MapOpen) ProcessDrag(input ?? GuiInputState.Empty, HudScale(w, h));
         LastFrame = layout.BuildFrame(BuildDocument(w, h, telemetry), new(w, h), input ?? GuiInputState.Empty, LastFrame.Interaction);
+        // Windows the player opens are a top layer: the base HUD's GPU geometry (minimap, compass) is drawn before them.
+        int topLayer = int.MaxValue;
+        for (int i = 0; i < LastFrame.DrawCommands.Count; i++)
+            if (LastFrame.DrawCommands[i] is GuiFillRectangleCommand { Color: var marker } && marker == TopLayerMarker) { topLayer = i; break; }
+        bool chase = !modal && !MapOpen && telemetry.Campaign?.ShopOpen != true;
         Ui = composer.Build(LastFrame, ++revision, mesh =>
         {
             if (ForecastOpen && !HousingOpen && telemetry.Campaign?.ShopOpen != true && telemetry.Campaign?.DispatchOpen != true
@@ -74,7 +79,8 @@ internal sealed partial class StormChaseHud : IDisposable
                 DrawWorldMapInstruments(mesh, frame);
             else if (!modal && telemetry.Campaign?.ShopOpen != true)
                 DrawInstruments(mesh, frame);
-        });
+        }, chase && PhoneOpen && layoutForInstruments is { } phoneLayout && telemetryForInstruments is { } phoneTelemetry
+            ? mesh => DrawPhoneInstruments(mesh, phoneLayout, phoneTelemetry, frame) : null, chase ? topLayer : int.MaxValue);
     }
 
     public bool HandleWeatherGuiAction(string action)
