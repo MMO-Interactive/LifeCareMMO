@@ -17,7 +17,7 @@ public sealed record JoinTicketDto(string Ticket, DateTimeOffset ExpiresUtc, str
 public sealed record ServerInfoDto(string ServerId, string Name, string Region, int Players, int MaxPlayers, string Mode,
     string Version, string Host, int HttpPort, int GamePort, bool AuthenticationRequired,
     int WorldSeed, float WorldSizeKm, double CampaignSeconds, float Hour, int Day, string Forecast, int StormCount,
-    bool Ready=false, string WorldContentFingerprint="", string TransportIdentity="", string TransportAuthority="",string ApiAddress="");
+    bool Ready=false, string WorldContentFingerprint="", string TransportIdentity="", string TransportAuthority="",string ApiAddress="",int RelayPort=0);
 public sealed record OfferDto(string Sku, string Name, decimal Price, string Description);
 public sealed record ApiError(string Error);
 public sealed record AuthenticatedCharacter(string AccountId, string CharacterId, string Name, CareerDto Career);

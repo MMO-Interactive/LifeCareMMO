@@ -7,11 +7,12 @@ using StormChase.Protocol;
 namespace StormChase.Networking;
 
 public enum TransportEventKind { Connected = 1, Disconnected = 2, Message = 3, Fault = 4 }
-public sealed record TransportEvent(TransportEventKind Kind, uint ConnectionId, ProtocolMessage? Message = null, string Reason = "");
+/// <summary>Raw holds the undecoded frame when the host runs in relay mode; Message is then null.</summary>
+public sealed record TransportEvent(TransportEventKind Kind, uint ConnectionId, ProtocolMessage? Message = null, string Reason = "", byte[]? Raw = null);
 
 /// <summary>Encrypted GameNetworkingSockets IP transport. A dedicated pump keeps networking independent of rendering.</summary>
 /// <remarks>Admission, trusted server identity, server authority, and persistence are application responsibilities.</remarks>
-public sealed unsafe class StormTransportHost : IDisposable
+public sealed unsafe class StormTransportHost : IGameTransport
 {
     public const int MaxPendingEvents = 2048;
     public const int MaxPendingSends = 512;
@@ -27,13 +28,18 @@ public sealed unsafe class StormTransportHost : IDisposable
     private long _queuedBytes, _eventBytes, _sequence;
     private Outgoing? _blockedSend;
     private readonly TransportSecurity? _security;
+    private readonly bool _raw;
+    private readonly EventWaitHandle? _signal;
+    private readonly int _pumpWaitMs;
     public bool IsServer { get; }
     public ushort BoundPort { get; }
     public int ConnectionCount => _connections.Count;
     public string? LastError { get; private set; }
 
-    private StormTransportHost(ushort port, int maxConnections, TransportSecurity? security)
+    private StormTransportHost(ushort port, int maxConnections, TransportSecurity? security, bool raw = false, EventWaitHandle? signal = null, int pumpWaitMs = 5)
     {
+        if (pumpWaitMs is < 1 or > 50) throw new ArgumentOutOfRangeException(nameof(pumpWaitMs));
+        _raw = raw; _signal = signal; _pumpWaitMs = pumpWaitMs;
         if (maxConnections is < 1 or > 256) throw new ArgumentOutOfRangeException(nameof(maxConnections));
         IsServer = port != 0;
         BoundPort = port;
@@ -49,6 +55,8 @@ public sealed unsafe class StormTransportHost : IDisposable
     }
 
     public static StormTransportHost CreateServer(ushort port, int maxConnections = 32, TransportSecurity? security = null) => port == 0 ? throw new ArgumentOutOfRangeException(nameof(port)) : new(port, maxConnections, security);
+    /// <summary>A relay server: frames arrive undecoded in <see cref="TransportEvent.Raw"/>, each event sets <paramref name="signal"/>, and the native pump waits at most <paramref name="pumpWaitMs"/>.</summary>
+    public static StormTransportHost CreateRelayServer(ushort port, int maxConnections, TransportSecurity security, EventWaitHandle signal, int pumpWaitMs = 1) => port == 0 ? throw new ArgumentOutOfRangeException(nameof(port)) : new(port, maxConnections, security, true, signal, pumpWaitMs);
     public static StormTransportHost CreateClient(TransportSecurity? security = null) => new(0, 1, security);
 
     public uint Connect(string host, ushort port)
@@ -71,7 +79,19 @@ public sealed unsafe class StormTransportHost : IDisposable
     public bool Send<T>(uint connectionId, MessageKind kind, T payload, bool reliable = true)
     {
         if (Volatile.Read(ref _disposed) != 0 || connectionId == 0) return false;
-        var bytes = ProtocolCodec.Encode(kind, (ulong)Interlocked.Increment(ref _sequence), payload);
+        var bytes = ProtocolCodec.Encode(kind, (ulong)Interlocked.Increment(ref _sequence) & ~ProtocolCodec.ReliableFlag | (reliable ? ProtocolCodec.ReliableFlag : 0), payload);
+        return Enqueue(connectionId, bytes, reliable);
+    }
+
+    /// <summary>Forwards an already encoded frame on the channel its header asks for. False means an invalid frame or backpressure.</summary>
+    public bool SendRaw(uint connectionId, byte[] frame)
+    {
+        if (Volatile.Read(ref _disposed) != 0 || connectionId == 0 || !ProtocolCodec.TryReadHeader(frame, out _, out bool reliable)) return false;
+        return Enqueue(connectionId, frame, reliable);
+    }
+
+    private bool Enqueue(uint connectionId, byte[] bytes, bool reliable)
+    {
         if (Interlocked.Increment(ref _sendCount) > MaxPendingSends)
         {
             Interlocked.Decrement(ref _sendCount);
@@ -150,13 +170,14 @@ public sealed unsafe class StormTransportHost : IDisposable
                         case TransportEventKind.Disconnected:
                             _connections.TryRemove(connection, out _); Publish(new(TransportEventKind.Disconnected, connection, Reason: DecodeText(reason))); break;
                         case TransportEventKind.Message:
-                            if (length >= 0 && length <= payload.Length && ProtocolCodec.TryDecode(payload.AsSpan(0, length), out var message)) Publish(new(TransportEventKind.Message, connection, message), length);
+                            if (_raw && length >= 0 && length <= payload.Length && ProtocolCodec.TryReadHeader(payload.AsSpan(0, length), out _, out _)) Publish(new(TransportEventKind.Message, connection, Raw: payload.AsSpan(0, length).ToArray()), length);
+                            else if (!_raw && length >= 0 && length <= payload.Length && ProtocolCodec.TryDecode(payload.AsSpan(0, length), out var message)) Publish(new(TransportEventKind.Message, connection, message), length);
                             else { Close(connection, "Invalid protocol message"); Publish(new(TransportEventKind.Fault, connection, Reason: "Invalid protocol message")); }
                             break;
                         default: Publish(new(TransportEventKind.Fault, connection, Reason: DecodeText(reason))); break;
                     }
                 }
-                _wake.WaitOne(5);
+                _wake.WaitOne(_pumpWaitMs);
             }
         }
         catch (Exception ex) { LastError = ex.Message; Publish(new(TransportEventKind.Fault, 0, Reason: ex.Message)); }
@@ -165,7 +186,7 @@ public sealed unsafe class StormTransportHost : IDisposable
     private void Publish(TransportEvent item, int bytes = 128)
     {
         var count = Interlocked.Increment(ref _eventCount);
-        if (Interlocked.Add(ref _eventBytes, bytes) <= MaxQueuedBytes && count <= MaxPendingEvents) { _events.Enqueue(new(item, bytes)); return; }
+        if (Interlocked.Add(ref _eventBytes, bytes) <= MaxQueuedBytes && count <= MaxPendingEvents) { _events.Enqueue(new(item, bytes)); _signal?.Set(); return; }
         Interlocked.Decrement(ref _eventCount); Interlocked.Add(ref _eventBytes, -bytes);
         LastError = "Incoming event queue exceeded its bounded capacity.";
         if (item.ConnectionId != 0) Close(item.ConnectionId, "Receive queue overflow");

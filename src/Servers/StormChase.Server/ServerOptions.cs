@@ -26,6 +26,12 @@ public sealed record ServerOptions
     public string? ApiAddress {get;init;}
     public string? ControlKey { get; init; }
     public string? TestOutput { get; init; }
+    /// <summary>Gateway mode: players arrive over the internal relay link on this port instead of the public UDP game port.</summary>
+    public int RelayPort { get; init; }
+    public string RelayListen { get; init; } = "127.0.0.1";
+    public string? LinkKeyEnvironment { get; init; }
+    /// <summary>Weather comes from a separate climate process at this address; empty runs the climate model in-process.</summary>
+    public string? ClimateAddress { get; init; }
 
     public static ServerOptions Parse(string[] args)
     {
@@ -49,7 +55,11 @@ public sealed record ServerOptions
             MasterKeyEnvironment=Read("--master-key-env","") is{Length:>0} masterKeyEnv?masterKeyEnv:null,
             ApiAddress=Read("--api-address","") is{Length:>0} api?api.TrimEnd('/'):null,
             ControlKey=Read("--control-key","") is { Length: >0 } key ? key : null,
-            TestOutput=Read("--test-output","") is { Length: >0 } output ? Path.GetFullPath(output) : null
+            TestOutput=Read("--test-output","") is { Length: >0 } output ? Path.GetFullPath(output) : null,
+            RelayPort=int.Parse(Read("--relay-port","0"),CultureInfo.InvariantCulture),
+            RelayListen=Read("--relay-listen","127.0.0.1"),
+            LinkKeyEnvironment=Read("--link-key-env","") is{Length:>0} linkKey?linkKey:null,
+            ClimateAddress=Read("--climate","") is{Length:>0} climate?climate:null
         };
         if(options.HttpPort is <0 or >65535 || options.GamePort is <0 or >65535 || options.MaxPlayers is <1 or >64)
             throw new ArgumentException("Ports must be 0..65535; max players must be 1..64.");
@@ -60,6 +70,9 @@ public sealed record ServerOptions
             throw new ArgumentException("External HTTP hosting requires --certificate. --allow-insecure-lan is an explicit trusted LAN development option.");
         if(options.CertificatePath is not null && !File.Exists(options.CertificatePath)) throw new FileNotFoundException("TLS certificate not found.",options.CertificatePath);
         if(options.ControlKey is not null && (options.ControlKey.Length!=64||options.ControlKey.Any(c=>!char.IsAsciiHexDigit(c)))) throw new ArgumentException("Control key must be exactly 32 bytes in hexadecimal.");
+        if(options.RelayPort is <0 or >65535)throw new ArgumentException("Relay port must be 0..65535.");
+        if(options.RelayPort>0&&options.RelayListen is not ("127.0.0.1" or "::1" or "localhost")&&(options.LinkKeyEnvironment is null||string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(options.LinkKeyEnvironment))))
+            throw new ArgumentException("A relay link outside loopback requires --link-key-env.");
         if(options.AccountsOnly&&options.MasterUrl is not null)throw new ArgumentException("An accounts service does not delegate to another master.");
         if(options.MasterUrl is not null)
         {

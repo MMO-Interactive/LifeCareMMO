@@ -34,7 +34,7 @@ public sealed partial class GameAuthority:BackgroundService
     private StormChaseDestruction? destruction;
     private StormChaseContracts? contracts;
     private static readonly JsonSerializerOptions ContractJson=new(JsonSerializerDefaults.Web);
-    private StormTransportHost? transport;
+    private IGameTransport? transport;
     private TransportIdentity? transportIdentity;
     private EnvironmentSceneState environment;
     private RenderWeatherState? renderWeather;
@@ -43,6 +43,7 @@ public sealed partial class GameAuthority:BackgroundService
     private AtmosphereSnapshot? fractionalDayProfile;
     private long tick,baselineRevision,eventNumber;
     private uint nextPlayerId;
+    private int relayPort;
     private int nextProbeId;
     private DateTimeOffset lastPersist=DateTimeOffset.UtcNow;
     private ServerInfoDto publishedInfo=null!;
@@ -65,7 +66,7 @@ public sealed partial class GameAuthority:BackgroundService
     private void PublishInfo()
     {
         Volatile.Write(ref publishedInfo,new(ServerId,options.ServerName,"Self hosted",players.Count,options.MaxPlayers,options.AccountsOnly?"Accounts service":"Cooperative storm chase","1",options.AdvertiseHost,options.HttpPort,options.GamePort,true,options.CampaignSeed,
-            options.AccountsOnly?0:StormChaseWorld.PlayableExtentMeters/1000,weather.ElapsedSeconds,weather.Hour,weather.DayNumber,weather.ForecastName,environment.ActiveStorms.Count,Ready,world?.ContentFingerprint??"",transportIdentity?.Identity??"",transportIdentity?.AuthorityCertificateBase64??"",options.ApiAddress??(options.CertificatePath is null?"http":"https")+"://"+options.AdvertiseHost+":"+options.HttpPort));
+            options.AccountsOnly?0:StormChaseWorld.PlayableExtentMeters/1000,weather.ElapsedSeconds,weather.Hour,weather.DayNumber,weather.ForecastName,environment.ActiveStorms.Count,Ready,world?.ContentFingerprint??"",transportIdentity?.Identity??"",transportIdentity?.AuthorityCertificateBase64??"",options.ApiAddress??(options.CertificatePath is null?"http":"https")+"://"+options.AdvertiseHost+":"+options.HttpPort,RelayPort:relayPort));
         Volatile.Write(ref publishedCharacters,players.Values.Select(p=>p.Character.CharacterId).ToArray());
     }
     public JoinTicketDto? IssueAdmission(string accountId,string characterId)
@@ -144,9 +145,20 @@ public sealed partial class GameAuthority:BackgroundService
             if(destruction.NativeProvider.IsReducedFallback||destruction.NativeProvider.ProviderName!="PhysX")throw new InvalidOperationException("The dedicated world requires the actual native PhysX provider.");
             destruction.AdditionalPhysicsAnchors=()=>players.Values.SelectMany(p=>new[]{p.Feet,p.Vehicle.Position}).Concat(furniturePhysics?.PhysicsAnchors??[]).ToArray();
             int id=0;foreach(var item in world.DestructibleItems.OrderBy(i=>i.MotionVectorId,StringComparer.Ordinal))stablePartIds.Add(item.MotionVectorId!,++id);
-            transportIdentity=TransportIdentity.LoadOrCreate(Path.Combine(options.DataRoot,"transport-identity.json"));
-            transport=StormTransportHost.CreateServer((ushort)options.GamePort,options.MaxPlayers+8,transportIdentity.ServerSecurity);
-            Console.WriteLine($"Native PhysX world ready: {world.BuildingCount} buildings, {world.DestructibleItems.Count} parts; encrypted game transport {options.GamePort}.");
+            if(options.RelayPort>0)
+            {
+                // Gateway mode: no public game port. Players reach this district host only through a Gateway link.
+                var relay=new RelayLinkServer(System.Net.IPAddress.Parse(options.RelayListen=="localhost"?"127.0.0.1":options.RelayListen),options.RelayPort,
+                    options.LinkKeyEnvironment is null?null:Environment.GetEnvironmentVariable(options.LinkKeyEnvironment));
+                transport=relay;relayPort=relay.Port;
+                Console.WriteLine($"Native PhysX world ready: {world.BuildingCount} buildings, {world.DestructibleItems.Count} parts; Gateway relay link {relay.Port}.");
+            }
+            else
+            {
+                transportIdentity=TransportIdentity.LoadOrCreate(Path.Combine(options.DataRoot,"transport-identity.json"));
+                transport=StormTransportHost.CreateServer((ushort)options.GamePort,options.MaxPlayers+8,transportIdentity.ServerSecurity);
+                Console.WriteLine($"Native PhysX world ready: {world.BuildingCount} buildings, {world.DestructibleItems.Count} parts; encrypted game transport {options.GamePort}.");
+            }
             if(options.NativeFixture)
             {
                 BeginNativeProofStorm();environment=GroundStorms(proofEnvironment!);

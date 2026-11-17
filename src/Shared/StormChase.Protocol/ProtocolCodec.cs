@@ -13,6 +13,19 @@ public static class ProtocolCodec
     public const int HeaderBytes = 20;
     public const int MaxPayloadBytes = 256 * 1024;
     public static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { MaxDepth = 32, IncludeFields = true };
+    /// <summary>Top bit of the sequence field: the sender asked for reliable delivery. Relays use it to forward a frame unchanged on the same channel.</summary>
+    public const ulong ReliableFlag = 1UL << 63;
+
+    /// <summary>Checks the envelope only (magic, version, kind, length) so a relay can forward a frame without decoding its payload.</summary>
+    public static bool TryReadHeader(ReadOnlySpan<byte> bytes, out MessageKind kind, out bool reliable)
+    {
+        kind = default; reliable = false;
+        if (bytes.Length < HeaderBytes || bytes.Length > HeaderBytes + MaxPayloadBytes || BinaryPrimitives.ReadUInt32LittleEndian(bytes) != Magic || BinaryPrimitives.ReadUInt16LittleEndian(bytes[4..]) != Version) return false;
+        kind = (MessageKind)BinaryPrimitives.ReadUInt16LittleEndian(bytes[6..]);
+        if (BinaryPrimitives.ReadInt32LittleEndian(bytes[16..]) != bytes.Length - HeaderBytes || !Enum.IsDefined(kind)) return false;
+        reliable = (BinaryPrimitives.ReadUInt64LittleEndian(bytes[8..]) & ReliableFlag) != 0;
+        return true;
+    }
 
     public static byte[] Encode<T>(MessageKind kind, ulong sequence, T value)
     {
