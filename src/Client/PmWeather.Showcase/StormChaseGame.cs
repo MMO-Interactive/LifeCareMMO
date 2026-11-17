@@ -58,7 +58,8 @@ internal static partial class Showcase
                     if(play is null)continue;
                     if(key==0x1B)
                     {
-                        if(hud.ForecastOpen)hud.ForecastOpen=false;
+                        if(play.Lots?.Cancel()==true){}
+                        else if(hud.ForecastOpen)hud.ForecastOpen=false;
                         else if(play.ShopOpen||play.DispatchOpen||play.HousingOpen){play.ShopOpen=false;play.DispatchOpen=false;play.HousingOpen=false;}
                         else paused=!paused;
                     }
@@ -115,12 +116,13 @@ internal static partial class Showcase
                     foreach(var key in keyboard)
                     {
                         if(key.Key==0x1B)
-                        {if(hud.ForecastOpen)hud.ForecastOpen=false;else if(play.ShopOpen||play.DispatchOpen||play.HousingOpen){play.ShopOpen=false;play.DispatchOpen=false;play.HousingOpen=false;}else paused=!paused;}
+                        {if(play.Lots?.Cancel()==true){}else if(hud.ForecastOpen)hud.ForecastOpen=false;else if(play.ShopOpen||play.DispatchOpen||play.HousingOpen){play.ShopOpen=false;play.DispatchOpen=false;play.HousingOpen=false;}else paused=!paused;}
                         else if(key.Key==0x5A){hud.ForecastOpen=!hud.ForecastOpen;surface.ReleaseMouseLook();}
                         else if(key.Key==0x51)hud.HandleWeatherGuiAction("radar/toggle");
                         else if(!paused&&key.Key is 0x26 or 0x28 or 0x0D or 0x55 or 0x4F or 0x48 or 0x50)play.HandleKey(key.Key);
                     }
-                    surface.GuiInputEnabled=paused||play.ShopOpen||play.DispatchOpen||play.HousingOpen||hud.ForecastOpen;
+                    surface.GuiInputEnabled=paused||play.ShopOpen||play.DispatchOpen||play.HousingOpen||hud.ForecastOpen||play.Lots?.Pie is not null;
+                    hud.WorldOverlay=play.Lots is { } lotLayer?lotLayer.Overlay:null;
                     if(profiler is not null){profiler.Mark("InputAndKeys");play.Session.FrameTimingSink??=profiler.Prefixed("Game.");}
                     try{frame=play.Step(surface,number++,delta,paused,particles,hud.ForecastOpen);}
                     catch(Exception error)
@@ -146,7 +148,8 @@ internal static partial class Showcase
                     {
                         frame=frame with{Ui=hud.Ui};
                         if(hud.LastFrame.Interaction.ActivatedElementId is { } action)
-                        {if(hud.HandleWeatherGuiAction(action)){}else if(action.StartsWith("housing/",StringComparison.Ordinal))HousingAction(action);else play.HandleGuiAction(action);}
+                        {if(hud.HandleWeatherGuiAction(action)){}else if(action.StartsWith("lot/",StringComparison.Ordinal))play.Lots?.HandleGuiAction(action);
+                        else if(action.StartsWith("housing/",StringComparison.Ordinal))HousingAction(action);else play.HandleGuiAction(action);}
                     }
                     audio?.Update(frame,(float)seconds,null,play.Session.Effects.LastStrike);
                 }

@@ -35,6 +35,8 @@ internal sealed class StormChasePlaySession : IDisposable
     public FlyCamera Camera { get; } = new();
     public OnlineChaseState? ServerState => client?.Current;
     public StormChasePhotos Photos { get; }
+    /// <summary>LifeCare lots, build mode and world furniture; online through the Gateway only.</summary>
+    public StormChaseLotPlay? Lots { get; private set; }
     public void SuspendInput()
     {var facing=Camera.Forward;client?.SetInput(MathF.Atan2(facing.X,facing.Z),MathF.Asin(Math.Clamp(facing.Y,-1,1)),0,0,0,false,true,false);}
     public StormChasePlaySession(StormChaseSession session, StormChaseCareer localCareer,
@@ -97,13 +99,16 @@ internal sealed class StormChasePlaySession : IDisposable
             var ticket=await accounts.JoinAsync(selection.Character.Id,server.ServerId,cancellation);
             online=new(server,ticket,session.World.ContentFingerprint);
             await online.Admission.WaitAsync(TimeSpan.FromSeconds(25),cancellation);
-            return new(session,online,name,output,staging);
+            var lots=new StormChaseLotPlay(selection.AccountAddress,selection.AccessToken,selection.Character.Id,session.World);
+            session.LotItems=lots.RenderItems;session.LotDebrisPart=id=>lots.Piece(id) is { } piece?StormChaseLotRenderer.Item(piece):null;
+            return new(session,online,name,output,staging){Lots=lots};
         }
         catch { online?.Dispose();vehicle?.Dispose();session?.Dispose();throw; }
     }
 
     public void HandleKey(int key)
     {
+        if(Lots?.HandleKey(key)==true)return;
         if(key==0x55){ShopOpen=!ShopOpen;DispatchOpen=false;HousingOpen=false;if(career is not null)career.ShopOpen=ShopOpen;return;}
         if(key==0x4F){DispatchOpen=!DispatchOpen;ShopOpen=false;HousingOpen=false;if(career is not null)career.ShopOpen=false;return;}
         if(key==0x50){HousingOpen=!HousingOpen;ShopOpen=false;DispatchOpen=false;return;}
@@ -213,6 +218,12 @@ internal sealed class StormChasePlaySession : IDisposable
                 var position=pivot-Camera.Forward*7;position.Y=Math.Max(position.Y,Session.World.HeightAt(position.X,position.Z)+1);
                 camera=camera with{Position=new(position.X,position.Y,position.Z),VerticalFieldOfViewDegrees=66};
             }
+            if(Lots is { } lots)
+            {
+                lots.Tick(localSeconds+=delta);
+                var clicks=surface.DrainWorldClicks();
+                lots.Update(camera,new(player.Position.X,player.Position.Y,player.Position.Z),blocked?Array.Empty<WorldClick>():clicks,surface.Width,surface.Height);
+            }
             foreach(var result in client.DrainReceipts())Console.WriteLine("Online action "+result.RequestId+": "+(result.Success?"confirmed":"rejected")+"; "+result.Message);
             var onlineSource=state.World.Environment!;
             var onlineEnvironment=localWeather.Update(new(delta,(float)state.World.SimulationSeconds,2026,150,onlineSource.TimeOfDayHours,
@@ -270,5 +281,5 @@ internal sealed class StormChasePlaySession : IDisposable
             // Online, the server-issued department vehicle (types 4-6) identifies the job.
             Job:state is null?career?.Save.Contracts.Job??StormChaseJobs.Chaser:vehicle?.VehicleType switch{4=>StormChaseJobs.Police,5=>StormChaseJobs.Fire,6=>StormChaseJobs.Ems,_=>StormChaseJobs.Chaser})};
     }
-    public void Dispose(){client?.Dispose();if(career is not null&&Session.FurniturePhysics is { } furniture)career.SaveFurniturePoses(furniture.States);career?.Flush();vehicles?.Dispose();Session.Dispose();}
+    public void Dispose(){Lots?.Dispose();client?.Dispose();if(career is not null&&Session.FurniturePhysics is { } furniture)career.SaveFurniturePoses(furniture.States);career?.Flush();vehicles?.Dispose();Session.Dispose();}
 }

@@ -658,6 +658,7 @@ internal sealed class NativeSurface : IRenderSurfaceHost, IDisposable
     private Vector2 mouseDelta;
     private float wheelNotches;
     private readonly Queue<int> stormKeys = new();
+    private readonly Queue<WorldClick> worldClicks = new();
     private readonly Queue<GuiPointerState> guiPointerEvents = new();
     private readonly Queue<GuiKeyboardEvent> guiKeyboardEvents = new();
     private GuiPointerState guiPointer = GuiPointerState.Missing;
@@ -729,6 +730,8 @@ internal sealed class NativeSurface : IRenderSurfaceHost, IDisposable
     }
     public bool IsInputActive => IsCreated && !IsCloseRequested && !IsMinimized && GetForegroundWindow() == WindowHandle;
     public bool TryGetStormKey(out int key) => stormKeys.TryDequeue(out key);
+    /// <summary>Mouse buttons pressed while mouse look is captured, for crosshair-aimed world interaction (building, furniture).</summary>
+    public IReadOnlyList<WorldClick> DrainWorldClicks() { var clicks = worldClicks.ToArray(); worldClicks.Clear(); return clicks; }
     public bool TryGetGuiKeyboardEvent(out GuiKeyboardEvent input) => guiKeyboardEvents.TryDequeue(out input);
     public void SetTitle(string title) => SetWindowTextW(WindowHandle, title);
     public void RequestClose() => closeRequested = true;
@@ -920,7 +923,17 @@ internal sealed class NativeSurface : IRenderSurfaceHost, IDisposable
         }
         if (flyControlsEnabled)
         {
-            if (message == 0x0201) { CaptureMouseLook(); return IntPtr.Zero; }
+            if (message == 0x0201)
+            {
+                if (MouseLookCaptured) { if (worldClicks.Count < 32) worldClicks.Enqueue(WorldClick.PrimaryDown); }
+                else CaptureMouseLook();
+                return IntPtr.Zero;
+            }
+            if (MouseLookCaptured && message is 0x0202 or 0x0204)
+            {
+                if (worldClicks.Count < 32) worldClicks.Enqueue(message == 0x0202 ? WorldClick.PrimaryUp : WorldClick.SecondaryDown);
+                return IntPtr.Zero;
+            }
             if (message == 0x020A)
             {
                 if (IsInputActive) wheelNotches += unchecked((short)((parameter >> 16) & 0xFFFF)) / 120f;
@@ -1021,7 +1034,8 @@ internal sealed class NativeSurface : IRenderSurfaceHost, IDisposable
                 }
                 if (flyControlsEnabled && message.Id == 0x0100 && ((key is >= 0x31 and <= 0x36 or 0x52 or 0x50 or 0x47 or 0xDB or 0xDD)
                     || (ChaseControlsEnabled && key is 0x09 or 0x43 or 0x56 or 0x42 or 0x46 or 0x54 or 0x4D or 0x48 or 0x4C
-                        or 0x45 or 0x55 or 0x4A or 0x4B or 0x58 or 0x4E or 0x4F or 0x5A or 0x51 or 0x26 or 0x28 or 0x0D)))
+                        or 0x45 or 0x55 or 0x4A or 0x4B or 0x58 or 0x4E or 0x4F or 0x5A or 0x51 or 0x26 or 0x28 or 0x0D
+                        or 0x59 or 0x49 or 0x21 or 0x22)))
                 {
                     stormKeys.Enqueue((int)key);
                     continue;

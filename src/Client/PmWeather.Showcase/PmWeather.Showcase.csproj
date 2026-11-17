@@ -17,6 +17,7 @@
     <ProjectReference Include="$(EngineRoot)\src\Engine.Splines\Engine.Splines.csproj" />
     <ProjectReference Include="$(EngineRoot)\src\Engine.Physics.PhysX\Engine.Physics.PhysX.csproj" />
     <ProjectReference Include="..\..\Shared\StormChase.Networking\StormChase.Networking.csproj" />
+    <ProjectReference Include="..\..\Shared\LifeCare.Construction\LifeCare.Construction.csproj" />
     <ProjectReference Include="$(EngineRoot)\src\HumanSimulation\Tools.Avatar.UMA\Tools.Avatar.UMA.csproj" />
     <Compile Include="$(EngineRoot)\src\Engine.Rendering.Smoke\RenderGpuDebugValidation.cs" Link="RenderGpuDebugValidation.cs" />
   </ItemGroup>

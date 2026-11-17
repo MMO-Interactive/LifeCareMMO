@@ -40,6 +40,8 @@ internal sealed partial class StormChaseHud : IDisposable
     public StormChaseRadarProduct RadarProduct { get; set; }
     public GuiFrame LastFrame { get; private set; } = GuiFrame.Empty;
     public RenderUiFrame? Ui { get; private set; }
+    /// <summary>Extra chase-screen elements (LifeCare build strip and pie wheel), in HUD pixels.</summary>
+    public Func<int, int, IEnumerable<GuiElement>>? WorldOverlay { get; set; }
 
     public StormChaseHud(nint owner)
     {

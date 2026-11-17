@@ -101,10 +101,12 @@ public sealed class LotFurnishingController
     }
 
     /// <summary>The placed piece under a world point on a level, for opening its pie menu.</summary>
-    public PlacedFurnishing? HitTest(float worldX, float worldZ, int onLevel)
+    public PlacedFurnishing? HitTest(float worldX, float worldZ, int onLevel) => HitTest(session.Lot, worldX, worldZ, onLevel);
+
+    public static PlacedFurnishing? HitTest(LotDocument lot, float worldX, float worldZ, int onLevel)
     {
         int x = (int)MathF.Floor(worldX / BuildGrid.SubCellMeters), z = (int)MathF.Floor(worldZ / BuildGrid.SubCellMeters);
-        return session.Lot.Furnishings.FirstOrDefault(f => f.Level == onLevel && x >= f.MinimumX && x < f.MinimumX + f.SpanX && z >= f.MinimumZ && z < f.MinimumZ + f.SpanZ);
+        return lot.Furnishings.FirstOrDefault(f => f.Level == onLevel && x >= f.MinimumX && x < f.MinimumX + f.SpanX && z >= f.MinimumZ && z < f.MinimumZ + f.SpanZ);
     }
 
     /// <summary>The piece whose footprint is centred as near the pointer as the 0.5 m sub-cell grid allows.</summary>

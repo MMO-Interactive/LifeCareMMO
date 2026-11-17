@@ -74,6 +74,10 @@ internal sealed class StormChaseSession : IDisposable
             .Concat(FurniturePhysics?.PhysicsAnchors??[]).ToArray();
     }
     public StormChaseWater Water { get; }
+    /// <summary>LifeCare lot geometry and ghosts for online frames, given the observer and the released (debris) ids.</summary>
+    public Func<Vector3f, Func<string, bool>, IEnumerable<RenderItem>>? LotItems { get; set; }
+    /// <summary>The render item of a lot piece the server has released as debris, by its stable id.</summary>
+    public Func<string, RenderItem?>? LotDebrisPart { get; set; }
     public StormChaseEffects Effects { get; }
     public StormChasePowerFlashes PowerFlashes { get; }
     public StormChaseAvatar Avatar { get; }
@@ -280,7 +284,9 @@ internal sealed class StormChaseSession : IDisposable
             .Where(item => item.MotionVectorId is null || !released.Contains(item.MotionVectorId)).ToList();
         foreach (var body in state.Debris)
         {
-            if (body.Collected || !onlineParts.TryGetValue(body.StablePartId, out var original)) continue;
+            if (body.Collected) continue;
+            RenderItem? original = onlineParts.TryGetValue(body.StablePartId, out var authored) ? authored : LotDebrisPart?.Invoke(body.StablePartId);
+            if (original is null) continue;
             float dx = body.Position.X-camera.Position.X, dz = body.Position.Z-camera.Position.Z;
             if (dx*dx+dz*dz > 5000*5000) continue; // visual distance culling; complete bodies remain in network state
             var rotation = OnlineRotation(body.Rotation);
@@ -288,6 +294,7 @@ internal sealed class StormChaseSession : IDisposable
                 RotationEulerDegrees = OnlineEuler(rotation), RotationYawDegrees = 0,
                 MotionVectorId = "online/debris/"+body.BodyId, AllowStaticInstancing = false, WritesMotionVectors = true });
         }
+        if (LotItems is { } lotItems) items.AddRange(lotItems(camera.Position, released.Contains));
         Mark("WorldAndDebris");
         var poses = new List<RenderSkinPose>();
         var presentPlayers=state.World.Players.Select(player=>player.PlayerId).ToHashSet();

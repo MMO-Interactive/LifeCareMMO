@@ -258,6 +258,7 @@ internal sealed partial class StormChaseHud
             Width = GuiLength.Pixels(200 * s), Height = GuiLength.Pixels(14 * s), TextAlignment = GuiTextAlignment.Right, WrapMode = GuiTextWrapMode.NoWrap,
             Style = new(Theme.Font, 7 * s, 1, Theme.Faint) });
 
+        if (WorldOverlay is { } overlay) root.AddRange(overlay(w, h));
         return new(new GuiOverlayPanel { Width = GuiLength.Pixels(w), Height = GuiLength.Pixels(h), Items = root });
     }
 
