@@ -3,12 +3,6 @@
   <Folder Name="/src/Client/">
     <Project Path="src/Client/PmWeather.Showcase/PmWeather.Showcase.csproj" />
   </Folder>
-  <Folder Name="/src/Servers/">
-    <Project Path="src/Servers/LifeCare.Climate/LifeCare.Climate.csproj" />
-    <Project Path="src/Servers/LifeCare.Construction.Service/LifeCare.Construction.Service.csproj" />
-    <Project Path="src/Servers/LifeCare.Gateway/LifeCare.Gateway.csproj" />
-    <Project Path="src/Servers/StormChase.Server/StormChase.Server.csproj" />
-  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/LifeCare.Construction/LifeCare.Construction.csproj" />
     <Project Path="src/Shared/StormChase.Networking/StormChase.Networking.csproj" />
@@ -16,10 +10,7 @@
     <Project Path="src/Shared/StormChase.Protocol/StormChase.Protocol.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/LifeCare.Construction.ServiceProbe/LifeCare.Construction.ServiceProbe.csproj" />
     <Project Path="tests/LifeCare.Construction.Tests/LifeCare.Construction.Tests.csproj" />
-    <Project Path="tests/LifeCare.Phase0Probe/LifeCare.Phase0Probe.csproj" />
-    <Project Path="tests/LifeCare.Phase1Probe/LifeCare.Phase1Probe.csproj" />
     <Project Path="tests/StormChase.Networking.Tests/StormChase.Networking.Tests.csproj" />
   </Folder>
   <Project Path="../BiologyLib/src/BiologyLib/BiologyLib.csproj" />

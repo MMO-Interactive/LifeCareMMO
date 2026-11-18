@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>LifeCare.Construction.Service</RootNamespace>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Shared\LifeCare.Construction\LifeCare.Construction.csproj" />
-  </ItemGroup>
-</Project>

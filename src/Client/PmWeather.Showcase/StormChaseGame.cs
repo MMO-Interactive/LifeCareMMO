@@ -14,14 +14,14 @@ internal static partial class Showcase
     private static int RunStormChaseGame(RendererOptions options,NativeSurface surface,MutableRenderAssetCatalog catalog,
         CaptureLogger logger,RenderGpuDebugValidation validation,bool particles,string qualityName,string output,string[] args)
     {
-        using var localServer=new LocalChaseServer();using var frontend=new StormChaseFrontend(localServer);
+        using var frontend=new StormChaseFrontend();
         using var hud=new StormChaseHud(surface.WindowHandle);var pauseMenu=new ChasePauseMenu();
         using var cancellation=new CancellationTokenSource();var photoGate=new object();
         string lastQualityPreference=frontend.Preferences.WeatherQuality;
         if(OptionalValue(args,"--weather-quality") is null&&OptionalValue(args,"--weather-scale") is null)
         {var configured=WeatherRenderSettings.Read(["--weather-quality",lastQualityPreference]);options=GameQualityOptions(options,configured);qualityName=configured.Name;}
         StormChasePlaySession? play=null;Task<StormChasePlaySession>? loading=null;
-        var host=new DedicatedRenderBackendHost("Storm Chase game DX12",maximumQueuedFrames:1);
+        var host=new DedicatedRenderBackendHost("LifeCare Online DX12",maximumQueuedFrames:1);
         StormChaseFramePacing.EnableHighResolutionTimer();
         using var profiler=StormChaseLiveProfiler.FromEnvironment();
         surface.EnableFlyCameraControls();surface.ChaseControlsEnabled=true;surface.MenuControlsEnabled=true;
@@ -44,7 +44,7 @@ internal static partial class Showcase
             DemoThreadPump.Wait(Task.Run(()=>host.Reconfigure(CreateBackend)),surface);
             var clock=Stopwatch.StartNew();double previous=0,nextStatus=1,lastStatus=0;long number=0,completed=0;
             double fps=0;bool paused=false,firstPresented=false,pieWasOpen=false;bool? fullscreenPreference=null;
-            Console.WriteLine("Native Storm Chase: account login → main menu → single player / host / authenticated multiplayer.");
+            Console.WriteLine("LifeCare: Online: login → character select (or create) → Gateway world.");
             while(!surface.IsCloseRequested)
             {
                 surface.GameControlsEnabled=play is not null;
@@ -98,7 +98,7 @@ internal static partial class Showcase
                     if(loading is null&&frontend.Selection is { } selection)
                     {
                         string name=selection.Character?.Name??frontend.Preferences.Username;
-                        frontend.SetJoiningStatus(selection.Offline?"Loading your single-player chase…":"Loading world and avatars before requesting native admission…");
+                        frontend.SetJoiningStatus("Loading the world and everyone in it…");
                         loading=StormChasePlaySession.LoadAsync(catalog,logger,selection,name,output,options.FrameExportPath!,args,cancellation.Token);
                     }
                     if(loading is { IsCompleted:true })
@@ -108,14 +108,10 @@ internal static partial class Showcase
                             var admitted=loading.GetAwaiter().GetResult();lock(photoGate)play=admitted;
                             paused=false;hud.RegionalMap=false;hud.ForecastOpen=false;hud.MapOpen=false;hud.PhoneOpen=false;
                             hud.AttachWorld(play.Session.World);
-                            var chatSession=play;hud.SendChat=(channel,text)=>
-                            {
-                                if(chatSession.Online)return chatSession.SendChat(channel,text);
-                                hud.AddChat(new(DateTime.Now.ToString("h:mm"),channel,"System","Chat needs an online district.",true));return true;
-                            };hud.MapLots=play.Lots is { } mapLots?mapLots.MapLots:null;
+                            hud.SendChat=play.SendChat;hud.MapLots=play.Lots is { } mapLots?mapLots.MapLots:null;
                             audio?.ConfigureWarningSites(play.Session.World.Settlements.Select(site=>site.Position with{Y=site.Position.Y+15}));
                             surface.GuiInputEnabled=false;
-                            Console.WriteLine(play.Online?"Native multiplayer admitted: complete reliable debris baseline and server environment.":"Authenticated single-player session loaded.");
+                            Console.WriteLine("Admitted to the Gateway world: complete reliable debris baseline and server environment.");
                         }
                         catch(Exception error){frontend.JoinFailed(error.Message);Console.WriteLine("Game join failed: "+error.Message);}
                         loading=null;
@@ -164,14 +160,14 @@ internal static partial class Showcase
                     profiler?.Mark("Hud");
                     if(paused)
                     {
-                        var ui=pauseMenu.Update(surface.Width,surface.Height,input,keyboard,play.PlayerName,play.Online);
+                        var ui=pauseMenu.Update(surface.Width,surface.Height,input,keyboard,play.PlayerName);
                         frame=frame with{Ui=ui};
                         switch(pauseMenu.Action)
                         {
                             case "resume":paused=false;break;
                             case "dispatch":paused=false;play.DispatchOpen=true;break;
                             case "home":paused=false;play.HousingOpen=true;break;
-                            case "leave":Leave("Returned to the main menu.");continue;
+                            case "leave":Leave(StormChaseFrontend.ReturnedToCharacters);continue;
                             case "quit":surface.RequestClose();continue;
                         }
                     }
@@ -209,15 +205,15 @@ internal static partial class Showcase
                 {
                     fps=(progress.CompletedFrameCount-completed)/Math.Max(.001,seconds-lastStatus);
                     completed=progress.CompletedFrameCount;lastStatus=seconds;nextStatus=seconds+1;
-                    string mode=play is null?frontend.Screen.ToString():play.Online?"MULTIPLAYER":"SINGLE PLAYER";
-                    surface.SetTitle($"Storm Chase · {mode} · {qualityName} · {fps:0.0} FPS · GPU {host.LastGpuTiming?.TotalMilliseconds??0:0.0} ms");
+                    string mode=play is null?frontend.Screen.ToString():play.PlayerName;
+                    surface.SetTitle($"{StormChaseFrontend.GameTitle} · {mode} · {qualityName} · {fps:0.0} FPS · GPU {host.LastGpuTiming?.TotalMilliseconds??0:0.0} ms");
                 }
                 StormChaseFramePacing.WaitForRenderer(host,surface);
                 if(profiler is not null)
                 {
                     profiler.Mark("WaitForRenderer");
                     profiler.EndUiFrame((clock.Elapsed.TotalSeconds-seconds)*1000,host.GetProgressSnapshot().CompletedFrameCount,
-                        host.LastGpuTiming?.TotalMilliseconds??0,play is null?frontend.Screen.ToString():$"{(play.Online?"online":"single")}, items {frame.Items.Count}");
+                        host.LastGpuTiming?.TotalMilliseconds??0,play is null?frontend.Screen.ToString():$"online, items {frame.Items.Count}");
                     if(profiler.ShouldExit)surface.RequestClose();
                 }
             }
@@ -238,7 +234,7 @@ internal static partial class Showcase
             void Leave(string reason)
             {
                 lock(photoGate){var leaving=play;play=null;leaving?.Dispose();}
-                paused=false;hud.ForecastOpen=false;surface.GuiInputEnabled=true;frontend.ReturnToMenu(reason);
+                paused=false;hud.ForecastOpen=false;surface.GuiInputEnabled=true;frontend.ReturnToCharacterSelect(reason);
             }
             void HousingAction(string action)
             {
@@ -269,9 +265,6 @@ internal static partial class Showcase
             if(loading is not null)
             {try{DemoThreadPump.Wait(loading,surface);loading.GetAwaiter().GetResult().Dispose();}catch(Exception){}}
             lock(photoGate){play?.Dispose();play=null;}
-            // The authority must flush its final career/furniture poses while the
-            // owned accounts service is still alive. Frontend owns that service.
-            DemoThreadPump.Wait(localServer.StopAsync(),surface);
             if(audio is null){DemoThreadPump.Wait(audioTask,surface);audio=audioTask.GetAwaiter().GetResult();}
             if(audio is not null)DemoThreadPump.Wait(audio.DisposeAsync().AsTask(),surface);
         }
@@ -294,7 +287,7 @@ internal sealed class ChasePauseMenu
     public string? Action{get;private set;}
     private static readonly string[] ids=["resume","dispatch","home","leave","quit"];
     public ChasePauseMenu(){layout=new(composer);}
-    public RenderUiFrame Update(int width,int height,GuiInputState input,IReadOnlyList<GuiKeyboardEvent> keyboard,string name,bool online)
+    public RenderUiFrame Update(int width,int height,GuiInputState input,IReadOnlyList<GuiKeyboardEvent> keyboard,string name)
     {
         Action=null;float scale=Math.Min(1,Math.Min(width/760f,height/560f));
         if(scale<1){width=(int)Math.Ceiling(width/scale);height=(int)Math.Ceiling(height/scale);input=new(input.Pointer with{X=input.Pointer.X/scale,Y=input.Pointer.Y/scale});}
@@ -304,8 +297,8 @@ internal sealed class ChasePauseMenu
         float k=ChaseMenuKit.ScaleFor(width,height),W=width/k,H=height/k;const float cardWidth=440,pad=30,inner=cardWidth-pad*2;
         var content=new List<GuiElement>();var kit=new ChaseMenuKit(k,content);float y=pad;
         kit.Text("Paused",pad,y,inner,22,StormChaseHud.Theme.Ink,bold:true);y+=40;
-        kit.Text(name+(online?"   ·   server weather keeps running":"   ·   single player"),pad,y,inner,10,StormChaseHud.Theme.Muted);y+=38;
-        string[] labels=["RESUME CHASE","FIELD DISPATCH & COMMUNITY","HOME, FURNISHINGS & VISITS","LEAVE TO MAIN MENU","QUIT GAME"];
+        kit.Text(name+"   ·   the world keeps running while you're paused",pad,y,inner,10,StormChaseHud.Theme.Muted);y+=38;
+        string[] labels=["RESUME CHASE","FIELD DISPATCH & COMMUNITY","HOME, FURNISHINGS & VISITS","BACK TO CHARACTERS","QUIT GAME"];
         for(int i=0;i<ids.Length;i++)
         {
             if(i==3)y+=8;

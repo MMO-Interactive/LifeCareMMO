@@ -1,5 +1,8 @@
 # Phase 1: Build and interact
 
+> Since 2026-11-18 the server projects, probes and `tools/Start-LifeCareServers.ps1` named below live in the
+> separate **LifeCareMMO-Server** repo (sibling checkout `%USERPROFILE%\LifeCareMMO-Server`), at the same relative paths.
+
 Status, 2026-11-17: the gate probe passes 25/25. Nobody has played build mode in the real DX12 client yet. It builds
 and is wired in, but the probe drives the same controllers headlessly.
 
