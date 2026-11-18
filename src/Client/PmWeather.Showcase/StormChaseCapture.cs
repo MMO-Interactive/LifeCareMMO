@@ -92,6 +92,8 @@ internal static partial class Showcase
         movingSimulation.Advance(50);
         var movingB = session.GroundStorms(movingSimulation.Current);
         var electrical = session.GroundStorms(ChasePeakSimulation(3,14).Current);
+        string chaseFilter=Value(args,"--chase-scene","all");
+        var lotShowcase = chaseFilter is "all" or "lot-modules" or "lot-round-room" ? StormChaseLotShowcase.Create(session.World,catalog) : default;
 
         await using var backend = new Dx12RenderBackend(options,surface,catalog,logger);
         await backend.InitializeAsync(CancellationToken.None);
@@ -103,7 +105,7 @@ internal static partial class Showcase
         string[] names=["clear-landscape","severe-road","crest-shore","crest-underwater","dressed-avatar",
             "structures-intact","physx-airborne","physx-settled-clear","sunset-storm","lightning-storm","night-torch",
             "moving-storm-a","moving-storm-b","power-flash","core-punch","probe-lineup","chase-truck","emergency-lineup",
-            "gulf-coast","town-street","town-street-night","building-closeup","road-junction","highway-edge","npc-street"];
+            "gulf-coast","town-street","town-street-night","building-closeup","road-junction","highway-edge","npc-street","lot-modules","lot-round-room"];
         if(filter!="all"&&!names.Contains(filter,StringComparer.OrdinalIgnoreCase))
             throw new ArgumentException("Unknown --chase-scene: "+filter+". Use "+string.Join(", ",names)+" or all.");
         foreach(string name in names)
@@ -120,6 +122,9 @@ internal static partial class Showcase
             var camera=npcCamera is not null?npcCamera:name switch
             {
                 "gulf-coast"=>CoastCamera(session),
+                // The capture-only showcase lot: modules, a gable and a hip roof, and a true round room with a nurses' station.
+                "lot-modules"=>ChaseCaptureCamera(lotShowcase.HouseCentre+new Vector3f(-6,14,-30),lotShowcase.HouseCentre+new Vector3f(12,1,8)),
+                "lot-round-room"=>ChaseCaptureCamera(lotShowcase.RoundRoomCentre+new Vector3f(-3.5f,8.5f,-9.5f),lotShowcase.RoundRoomCentre+new Vector3f(.5f,.6f,1)),
                 // Meridian downtown: an intersection with stop signs, street-name blades and street lights.
                 "town-street" or "town-street-night"=>ChaseCaptureCamera(new(5784,session.World.HeightAt(5784,6915)+1.8f,6915),new(5792,session.World.HeightAt(5792,6960)+2.6f,6960)),
                 "building-closeup"=>BuildingCamera(session),
@@ -154,7 +159,8 @@ internal static partial class Showcase
                 var built=session.BuildFrame(number,visualSeconds,delta,environment,camera,width,height,
                     particles,history, snapshot:local.Snapshot,advancePhysics:false);
                 return name=="probe-lineup"?AddProbeLineup(built,session):name=="chase-truck"?AddChaseTruck(built,session)
-                    :name=="emergency-lineup"?AddEmergencyLineup(built,session,visualSeconds):built;
+                    :name=="emergency-lineup"?AddEmergencyLineup(built,session,visualSeconds)
+                    :name is "lot-modules" or "lot-round-room"?built with{Items=built.Items.Concat(lotShowcase.Items).ToList()}:built;
             }
             var frame=Build();
             if(name=="power-flash")

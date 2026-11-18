@@ -57,6 +57,8 @@ public static class StructuralSupport
             var (a, b) = wall.Sides;
             Add(violations, $"wall:{wall.EdgeX}:{wall.EdgeZ}:{(int)wall.Axis}:{wall.Level}", "Wall", wall.Level, Better(For(support, a), For(support, b)));
         }
+        foreach (var wall in plan.CurvedWalls.Where(w => w.Level > 0))
+            Add(violations, $"curved:{wall.WallId}", "Curved wall", wall.Level, For(support, LotBuildController.TileAt(wall.CenterX, wall.CenterZ)));
         foreach (var roof in plan.Roofs.Where(r => r.Level > 0))
             for (int z = roof.MinimumTileZ; z <= roof.MaximumTileZ; z++)
                 for (int x = roof.MinimumTileX; x <= roof.MaximumTileX; x++)

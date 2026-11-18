@@ -410,6 +410,8 @@ STYLES = {
                        skirt="trim_white", corner="trim_white", door="door_wood", shutter="trim_white", fire=20),
     "stone": dict(name="Stone", pattern="stone", mat="stone", trim="trim_white", skirt="concrete",
                   corner="stone", door="door_wood", shutter="door_green", fire=120),
+    "plaster": dict(name="Interior Plaster", pattern="flat", mat="drywall", trim="trim_white", skirt="trim_white",
+                    corner="trim_white", door="door_wood", shutter="trim_white", fire=30),
 }
 COURSE = {"lap": 0.2, "flat": 0.25, "batten": 0.25, "stone": 0.25}
 

@@ -145,6 +145,147 @@ Check(furnished.Furnishings.Count == 0, "The lot is empty again");
     Check(LotGeometry.Build(session.Lot, 100).SequenceEqual(pieces), "Geometry is deterministic for a revision");
 }
 
+// ---- the rural module pack: every module the construction system can ask for exists
+{
+    string? pack = ModuleMeshLibrary.Locate(AppContext.BaseDirectory);
+    Check(pack is not null, "The rural module pack is found from the build output");
+    var library = ModuleMeshLibrary.Load(pack!);
+    var wanted = ModuleCatalog.WallStyles.SelectMany(s => ModuleCatalog.StraightOpenings.Select(o => ModuleCatalog.WallModule(s.Id, o.Id))
+            .Append(ModuleCatalog.OuterCornerModule(s.Id)).Append(ModuleCatalog.GableInfillModule(s.Id)))
+        .Concat(ModuleCatalog.FloorFinishes.Select(f => f.ModuleId))
+        .Concat(ModuleCatalog.RoofFinishes.SelectMany(f => new[] { "roof_gable_mid_", "roof_gable_end_", "roof_hip_end_", "roof_hip_2x2_" }.Select(p => p + f.Id)))
+        .Append("roof_flat_1x1").ToList();
+    var missing = wanted.Where(id => !library.Has(id)).ToList();
+    Check(missing.Count == 0, "Every catalog module is in the pack" + (missing.Count == 0 ? "" : ": missing " + string.Join(", ", missing.Take(5))));
+    var door = library.Module("wall_lap_white_door_wood")!;
+    Check(door.VertexCount > 100 && door.Positions.Min(p => p.Y) >= -.001f && MathF.Abs(door.Positions.Max(p => p.Y) - 3.2f) < .01f, "A wall module stands from the level base to the 3.2 m story top");
+    Check(door.Colors.Select(c => (c.X, c.Y, c.Z)).Distinct().Count() >= 4, "Module materials become vertex colours");
+    var turned = library.Compose([new("wall_lap_white_full", 0, 0, 0, 1)])!;
+    Check(turned.Positions.Max(p => p.Z) > 1.9f && turned.Positions.Max(p => MathF.Abs(p.X)) < .2f, "A quarter turn lays a wall along Z");
+}
+
+// ---- straight walls pick modules, face outward and get corner trims
+{
+    var deed = new LotDeed("lot-m", "owner", 0, 0, 9, 9);
+    var p = Must(BuildingEditor.Apply(BuildingPlan.Empty(deed), "owner", new(BuildEditKind.AddFloor, 0, 1, 1, 2, 2, Finish: "tile")), "Lay a tiled 2x2 floor");
+    var box = new List<WallSegment>();
+    for (int i = 1; i <= 2; i++) { box.Add(new(i, 1, WallAxis.AlongX, 0)); box.Add(new(i, 3, WallAxis.AlongX, 0)); box.Add(new(1, i, WallAxis.AlongZ, 0)); box.Add(new(3, i, WallAxis.AlongZ, 0)); }
+    box.Add(new(2, 1, WallAxis.AlongZ, 0));
+    p = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.AddWall, 0, Walls: box, Style: "stone")), "Wall it in with stone");
+    p = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.SetWallFinish, 0, Walls: [new(1, 1, WallAxis.AlongX, 0)], Opening: "door_wood")), "Put a door in the south wall");
+    Check(BuildingEditor.Apply(p, "owner", new(BuildEditKind.SetWallFinish, 0, Walls: [new(1, 1, WallAxis.AlongX, 0)], Opening: "passage")).ErrorCode == "invalid_opening", "Straight walls refuse curved-only openings");
+    Check(BuildingEditor.Apply(p, "owner", new(BuildEditKind.SetWallFinish, 0, Walls: [new(5, 5, WallAxis.AlongX, 0)], Opening: "door_wood")).ErrorCode == "unknown_wall", "Finishing a wall that is not there is refused");
+    var doc = LotDocument.From(p, 3);
+    var geo = LotGeometry.Build(doc, 0);
+    LotPiece W(string id) => geo.First(x => x.PieceId == "lot/lot-m/wall/0/" + id);
+    Check(W("x/1/1").Modules[0] is { ModuleId: "wall_stone_door_wood", QuarterTurns: 2 }, "The south wall's door module faces south (out of the room)");
+    Check(W("x/1/3").Modules[0].QuarterTurns == 0 && W("z/1/1").Modules[0].QuarterTurns == 3 && W("z/3/1").Modules[0].QuarterTurns == 1, "North, west and east walls face out of the room");
+    Check(W("z/2/1").Modules[0].ModuleId == "wall_stone_full", "A finished interior wall keeps its finish");
+    Check(geo.SelectMany(x => x.Modules).Count(m => m.ModuleId == "corner_stone_outer") == 4, "A rectangular building gets four outer corner trims");
+    Check(geo.Where(x => x.Kind == LotPieceKind.Floor).All(x => x.Modules[0].ModuleId == "floor_tile"), "Floors draw their finish");
+    var bare = LotGeometry.Build(LotDocument.From(BuildingEditor.Apply(p, "owner", new(BuildEditKind.AddWall, 0, Walls: [new(1, 2, WallAxis.AlongX, 0)])).Plan, 4), 0);
+    Check(bare.First(x => x.PieceId == "lot/lot-m/wall/0/x/1/2").Modules[0].ModuleId == "wall_plaster_full", "An unfinished wall between two rooms is interior plaster");
+    var cleared = BuildingEditor.Apply(p, "owner", new(BuildEditKind.RemoveWall, 0, Walls: [new(1, 1, WallAxis.AlongX, 0)])).Plan;
+    Check(cleared.WallFinishes.All(f => f.Wall != new WallSegment(1, 1, WallAxis.AlongX, 0)), "Removing a wall drops its finish");
+
+    // Roofs: gable ends with infill matching the wall below, hip 2x2, and the 2-tile span rule.
+    p = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.AddRoof, 0, 1, 1, 2, 2, RoofId: "g", Shape: "gable", Finish: "metal_green")), "Gable roof over the 2x2");
+    var roofs = LotGeometry.Build(LotDocument.From(p, 5), 0).Where(x => x.Kind == LotPieceKind.Roof).ToList();
+    Check(roofs.Count == 2 && roofs.All(r => r.Modules[0].ModuleId == "roof_gable_end_metal_green") && roofs.All(r => r.Modules.Any(m => m.ModuleId == "gable_infill_stone")),
+        "A 2x2 gable is two end pieces, each with stone gable infill");
+    Check(roofs.Select(r => r.Modules[0].QuarterTurns).Order().SequenceEqual([0, 2]), "The two gable ends face opposite ways");
+    var hip = BuildingEditor.Apply(p with { Roofs = [] }, "owner", new(BuildEditKind.AddRoof, 0, 1, 1, 2, 2, RoofId: "h", Shape: "hip")).Plan;
+    Check(LotGeometry.Build(LotDocument.From(hip, 6), 0).Single(x => x.Kind == LotPieceKind.Roof).Modules[0].ModuleId == "roof_hip_2x2_shingle", "A 2x2 hip roof is one hip module");
+    Check(BuildingEditor.Apply(BuildingPlan.Empty(deed), "owner", new(BuildEditKind.AddRoof, 0, 0, 0, 2, 2, RoofId: "x", Shape: "gable")).ErrorCode == "pitched_roof_span", "Pitched roofs must span exactly two tiles");
+    var longGable = BuildingEditor.Apply(BuildingPlan.Empty(deed), "owner", new(BuildEditKind.AddRoof, 0, 0, 0, 1, 3, RoofId: "l", Shape: "gable")).Plan;
+    var longPieces = LotGeometry.Build(LotDocument.From(longGable, 1), 0).ToList();
+    Check(longPieces.Count == 4 && longPieces.Count(x => x.Modules[0].ModuleId.StartsWith("roof_gable_mid")) == 2 && longPieces.All(x => x.SizeZ < 5),
+        "A gable 2 wide and 4 long runs its ridge along Z: two ends and two middles");
+}
+
+// ---- true curved walls: full rings, arcs and curved counters
+{
+    var deed = new LotDeed("lot-c", "owner", 0, 0, 7, 7);
+    var p = Must(BuildingEditor.Apply(BuildingPlan.Empty(deed), "owner", new(BuildEditKind.AddFloor, 0, 2, 2, 5, 5)), "Lay a 4x4 floor for a round room");
+    var roundWall = new CurvedWall("ring", 0, 16_000, 16_000, 5_000, 180_000, CurvedWall.FullCircleMilliDegrees, "lap_white", "full", true,
+        [new("door_wood", 90_000), new("win_large", 270_000), new("passage", 180_000)]);   // door due -Z, window due +Z, passage due +X; seam at -X
+    p = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.AddCurvedWall, 0, Curve: roundWall)), "Build a 5 m round room with a door and a window");
+    var roundRooms = RoundRoomFinder.Find(p, 0);
+    Check(roundRooms.Count == 1 && roundRooms[0].Floored && roundRooms[0].Entrances == 2 && MathF.Abs(roundRooms[0].AreaSquareMeters - MathF.PI * 4.9f * 4.9f) < .01f,
+        "A full ring with floor inside is a round room of π·r² with its two entrances");
+    var pieces = LotGeometry.Build(LotDocument.From(p, 2), 10).Where(x => x.Curve is not null).ToList();
+    Check(pieces.Count >= 14 && pieces.All(x => x.Kind == LotPieceKind.Wall) && pieces.Select(x => x.PieceId).Distinct().Count() == pieces.Count, "The ring breaks into curved pieces with unique ids");
+    float arc = pieces.Sum(x => (float)((x.Curve!.To - x.Curve.From) * roundWall.Radius));
+    Check(MathF.Abs(arc - 2 * MathF.PI * roundWall.Radius) < .001f, "The pieces cover the whole circumference with no gaps");
+
+    // The mesh is a true curve: outer-face vertices lie on the circle and carry radial (smooth) normals.
+    var segment = pieces[0].Curve!;
+    var world = CurvedWallMesher.Build(roundWall, segment.From, segment.To, 10);
+    float outer = roundWall.Radius + CurvedWalls.Thickness / 2;
+    var onFace = Enumerable.Range(0, world.VertexCount).Where(i =>
+    {
+        var v = world.Positions[i]; float d = MathF.Sqrt((v.X - 16) * (v.X - 16) + (v.Z - 16) * (v.Z - 16));
+        return MathF.Abs(d - (roundWall.Radius - CurvedWalls.Thickness / 2)) < .001f;
+    }).ToList();
+    System.Numerics.Vector3 Out(int i) { var v = world.Positions[i]; return System.Numerics.Vector3.Normalize(new(v.X - 16, 0, v.Z - 16)); }
+    var sideways = onFace.Where(i => MathF.Abs(System.Numerics.Vector3.Dot(world.Normals[i], Out(i))) > .5f).ToList();   // the face itself, not caps or rings
+    Check(sideways.Count > 20 && sideways.All(i => System.Numerics.Vector3.Dot(world.Normals[i], -Out(i)) > .999f),
+        "Inner-face vertices sit exactly on the arc with radial normals (no flat panels)");
+    var angles = onFace.Select(i => Math.Round(((Math.Atan2(world.Positions[i].Z - 16, world.Positions[i].X - 16) * 180 / Math.PI - roundWall.StartMilliDegrees / 1000.0) % 360 + 360) % 360, 3)).Distinct().Order().ToList();
+    Check(angles.Zip(angles.Skip(1), (a, b) => b - a).All(step => step <= 3.0001), "The arc is sampled at least every 3°");
+    Check(world.Indices.Count % 3 == 0 && world.Indices.All(i => i >= 0 && i < world.VertexCount), "The curved mesh is valid triangles");
+    var local = CurvedWallMesher.ForPiece(pieces[0]);
+    var back = System.Numerics.Matrix4x4.CreateRotationY(pieces[0].YawDegrees * MathF.PI / 180);
+    var p0 = System.Numerics.Vector3.Transform(local.Positions[0], back) + new System.Numerics.Vector3(pieces[0].CenterX, pieces[0].CenterY, pieces[0].CenterZ);
+    Check(System.Numerics.Vector3.Distance(p0, world.Positions[0]) < .001f, "A piece's local mesh, turned by its yaw, lands back on the arc");
+    var withDoor = pieces.Single(x => { var r = CurvedWalls.Range(roundWall, roundWall.HostedOpenings[0]); return x.Curve!.From <= r.From && x.Curve.To >= r.To; });
+    Check(CurvedWallMesher.ForPiece(withDoor).VertexCount > 0, "The door sits whole inside one piece");
+
+    // Furniture cannot straddle the curved wall, but can stand inside the room or in the doorway.
+    var chairDef = FurnishingCatalog.Find("chair")!.Definition;
+    Check(!FurnishingEditor.Place(p, "owner", PlacedFurnishing.Of("c1", chairDef, 0, 2, 3, 6, 7, 0)).Accepted, "A chair on the ring's wall line is refused");
+    Check(FurnishingEditor.Place(p, "owner", PlacedFurnishing.Of("c2", chairDef, 0, 4, 4, 0, 0, 0)).Accepted, "A chair in the round room is fine");
+    Check(FurnishingEditor.Place(p, "owner", PlacedFurnishing.Of("c3", chairDef, 0, 5, 3, 1, 7, 0)).Accepted, "A chair in the open passage clears the ring");
+    var withChair = Must(FurnishingEditor.Place(p, "owner", PlacedFurnishing.Of("c4", chairDef, 0, 4, 4, 0, 0, 0)), "Set a chair inside");
+    Check(BuildingEditor.Apply(withChair, "owner", new(BuildEditKind.SetCurvedWall, 0, Curve: roundWall with { RadiusMillimeters = 1_500 })).ErrorCode is "furnishing_in_the_way" or "opening_too_curved", "Shrinking the ring onto furniture is refused");
+
+    // Rules.
+    CurvedWall C(string id, int r, int sweep, string profile = "full", CurvedOpening[]? o = null) => new(id, 0, 16_000, 16_000, r, 0, sweep, "stucco", profile, true, o);
+    Check(CurvedWalls.Problem(C("a", 1_000, 360_000), deed)?.Code == "invalid_radius", "Radius below 1.5 m is refused");
+    Check(CurvedWalls.Problem(C("a", 20_000, 360_000), deed)?.Code == "outside_lot", "A ring reaching off the lot is refused");
+    Check(CurvedWalls.Problem(C("a", 3_025, 360_000), deed)?.Code == "unquantized_geometry", "Curves snap to 5 cm");
+    Check(CurvedWalls.Problem(C("a", 3_000, 10_000), deed)?.Code == "invalid_sweep", "Arcs sweep at least 15°");
+    Check(CurvedWalls.Problem(C("a", 1_500, 360_000, o: [new("win_wide", 90_000)]), deed)?.Code == "opening_too_curved", "A wide window is refused on a tight curve");
+    Check(CurvedWalls.Problem(C("a", 3_000, 360_000, o: [new("door_wood", 90_000), new("win_small", 100_000)]), deed)?.Code == "openings_overlap", "Overlapping openings are refused");
+    Check(CurvedWalls.Problem(C("a", 3_000, 180_000, o: [new("door_wood", 2_000)]), deed)?.Code == "opening_off_wall", "An opening hanging off an arc's end is refused");
+
+    // Nurses' stations: a 270° counter (the gap is the staff entrance) or a full counter roundWall with a passage.
+    var station = C("station", 2_500, 270_000, "counter");
+    Check(CurvedWalls.Problem(station, deed) is null, "A 270° horseshoe nurses' station counter is valid");
+    Check(CurvedWalls.Problem(station with { Openings = [new("door_wood", 135_000)] }, deed)?.Code == "invalid_opening", "Counters take passages, not doors");
+    Check(CurvedWalls.Problem(C("ring-counter", 2_500, 360_000, "counter", [new("passage", 180_000)]), deed) is null, "A full counter ring with a staff passage is valid");
+    var counterMesh = CurvedWallMesher.Build(station, 0, station.SweepRadians, 0);
+    Check(MathF.Abs(counterMesh.Positions.Max(v => v.Y) - (CurvedWalls.ProfileTop("counter") + .04f)) < .001f, "The counter's worktop sits at counter height");
+    Check(counterMesh.Positions.Min(v => MathF.Sqrt((v.X - 16) * (v.X - 16) + (v.Z - 16) * (v.Z - 16))) < 2.5f - .5f, "The worktop reaches into the staff side");
+    Check(CurvedWalls.Problem(C("glass", 3_000, 180_000, "glazed"), deed) is null && CurvedWallMesher.Build(C("glass", 3_000, 180_000, "glazed"), 0, Math.PI, 0)
+        .Colors.Any(c => MathF.Abs(c.X - ModuleCatalog.Color("glass").R) < .001f), "A glazed curved wall carries curved glass");
+    Check(BuildingEditor.Apply(p, "owner", new(BuildEditKind.AddCurvedWall, 0, Curve: roundWall)).ErrorCode == "invalid_curved_wall", "Curved wall ids are unique");
+    Check(BuildingEditor.Apply(p, "owner", new(BuildEditKind.AddCurvedWall, 1, Curve: station with { Level = 1, CenterXMillimeters = 4_000, CenterZMillimeters = 4_000 })).ErrorCode == "insufficient_structural_support",
+        "An upper-level curved wall needs a foundation");
+    var removed = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.RemoveCurvedWall, 0, TargetId: "ring")), "Remove the ring");
+    Check(removed.CurvedWalls.Count == 0 && RoundRoomFinder.Find(removed, 0).Count == 0, "Removing the ring removes the round room");
+
+    // Save and reload: the arc round-trips exactly, and lot files from before curved walls still load.
+    var options = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } };
+    var saved = System.Text.Json.JsonSerializer.Serialize(LotDocument.From(p, 9), options);
+    var loaded = System.Text.Json.JsonSerializer.Deserialize<LotDocument>(saved, options)!;
+    Check(loaded.CurvedWalls.Single().Fingerprint == roundWall.Fingerprint && LotGeometry.Build(loaded, 0).SequenceEqual(LotGeometry.Build(LotDocument.From(p, 9), 0)),
+        "A saved round room reloads with identical arc and geometry");
+    var legacyJson = """{"lot":{"lotId":"old","ownerCharacterId":"o","minimumTileX":0,"minimumTileZ":0,"maximumTileX":3,"maximumTileZ":3},"revision":4,"floors":[{"tileX":0,"tileZ":0,"level":0}],"walls":[],"roofs":[{"roofId":"r","minimumTileX":0,"minimumTileZ":0,"maximumTileX":0,"maximumTileZ":0,"level":0}],"furnishings":[]}""";
+    var legacyDoc = System.Text.Json.JsonSerializer.Deserialize<LotDocument>(legacyJson, options)!;
+    Check(legacyDoc.CurvedWalls.Length == 0 && legacyDoc.ToPlan().Roofs[0].Shape == "flat" && LotGeometry.Build(legacyDoc, 0).Count == 2, "A lot saved before modules and curves loads with defaults");
+}
+
 // ---- the pie wheel (Tiny Clinic's furnishing menu)
 {
     var piece = PlacedFurnishing.Of("chair-1", FurnishingCatalog.Find("chair")!.Definition, 0, 0, 0, 0, 0, 0);

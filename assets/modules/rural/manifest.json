@@ -4725,6 +4725,653 @@
    ]
   },
   {
+   "id": "wall_plaster_full",
+   "name": "Full Wall - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_full.glb",
+   "boundsMin": [
+    -2.0,
+    -0.125,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    3.2
+   ],
+   "triangles": 60,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_door_wood",
+   "name": "Wood Door - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_door_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 468,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "wood",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_door_halfglass",
+   "name": "Half-Window Door - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_door_halfglass.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 408,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_glass",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "halfglass",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_door_screen",
+   "name": "Screen Door - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_door_screen.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 568,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass",
+    "LC_screen"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "screen",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_door_garage",
+   "name": "Garage Door (Single) - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_door_garage.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 492,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_garage_white",
+    "LC_glass",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "garage",
+      "widthMeters": 2.7,
+      "heightMeters": 2.4,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_door_barn",
+   "name": "Barn Door (Sliding) - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_door_barn.glb",
+   "boundsMin": [
+    -2.0,
+    -0.205,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 444,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_door_red",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "barn",
+      "widthMeters": 3.0,
+      "heightMeters": 2.6,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_win_small",
+   "name": "Small Window - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_win_small.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 384,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.6,
+      "heightMeters": 0.6,
+      "sillMeters": 1.4,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_win_large",
+   "name": "Large Window - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_win_large.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 408,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 1.2,
+      "heightMeters": 1.4,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_win_shutter",
+   "name": "Shutter Window - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_win_shutter.glb",
+   "boundsMin": [
+    -2.0,
+    -0.173,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 948,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_win_corner",
+   "name": "Corner Window - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_win_corner.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 396,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 1.25
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_win_wide",
+   "name": "Wide Window - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_win_wide.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 408,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 2.4,
+      "heightMeters": 1.2,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "plaster"
+   ]
+  },
+  {
+   "id": "wall_plaster_half",
+   "name": "Half Wall - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_plaster_half.glb",
+   "boundsMin": [
+    -2.0,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.13,
+    1.25
+   ],
+   "triangles": 60,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 30,
+    "flammable": true,
+    "windRatingMph": 110,
+    "heightMeters": 1.0
+   },
+   "notes": []
+  },
+  {
+   "id": "corner_plaster_outer",
+   "name": "Outer Corner - Interior Plaster",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_plaster_outer.glb",
+   "boundsMin": [
+    -0.13,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    0.02,
+    0.02,
+    3.2
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "corner_plaster_inner",
+   "name": "Inner Corner - Interior Plaster",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_plaster_inner.glb",
+   "boundsMin": [
+    -0.16,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    0.1,
+    0.1,
+    3.2
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_trim_white",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "gable_infill_plaster",
+   "name": "Gable Infill (2 tiles) - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    2,
+    0
+   ],
+   "file": "glb/walls/gable_infill_plaster.glb",
+   "boundsMin": [
+    -4.0,
+    -0.166,
+    0.0
+   ],
+   "boundsMax": [
+    4.0,
+    0.1,
+    2.02
+   ],
+   "triangles": 200,
+   "materials": [
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_metal_dark"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Sits at roof level under a 2-tile-span gable end."
+   ]
+  },
+  {
+   "id": "shed_infill_plaster",
+   "name": "Shed Infill - Interior Plaster",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/shed_infill_plaster.glb",
+   "boundsMin": [
+    -2.0,
+    -0.1,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    1.02
+   ],
+   "triangles": 72,
+   "materials": [
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Fills the side triangle under a 1x1 shed roof; low end at local -X."
+   ]
+  },
+  {
    "id": "roof_gable_mid_shingle",
    "name": "Gable Roof, Middle - Asphalt Shingle",
    "category": "roofs",

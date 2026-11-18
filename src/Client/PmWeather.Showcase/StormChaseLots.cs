@@ -20,20 +20,81 @@ internal sealed class StormChaseLotRenderer
         ("ghost-valid", new(.25f, .95f, .55f, 1), 1.1f), ("ghost-invalid", new(1f, .28f, .25f, 1), 1.1f),
     ];
 
-    public StormChaseLotRenderer(MutableRenderAssetCatalog catalog)
+    /// <summary>The white, vertex-coloured material module and curved meshes draw with: their colours are in the vertices.</summary>
+    private const string ModuleMaterial = "module";
+    private static StormChaseLotRenderer? active;
+    private readonly MutableRenderAssetCatalog catalog;
+    private readonly ModuleMeshLibrary? modules;
+    private readonly Dictionary<string, AssetHandle?> meshes = new(StringComparer.Ordinal);
+
+    public StormChaseLotRenderer(MutableRenderAssetCatalog catalog, string? modulePack = null)
     {
+        this.catalog = catalog;
         catalog.UpsertMesh(StormChaseTerrainGeometry.Box(Cube));
-        foreach (var (name, tint, emissive) in Materials)
+        foreach (var (name, tint, emissive) in Materials.Append((ModuleMaterial, new(1, 1, 1, 1), 0)))
             catalog.UpsertMaterial(new()
             {
                 Handle = new("material", "lot/" + name), ShaderProgramId = BuiltInShaderLibrary.PbrLit.Id,
                 LightingProfile = RenderMaterialLightingProfile.MetallicRoughness, Tint = tint, RoughnessStrength = .8f,
                 MetalnessStrength = name == "metal" ? .5f : 0, EmissiveColor = emissive > 0 ? tint : ColorRgba.Black, EmissiveIntensity = emissive,
             });
+        try
+        {
+            if ((modulePack ?? ModuleMeshLibrary.Locate(AppContext.BaseDirectory)) is { } pack)
+            {
+                modules = ModuleMeshLibrary.Load(pack);
+                Console.WriteLine($"Lot modules: {modules.Count} from {pack}");
+            }
+            else Console.WriteLine("Lot modules: rural module pack not found; lots draw as boxes.");
+        }
+        catch (Exception ex) { Console.WriteLine("Lot modules failed to load; lots draw as boxes: " + ex.Message); }
+        active = this;
     }
 
-    /// <summary>The render item for a piece: its stable id doubles as the motion-vector id the host's debris names.</summary>
-    public static RenderItem Item(LotPiece piece, string? material = null) => StormChaseLotParts.Item(piece, material);
+    public int ModuleCount => modules?.Count ?? 0;
+
+    /// <summary>
+    /// The render item for a piece: its stable id doubles as the motion-vector id the host's debris names. Pieces with pack
+    /// modules or a curved arc draw their real mesh at the piece's centre and yaw (scale 1), so the same item also flies
+    /// correctly as debris with the body's rotation. Anything else, or a missing pack, draws the physics box.
+    /// </summary>
+    public static RenderItem Item(LotPiece piece, string? material = null)
+    {
+        if (active?.MeshFor(piece) is { } mesh)
+        {
+            string id = material ?? ModuleMaterial;
+            return new("lot/" + id, mesh, new AssetHandle("material", "lot/" + id), new(piece.CenterX, piece.CenterY, piece.CenterZ), new(1, 1, 1),
+                piece.YawDegrees, material is null, MotionVectorId: piece.PieceId, AllowStaticInstancing: material is null);
+        }
+        return StormChaseLotParts.Item(piece, material);
+    }
+
+    private AssetHandle? MeshFor(LotPiece piece)
+    {
+        if (piece.MeshKey is not { } key) return null;
+        if (meshes.TryGetValue(key, out var cached)) return cached;
+        MeshBuffer? data = piece.Curve is not null ? CurvedWallMesher.ForPiece(piece) : modules?.Compose(piece.Modules);
+        AssetHandle? handle = null;
+        if (data is { VertexCount: > 0 })
+        {
+            handle = new AssetHandle("mesh", "lot/mesh/" + meshes.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            catalog.UpsertMesh(ToRender(handle.Value, data));
+        }
+        if (meshes.Count > 20_000) meshes.Clear();
+        meshes[key] = handle;
+        return handle;
+    }
+
+    private static RenderMeshData ToRender(AssetHandle handle, MeshBuffer data)
+    {
+        var vertices = new RenderMeshVertex[data.VertexCount];
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            var p = data.Positions[i]; var n = data.Normals[i]; var c = data.Colors[i]; var uv = data.Uvs[i];
+            vertices[i] = new(new(p.X, p.Y, p.Z), new(c.X, c.Y, c.Z, c.W), uv.X, uv.Y, new(n.X, n.Y, n.Z), new(1, 0, 0), 1);
+        }
+        return new RenderMeshData { Handle = handle, Vertices = vertices, WideIndices = data.Indices.Select(i => (uint)i).ToArray() };
+    }
 
     public static IEnumerable<RenderItem> Items(IEnumerable<LotPiece> pieces, Vector3f observer, Func<string, bool> released, float range = 900)
     {
@@ -45,8 +106,10 @@ internal sealed class StormChaseLotRenderer
         }
     }
 
+    /// <summary>Ghosts draw as tinted boxes, except curved walls, which preview their true curved mesh.</summary>
     public static IEnumerable<RenderItem> Ghost(IEnumerable<LotPiece> pieces, bool valid) =>
-        pieces.Select(p => Item(p with { PieceId = "ghost/" + p.PieceId, SizeX = p.SizeX + .04f, SizeY = p.SizeY + .04f, SizeZ = p.SizeZ + .04f }, valid ? "ghost-valid" : "ghost-invalid"));
+        pieces.Select(p => Item(p.Curve is not null ? p with { PieceId = "ghost/" + p.PieceId }
+            : p with { PieceId = "ghost/" + p.PieceId, SizeX = p.SizeX + .04f, SizeY = p.SizeY + .04f, SizeZ = p.SizeZ + .04f, Modules = [] }, valid ? "ghost-valid" : "ghost-invalid"));
 }
 
 /// <summary>
@@ -146,7 +209,7 @@ internal sealed class StormChaseLotPlay : IDisposable
                 return true;
             }
             BuildMode = !BuildMode; build.CancelGesture(); furnish?.Cancel(); Pie = null;
-            build.Session.Status = BuildMode ? "Build mode: 1 floor · 2 wall · 3 roof · 4 delete · PgUp/PgDn level · click or drag to build." : "Left build mode.";
+            build.Session.Status = BuildMode ? "Build mode: 1 floor · 2 wall · 3 roof · 4 delete · 5 curved wall · 6 finish · B finish · N opening/shape/profile · C arc sweep · PgUp/PgDn level." : "Left build mode.";
             return true;
         }
         if (BuildMode && build is not null)
@@ -157,6 +220,11 @@ internal sealed class StormChaseLotPlay : IDisposable
                 case 0x32: build.SelectTool(LotBuildTool.Wall); return true;
                 case 0x33: build.SelectTool(LotBuildTool.Roof); return true;
                 case 0x34: build.SelectTool(LotBuildTool.Delete); return true;
+                case 0x35: build.SelectTool(LotBuildTool.CurvedWall); return true;
+                case 0x36: build.SelectTool(LotBuildTool.Finish); return true;
+                case 0x42: build.CyclePrimary(); return true;
+                case 0x4E: build.CycleSecondary(); return true;
+                case 0x43 when build.Tool == LotBuildTool.CurvedWall: build.CycleSweep(); return true;
                 case 0x21: build.ChangeLevel(1); return true;
                 case 0x22: build.ChangeLevel(-1); return true;
             }
@@ -256,7 +324,7 @@ internal sealed class StormChaseLotPlay : IDisposable
 
     /// <summary>The status-pill line for the HUD: what build mode or the carried piece is doing, else the lot layer's last message.</summary>
     public string? StatusLine => BuildMode && build is not null
-        ? $"BUILD · {build.Tool.ToString().ToUpperInvariant()} · {(build.Level == 0 ? "GROUND" : "FLOOR " + (build.Level + 1))}  —  {build.Preview.Status}"
+        ? $"BUILD · {build.Tool.ToString().ToUpperInvariant()} · {(build.Level == 0 ? "GROUND" : "FLOOR " + (build.Level + 1))}{(build.SelectionText is { Length: > 0 } sel ? " · " + sel : "")}  —  {build.Preview.Status}"
         : furnish?.Preview is { } ghost ? $"{(furnish.Gesture == FurnishingGesture.CarryingPackage ? "Carrying " + furnish.Carried!.Definition.Name : "Moving")}  —  {ghost.Status}  ·  R turn, click set down"
         : unavailable;
 
@@ -264,7 +332,8 @@ internal sealed class StormChaseLotPlay : IDisposable
     public IReadOnlyList<HudSlot>? Hotbar()
     {
         if (BuildMode && build is not null)
-            return [new("Floor", build.Tool == LotBuildTool.Floor), new("Wall", build.Tool == LotBuildTool.Wall), new("Roof", build.Tool == LotBuildTool.Roof), new("Delete", build.Tool == LotBuildTool.Delete)];
+            return [new("Floor", build.Tool == LotBuildTool.Floor), new("Wall", build.Tool == LotBuildTool.Wall), new("Roof", build.Tool == LotBuildTool.Roof),
+                new("Delete", build.Tool == LotBuildTool.Delete), new("Curved", build.Tool == LotBuildTool.CurvedWall), new("Finish", build.Tool == LotBuildTool.Finish)];
         if (furnish?.Gesture == FurnishingGesture.CarryingPackage) return [new(furnish.Carried!.Definition.Name, true)];
         if (furnish?.Gesture == FurnishingGesture.MovingPiece) return [new("Moving", true)];
         return null;

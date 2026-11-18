@@ -41,8 +41,24 @@ public readonly record struct WallSegment(int EdgeX, int EdgeZ, WallAxis Axis, i
     }
 }
 
-/// <summary>A flat roof over an inclusive tile rectangle on one story.</summary>
-public sealed record RoofArea(string RoofId, int MinimumTileX, int MinimumTileZ, int MaximumTileX, int MaximumTileZ, int Level);
+/// <summary>
+/// A roof over an inclusive tile rectangle on one story. Flat roofs fit any rectangle; gable and hip roofs span exactly
+/// two tiles (8 m) across, the span of the module pack's pitched roofs, with the ridge along the longer side.
+/// </summary>
+public sealed record RoofArea(string RoofId, int MinimumTileX, int MinimumTileZ, int MaximumTileX, int MaximumTileZ, int Level,
+    string Shape = ModuleCatalog.DefaultRoofShape, string Finish = ModuleCatalog.DefaultRoofFinish)
+{
+    public int WidthTiles => MaximumTileX - MinimumTileX + 1;
+    public int DepthTiles => MaximumTileZ - MinimumTileZ + 1;
+    /// <summary>Pitched roofs run their ridge along X unless the roof is two tiles wide and longer than that in Z.</summary>
+    public bool RidgeAlongX => DepthTiles == 2;
+}
+
+/// <summary>A straight wall's finish and the opening its module hosts (ModuleCatalog ids). Walls without one use defaults.</summary>
+public sealed record WallFinish(WallSegment Wall, string Style, string Opening);
+
+/// <summary>A floor tile's finish (ModuleCatalog floor finish id).</summary>
+public sealed record FloorFinish(FloorCell Floor, string Finish);
 
 /// <summary>A deeded lot: the tile rectangle its owner may build on.</summary>
 public sealed record LotDeed(string LotId, string OwnerCharacterId, int MinimumTileX, int MinimumTileZ, int MaximumTileX, int MaximumTileZ)
@@ -56,6 +72,9 @@ public sealed record LotDeed(string LotId, string OwnerCharacterId, int MinimumT
 public sealed record BuildingPlan(LotDeed Lot, IReadOnlySet<FloorCell> Floors, IReadOnlySet<WallSegment> Walls, IReadOnlyList<RoofArea> Roofs)
 {
     public IReadOnlyList<PlacedFurnishing> Furnishings { get; init; } = [];
+    public IReadOnlyList<CurvedWall> CurvedWalls { get; init; } = [];
+    public IReadOnlyList<WallFinish> WallFinishes { get; init; } = [];
+    public IReadOnlyList<FloorFinish> FloorFinishes { get; init; } = [];
     public static BuildingPlan Empty(LotDeed lot) => new(lot, new HashSet<FloorCell>(), new HashSet<WallSegment>(), []);
 }
 

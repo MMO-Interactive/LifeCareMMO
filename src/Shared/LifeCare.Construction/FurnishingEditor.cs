@@ -65,6 +65,10 @@ public static class FurnishingEditor
         foreach (var tile in tiles)
             foreach (var next in new TileCell[] { new(tile.X + 1, tile.Z), new(tile.X, tile.Z + 1) })
                 if (tiles.Contains(next) && walls.Contains(WallSegment.Between(tile, next, piece.Level))) return ("furnishing_crosses_wall", "Furnishings cannot cross a wall.");
+        float x0 = piece.MinimumX * BuildGrid.SubCellMeters + .01f, z0 = piece.MinimumZ * BuildGrid.SubCellMeters + .01f;
+        float x1 = (piece.MinimumX + piece.SpanX) * BuildGrid.SubCellMeters - .01f, z1 = (piece.MinimumZ + piece.SpanZ) * BuildGrid.SubCellMeters - .01f;
+        if (plan.CurvedWalls.Any(w => w.Level == piece.Level && CurvedWalls.Crosses(w, x0, z0, x1, z1)))
+            return ("furnishing_crosses_wall", "Furnishings cannot cross a curved wall or counter.");
         return null;
     }
 

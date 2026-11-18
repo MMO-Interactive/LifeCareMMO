@@ -24,6 +24,9 @@
   <ItemGroup>
     <Content Include="$(StormChaseAssetsRoot)\StormChase\**\*" Link="Assets\StormChase\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="client-config.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- The rural module pack (tools/Build-RuralModulePack.ps1): lot walls, floors and roofs are drawn from these GLBs. -->
+    <Content Include="..\..\..\assets\modules\rural\manifest.json" Link="Assets\Modules\Rural\manifest.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\..\assets\modules\rural\glb\**\*.glb" Link="Assets\Modules\Rural\glb\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="CopyVerifiedPhysicsRuntime" AfterTargets="Build;Publish" Condition="'$(EnginePhysicsRuntime)' != ''">
     <Copy SourceFiles="$(EnginePhysicsRuntime)" DestinationFolder="$(TargetDir)" />

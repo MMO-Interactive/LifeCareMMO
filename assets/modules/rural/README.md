@@ -1,6 +1,6 @@
 # Rural Town Module Pack
 
-205 modular pieces for the rural starter district. They snap to the construction grid in
+221 modular pieces for the rural starter district. They snap to the construction grid in
 `LifeCare.Construction`: 4 m tiles, 3.2 m stories, 0.2 m floor slabs and walls.
 
 Every module is generated from code by
@@ -36,7 +36,7 @@ glTF is Y-up. Each module's front, the exterior side, faces **+Z**. Rotate modul
 
 How the families fit together:
 
-- **Walls**: 6 siding styles × 11 types (full wall, 5 doors, 5 windows), plus a half wall, inner and outer corners, gable infill and shed infill in each style.
+- **Walls**: 7 wall styles (six sidings plus interior plaster) × 11 types (full wall, 5 doors, 5 windows), plus a half wall, inner and outer corners, gable infill and shed infill in each style.
 - **Gable roofs**: an `end` at each end (rotate the far one 180°) and a `mid` between them. Add `gable_infill_<style>` under each end at roof level.
 - **Hip roofs**: `hip_end` at each end with `gable_mid` between, or `hip_2x2` on its own.
 - **Roads**: two `road_lane` tiles, the second rotated 180°, make a 16 m street together with `sidewalk` tiles (curb at −Z after rotation). Use `road_plain` for intersections and `sidewalk_corner` at corners.
@@ -44,6 +44,7 @@ How the families fit together:
 
 ## Engine notes
 
-- The current `GltfMeshFileImporter` reads positions, normals, UVs and tangents and merges every primitive into one mesh. **It ignores materials.** Each GLB still carries its `LC_*` PBR materials, and the palette is listed in `manifest.json`. Showing those colours in-engine needs material support in the importer, or vertex-colour baking.
+- Lots load these GLBs through `LifeCare.Construction.ModuleMeshLibrary`, which bakes each primitive's material base colour into vertex colours. A whole module then draws as one item with one white `PbrLit` material. The engine's own `GltfMeshFileImporter` ignores materials, so modules loaded through it show no colour.
+- The client copies `manifest.json` and `glb/` to `Assets/Modules/Rural` next to the executable. In a dev build it also finds them here by walking up from the executable.
 - The largest module is about 5k vertices, well under the importer's 16-bit index limit.
 - UVs are box-projected at 2 m per texture repeat, ready for tiling textures. Signs are blank: no text or decals yet.

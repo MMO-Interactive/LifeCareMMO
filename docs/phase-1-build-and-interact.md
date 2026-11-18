@@ -23,7 +23,15 @@ Start the servers with `tools/Start-LifeCareServers.ps1` and sign in through the
 service posts it to the Construction service's `/api/internal/lots` with the service key. The client polls the
 Gateway's `/construction/api/lots` every 2 s.
 
-- **Y** toggles build mode on your lot. **1** floor, **2** wall, **3** roof, **4** delete. **PgUp/PgDn** change level.
+- **Y** toggles build mode on your lot. **1** floor, **2** wall, **3** roof, **4** delete, **5** curved wall, **6** finish.
+  **PgUp/PgDn** change level.
+- **B** steps the tool's finish: wall siding (walls, curved walls, finish tool), floor finish (floor) or roof finish (roof).
+- **N** steps the second option: the opening a wall hosts (walls, finish tool), the roof shape (flat, gable, hip) or the
+  curved wall's profile (full, glazed, half wall, counter).
+- **C** (curved wall tool) steps the sweep: full circle, 270°, 180°, 90°. Press at the centre and drag out the radius; the
+  arc's middle points where you release, so a 270° counter's open side faces away from the drag.
+- The finish tool restyles the wall you click and sets its opening. On a curved wall it adds the selected opening where you
+  click, or removes the one you click.
 - In build mode, aim with the crosshair and click or drag. A click with the wall tool takes the nearest tile edge.
 - **I** unpacks a furniture package. **R** turns it, a click sets it down, **Esc** puts it away.
 - **Right click** on a piece opens the pie wheel: Arrange (Move, Rotate, Pick Up) for the owner, Inspect for anyone.
@@ -71,7 +79,35 @@ The test tornado comes from `--storm-test-routes`, which needs keyed internal ro
 - **Damage lasts for the host's session only.** A restarted host shows lots whole again. Damage should be written back
   to the Construction service, so a lot can be "damaged until repaired".
 - **Packages are a stand-in.** `I` unpacks the next catalogue item until the shop delivers real packages.
-- **Furniture and lot geometry are plain boxes** with built-in materials. No art is involved, and none goes in git.
+- **Furniture is still plain boxes.** Lot walls, floors and roofs are drawn from the rural module pack
+  (`assets/modules/rural`, see [Building modules and curved walls](#building-modules-and-curved-walls)); without the pack
+  they fall back to boxes.
+
+## Building modules and curved walls
+
+- **Finishes are data.** Lot documents store a style and an opening per straight wall (`WallFinishes`), a finish per floor
+  tile (`FloorFinishes`) and a shape and finish per roof. Lot files saved before these existed load with defaults.
+- **Modules come from the finish.** `LotGeometry` picks each piece's pack modules (`LotPiece.Modules`). A wall turns so its
+  exterior faces away from the floored side; a wall with floor on both sides is interior plaster unless finished otherwise.
+  Outer corners get corner trims, and gable ends get gable infill in the style of the wall below.
+- **Pitched roofs** (gable, hip) span exactly two tiles, the span of the pack's roof modules, with the ridge along the
+  longer side. Flat roofs fit any rectangle.
+- **Curved walls are true arcs** (`CurvedWall`, ported from Arcade Clinic's arc wall paths): centre, radius, start and sweep
+  in fixed-point millimetres and millidegrees, from a 15° arc to a full ring. Openings sit on the arc by angle; doors keep a
+  straight leaf across the chord, and the authority refuses openings that are too wide for the curve.
+- **The mesh is generated from the arc** (`CurvedWallMesher`): faces sampled at 3° or 12 cm at most, with radial normals and
+  shared vertices, so a ring reads as one surface. Siding courses, battens, stones and window glass follow the curve.
+- **Pieces split along the arc.** Each wall is cut into pieces of at most 2.4 m of arc, each with its own box for storm
+  damage. Each opening stays whole inside one piece, and a torn-off piece flies as a curved panel.
+- **Profiles:** full (3 m), glazed (a continuous curved window band), half (1 m low wall) and counter (1.05 m with a
+  worktop on the staff side).
+  - A 270° counter is a horseshoe nurses' station whose gap is the staff entrance.
+  - A full counter ring takes a passage instead.
+- **Round rooms:** a full ring with floor inside is a room (`RoundRoomFinder`) with area π·r² and its entrances counted.
+  Furniture cannot straddle a curved wall or counter.
+- **Capture:** `PmWeather.Showcase --chase-capture --chase-scene lot-modules` (or `lot-round-room`) builds a showcase lot
+  through `BuildingEditor` and renders it. The lot holds the module house, a hip-roofed garage, the round room with its
+  nurses' station, a glazed screen and a curved low wall.
 - **Access tokens are not refreshed** by the lot client. A session longer than the token's life loses lot access until
   the player rejoins.
 - **The client polls every lot.** Fine for Phase 1. Many lots will need the list filtered by area.
