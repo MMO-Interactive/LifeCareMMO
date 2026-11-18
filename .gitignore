@@ -66,3 +66,6 @@ Directory.Build.local.props
 server-data/
 
 server-data/
+
+# Blender backup saves
+*.blend1

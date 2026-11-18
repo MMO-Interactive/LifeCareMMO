@@ -1,0 +1,7767 @@
+{
+ "pack": "lifecare-rural-town",
+ "version": 1,
+ "generator": "tools/blender/rural_modules/build_rural_pack.py",
+ "units": "meters",
+ "axes": "glTF Y-up. Blender (x, y, z) = glTF (x, z, -y). Module front/exterior faces glTF +Z.",
+ "grid": {
+  "tileMeters": 4.0,
+  "subCellMeters": 0.5,
+  "storyMeters": 3.2,
+  "floorThicknessMeters": 0.2,
+  "wallThicknessMeters": 0.2,
+  "wallTopMeters": 3.2,
+  "roofPitch": "6:12 (0.5)",
+  "eaveOverhangMeters": 0.3
+ },
+ "attach": {
+  "tile": "Origin at tile centre; y=0 is the level base (floors) or ground (terrain, roads).",
+  "edge": "Origin at the tile-edge midpoint at the level base; runs along X; exterior faces +Z.",
+  "vertex": "Origin on the grid vertex; an outer corner fills the -X/+Z quadrant.",
+  "roof": "Origin at the footprint centre at the wall top (the next level's elevation).",
+  "free": "Origin at base centre; wall-mounted items have the wall face at z=0 and project toward +Z."
+ },
+ "materials": {
+  "LC_trim_white": {
+   "baseColor": "#ECEBE4",
+   "roughness": 0.6,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_drywall": {
+   "baseColor": "#D9D3C7",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_siding_white": {
+   "baseColor": "#E4E2D6",
+   "roughness": 0.7,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_siding_natural": {
+   "baseColor": "#9C7550",
+   "roughness": 0.8,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_stucco": {
+   "baseColor": "#CDBB9B",
+   "roughness": 0.95,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_batten_green": {
+   "baseColor": "#4E6B4A",
+   "roughness": 0.75,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_batten_red": {
+   "baseColor": "#8E2A22",
+   "roughness": 0.75,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_stone": {
+   "baseColor": "#8A857C",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_mortar": {
+   "baseColor": "#5F5B55",
+   "roughness": 0.95,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_concrete": {
+   "baseColor": "#9E9C96",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_sidewalk": {
+   "baseColor": "#B9B5AC",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_wood_floor": {
+   "baseColor": "#A0703F",
+   "roughness": 0.55,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_tile_floor": {
+   "baseColor": "#DCD6C8",
+   "roughness": 0.35,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_grout": {
+   "baseColor": "#8F8A80",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_wood_deck": {
+   "baseColor": "#8B6A45",
+   "roughness": 0.8,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_wood_raw": {
+   "baseColor": "#7A5A3A",
+   "roughness": 0.85,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_wood_dark": {
+   "baseColor": "#4D3826",
+   "roughness": 0.8,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_gravel": {
+   "baseColor": "#7C776E",
+   "roughness": 1,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_dirt": {
+   "baseColor": "#6B5038",
+   "roughness": 1,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_soil": {
+   "baseColor": "#4A3626",
+   "roughness": 1,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_grass": {
+   "baseColor": "#557F34",
+   "roughness": 1,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_grass_dry": {
+   "baseColor": "#8F8B4C",
+   "roughness": 1,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_snow": {
+   "baseColor": "#F2F4F7",
+   "roughness": 0.6,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_asphalt": {
+   "baseColor": "#323335",
+   "roughness": 0.95,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_line_yellow": {
+   "baseColor": "#E2B227",
+   "roughness": 0.7,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_line_white": {
+   "baseColor": "#E8E8E2",
+   "roughness": 0.7,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_shingle": {
+   "baseColor": "#46484B",
+   "roughness": 0.95,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_metal_green": {
+   "baseColor": "#3F6047",
+   "roughness": 0.45,
+   "metallic": 0.6,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_metal_galv": {
+   "baseColor": "#A3A7AA",
+   "roughness": 0.35,
+   "metallic": 0.85,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_metal_dark": {
+   "baseColor": "#2B2D30",
+   "roughness": 0.5,
+   "metallic": 0.7,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_roof_membrane": {
+   "baseColor": "#6F7275",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_glass": {
+   "baseColor": "#8FB0C4",
+   "roughness": 0.05,
+   "metallic": 0,
+   "alpha": 0.35,
+   "emission": 0
+  },
+  "LC_screen": {
+   "baseColor": "#2A2C2E",
+   "roughness": 0.8,
+   "metallic": 0.3,
+   "alpha": 0.55,
+   "emission": 0
+  },
+  "LC_door_green": {
+   "baseColor": "#3E5A3C",
+   "roughness": 0.6,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_door_wood": {
+   "baseColor": "#6E4A2C",
+   "roughness": 0.6,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_door_red": {
+   "baseColor": "#8A2B22",
+   "roughness": 0.6,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_garage_white": {
+   "baseColor": "#E3E1DA",
+   "roughness": 0.5,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_brick": {
+   "baseColor": "#8A4A35",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_brass": {
+   "baseColor": "#B08D47",
+   "roughness": 0.35,
+   "metallic": 1,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_plastic_blue": {
+   "baseColor": "#2D5DA8",
+   "roughness": 0.5,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_propane": {
+   "baseColor": "#EEEEEA",
+   "roughness": 0.4,
+   "metallic": 0.2,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_ac_beige": {
+   "baseColor": "#CFCBBF",
+   "roughness": 0.5,
+   "metallic": 0.3,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_bark": {
+   "baseColor": "#5A4632",
+   "roughness": 1,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_leaf_green": {
+   "baseColor": "#4E7D30",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_leaf_dark": {
+   "baseColor": "#36602A",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_leaf_autumn": {
+   "baseColor": "#C4651E",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_leaf_gold": {
+   "baseColor": "#D99A2B",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_pine": {
+   "baseColor": "#2F4F2E",
+   "roughness": 0.9,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_flower_red": {
+   "baseColor": "#C4303A",
+   "roughness": 0.8,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_flower_yellow": {
+   "baseColor": "#E8C53A",
+   "roughness": 0.8,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_flower_purple": {
+   "baseColor": "#7B4FA8",
+   "roughness": 0.8,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_flower_white": {
+   "baseColor": "#F2EFE6",
+   "roughness": 0.8,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_sign_red": {
+   "baseColor": "#B3241E",
+   "roughness": 0.5,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_sign_white": {
+   "baseColor": "#F0F0EC",
+   "roughness": 0.5,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_sign_yellow": {
+   "baseColor": "#E8C21D",
+   "roughness": 0.5,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_sign_green": {
+   "baseColor": "#2D6B3F",
+   "roughness": 0.5,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_sign_black": {
+   "baseColor": "#1C1C1C",
+   "roughness": 0.5,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_lamp_glow": {
+   "baseColor": "#FFE2A8",
+   "roughness": 0.3,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 4.0
+  },
+  "LC_water": {
+   "baseColor": "#2E4A57",
+   "roughness": 0.1,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_hay": {
+   "baseColor": "#C9A64E",
+   "roughness": 1,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_insulator": {
+   "baseColor": "#5E7F74",
+   "roughness": 0.2,
+   "metallic": 0,
+   "alpha": 1,
+   "emission": 0
+  },
+  "LC_tank_white": {
+   "baseColor": "#E7E8E6",
+   "roughness": 0.45,
+   "metallic": 0.3,
+   "alpha": 1,
+   "emission": 0
+  }
+ },
+ "modules": [
+  {
+   "id": "floor_concrete",
+   "name": "Concrete Slab",
+   "category": "floors",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/floors/floor_concrete.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.2
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_concrete"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "flammable": false
+   },
+   "notes": []
+  },
+  {
+   "id": "floor_wood",
+   "name": "Wood Floor",
+   "category": "floors",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/floors/floor_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.2
+   ],
+   "triangles": 684,
+   "materials": [
+    "LC_wood_raw",
+    "LC_wood_floor"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "flammable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "floor_tile",
+   "name": "Tile Floor",
+   "category": "floors",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/floors/floor_tile.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.2
+   ],
+   "triangles": 780,
+   "materials": [
+    "LC_grout",
+    "LC_tile_floor"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "flammable": false,
+    "cleanable": true
+   },
+   "notes": [
+    "clinic"
+   ]
+  },
+  {
+   "id": "floor_raised_wood",
+   "name": "Raised Wood Floor",
+   "category": "floors",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/floors/floor_raised_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.6
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.2
+   ],
+   "triangles": 732,
+   "materials": [
+    "LC_wood_raw",
+    "LC_wood_floor",
+    "LC_concrete"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "flammable": true,
+    "raisedBaseMeters": 0.4
+   },
+   "notes": [
+    "Lift the lot base 0.4 m; piers reach 0.6 m below the level base."
+   ]
+  },
+  {
+   "id": "pad_gravel",
+   "name": "Gravel Pad",
+   "category": "floors",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/floors/pad_gravel.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.15
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.084
+   ],
+   "triangles": 812,
+   "materials": [
+    "LC_gravel"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "drivable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "pad_dirt",
+   "name": "Dirt / Packed Earth",
+   "category": "floors",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/floors/pad_dirt.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.15
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.05
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_dirt"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "drivable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "pad_grass",
+   "name": "Grass Plot",
+   "category": "floors",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/floors/pad_grass.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.15
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.05
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_grass"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "skirt_lattice",
+   "name": "Lattice Skirt",
+   "category": "floors",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/floors/skirt_lattice.glb",
+   "boundsMin": [
+    -2.018,
+    -0.138,
+    -0.6
+   ],
+   "boundsMax": [
+    2.018,
+    -0.07,
+    0.0
+   ],
+   "triangles": 348,
+   "materials": [
+    "LC_trim_white",
+    "LC_soil"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Hangs below a raised floor's outside edge."
+   ]
+  },
+  {
+   "id": "wall_lap_white_full",
+   "name": "Full Wall - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_full.glb",
+   "boundsMin": [
+    -2.0,
+    -0.125,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    3.2
+   ],
+   "triangles": 228,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_door_wood",
+   "name": "Wood Door - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_door_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 852,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_door_green",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "wood",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_door_halfglass",
+   "name": "Half-Window Door - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_door_halfglass.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 792,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_door_green",
+    "LC_glass",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "halfglass",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_door_screen",
+   "name": "Screen Door - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_door_screen.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 952,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_door_green",
+    "LC_brass",
+    "LC_screen"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "screen",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_door_garage",
+   "name": "Garage Door (Single) - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_door_garage.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 852,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_garage_white",
+    "LC_glass",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "garage",
+      "widthMeters": 2.7,
+      "heightMeters": 2.4,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_door_barn",
+   "name": "Barn Door (Sliding) - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_door_barn.glb",
+   "boundsMin": [
+    -2.0,
+    -0.205,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 792,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_door_red",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "barn",
+      "widthMeters": 3.0,
+      "heightMeters": 2.6,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_win_small",
+   "name": "Small Window - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_win_small.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 840,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.6,
+      "heightMeters": 0.6,
+      "sillMeters": 1.4,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_win_large",
+   "name": "Large Window - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_win_large.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 828,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 1.2,
+      "heightMeters": 1.4,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_win_shutter",
+   "name": "Shutter Window - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_win_shutter.glb",
+   "boundsMin": [
+    -2.0,
+    -0.173,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 1368,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_glass",
+    "LC_door_green"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_win_corner",
+   "name": "Corner Window - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_win_corner.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 816,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 1.25
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_win_wide",
+   "name": "Wide Window - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_win_wide.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 840,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 2.4,
+      "heightMeters": 1.2,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_white"
+   ]
+  },
+  {
+   "id": "wall_lap_white_half",
+   "name": "Half Wall - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_white_half.glb",
+   "boundsMin": [
+    -2.0,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.13,
+    1.25
+   ],
+   "triangles": 108,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_white",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "heightMeters": 1.0
+   },
+   "notes": []
+  },
+  {
+   "id": "corner_lap_white_outer",
+   "name": "Outer Corner - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_lap_white_outer.glb",
+   "boundsMin": [
+    -0.13,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    0.02,
+    0.02,
+    3.2
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "corner_lap_white_inner",
+   "name": "Inner Corner - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_lap_white_inner.glb",
+   "boundsMin": [
+    -0.16,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    0.1,
+    0.1,
+    3.2
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_trim_white",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "gable_infill_lap_white",
+   "name": "Gable Infill (2 tiles) - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    2,
+    0
+   ],
+   "file": "glb/walls/gable_infill_lap_white.glb",
+   "boundsMin": [
+    -4.0,
+    -0.166,
+    0.0
+   ],
+   "boundsMax": [
+    4.0,
+    0.1,
+    2.02
+   ],
+   "triangles": 224,
+   "materials": [
+    "LC_siding_white",
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_metal_dark"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Sits at roof level under a 2-tile-span gable end."
+   ]
+  },
+  {
+   "id": "shed_infill_lap_white",
+   "name": "Shed Infill - Wood Siding (Painted)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/shed_infill_lap_white.glb",
+   "boundsMin": [
+    -2.0,
+    -0.112,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    1.02
+   ],
+   "triangles": 84,
+   "materials": [
+    "LC_siding_white",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Fills the side triangle under a 1x1 shed roof; low end at local -X."
+   ]
+  },
+  {
+   "id": "wall_lap_natural_full",
+   "name": "Full Wall - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_full.glb",
+   "boundsMin": [
+    -2.0,
+    -0.125,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    3.2
+   ],
+   "triangles": 228,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_door_wood",
+   "name": "Wood Door - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_door_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 852,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "wood",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_door_halfglass",
+   "name": "Half-Window Door - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_door_halfglass.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 792,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_glass",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "halfglass",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_door_screen",
+   "name": "Screen Door - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_door_screen.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 952,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass",
+    "LC_screen"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "screen",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_door_garage",
+   "name": "Garage Door (Single) - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_door_garage.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 852,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_garage_white",
+    "LC_glass",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "garage",
+      "widthMeters": 2.7,
+      "heightMeters": 2.4,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_door_barn",
+   "name": "Barn Door (Sliding) - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_door_barn.glb",
+   "boundsMin": [
+    -2.0,
+    -0.205,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 792,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_door_red",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "barn",
+      "widthMeters": 3.0,
+      "heightMeters": 2.6,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_win_small",
+   "name": "Small Window - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_win_small.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 840,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.6,
+      "heightMeters": 0.6,
+      "sillMeters": 1.4,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_win_large",
+   "name": "Large Window - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_win_large.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 828,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 1.2,
+      "heightMeters": 1.4,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_win_shutter",
+   "name": "Shutter Window - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_win_shutter.glb",
+   "boundsMin": [
+    -2.0,
+    -0.173,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 1368,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_win_corner",
+   "name": "Corner Window - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_win_corner.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 816,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 1.25
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_win_wide",
+   "name": "Wide Window - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_win_wide.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 840,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 2.4,
+      "heightMeters": 1.2,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "lap_natural"
+   ]
+  },
+  {
+   "id": "wall_lap_natural_half",
+   "name": "Half Wall - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_lap_natural_half.glb",
+   "boundsMin": [
+    -2.0,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.13,
+    1.25
+   ],
+   "triangles": 108,
+   "materials": [
+    "LC_drywall",
+    "LC_siding_natural",
+    "LC_wood_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "heightMeters": 1.0
+   },
+   "notes": []
+  },
+  {
+   "id": "corner_lap_natural_outer",
+   "name": "Outer Corner - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_lap_natural_outer.glb",
+   "boundsMin": [
+    -0.13,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    0.02,
+    0.02,
+    3.2
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_wood_dark"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "corner_lap_natural_inner",
+   "name": "Inner Corner - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_lap_natural_inner.glb",
+   "boundsMin": [
+    -0.16,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    0.1,
+    0.1,
+    3.2
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_wood_dark",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "gable_infill_lap_natural",
+   "name": "Gable Infill (2 tiles) - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    2,
+    0
+   ],
+   "file": "glb/walls/gable_infill_lap_natural.glb",
+   "boundsMin": [
+    -4.0,
+    -0.166,
+    0.0
+   ],
+   "boundsMax": [
+    4.0,
+    0.1,
+    2.02
+   ],
+   "triangles": 224,
+   "materials": [
+    "LC_siding_natural",
+    "LC_drywall",
+    "LC_wood_dark",
+    "LC_metal_dark"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Sits at roof level under a 2-tile-span gable end."
+   ]
+  },
+  {
+   "id": "shed_infill_lap_natural",
+   "name": "Shed Infill - Wood Siding (Natural)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/shed_infill_lap_natural.glb",
+   "boundsMin": [
+    -2.0,
+    -0.112,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    1.02
+   ],
+   "triangles": 84,
+   "materials": [
+    "LC_siding_natural",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Fills the side triangle under a 1x1 shed roof; low end at local -X."
+   ]
+  },
+  {
+   "id": "wall_stucco_full",
+   "name": "Full Wall - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_full.glb",
+   "boundsMin": [
+    -2.0,
+    -0.125,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    3.2
+   ],
+   "triangles": 60,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_door_wood",
+   "name": "Wood Door - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_door_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 468,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "wood",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_door_halfglass",
+   "name": "Half-Window Door - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_door_halfglass.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 408,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_glass",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "halfglass",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_door_screen",
+   "name": "Screen Door - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_door_screen.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 568,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass",
+    "LC_screen"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "screen",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_door_garage",
+   "name": "Garage Door (Single) - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_door_garage.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 492,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_garage_white",
+    "LC_glass",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "garage",
+      "widthMeters": 2.7,
+      "heightMeters": 2.4,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_door_barn",
+   "name": "Barn Door (Sliding) - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_door_barn.glb",
+   "boundsMin": [
+    -2.0,
+    -0.205,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 444,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_door_red",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "barn",
+      "widthMeters": 3.0,
+      "heightMeters": 2.6,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_win_small",
+   "name": "Small Window - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_win_small.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 384,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.6,
+      "heightMeters": 0.6,
+      "sillMeters": 1.4,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_win_large",
+   "name": "Large Window - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_win_large.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 408,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 1.2,
+      "heightMeters": 1.4,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_win_shutter",
+   "name": "Shutter Window - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_win_shutter.glb",
+   "boundsMin": [
+    -2.0,
+    -0.173,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 948,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass",
+    "LC_door_green"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_win_corner",
+   "name": "Corner Window - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_win_corner.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 396,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 1.25
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_win_wide",
+   "name": "Wide Window - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_win_wide.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 408,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 2.4,
+      "heightMeters": 1.2,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stucco"
+   ]
+  },
+  {
+   "id": "wall_stucco_half",
+   "name": "Half Wall - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stucco_half.glb",
+   "boundsMin": [
+    -2.0,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.13,
+    1.25
+   ],
+   "triangles": 60,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 60,
+    "flammable": false,
+    "windRatingMph": 110,
+    "heightMeters": 1.0
+   },
+   "notes": []
+  },
+  {
+   "id": "corner_stucco_outer",
+   "name": "Outer Corner - Stucco",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_stucco_outer.glb",
+   "boundsMin": [
+    -0.13,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    0.02,
+    0.02,
+    3.2
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_stucco"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "corner_stucco_inner",
+   "name": "Inner Corner - Stucco",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_stucco_inner.glb",
+   "boundsMin": [
+    -0.16,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    0.1,
+    0.1,
+    3.2
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_stucco",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "gable_infill_stucco",
+   "name": "Gable Infill (2 tiles) - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    2,
+    0
+   ],
+   "file": "glb/walls/gable_infill_stucco.glb",
+   "boundsMin": [
+    -4.0,
+    -0.166,
+    0.0
+   ],
+   "boundsMax": [
+    4.0,
+    0.1,
+    2.02
+   ],
+   "triangles": 200,
+   "materials": [
+    "LC_stucco",
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_metal_dark"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Sits at roof level under a 2-tile-span gable end."
+   ]
+  },
+  {
+   "id": "shed_infill_stucco",
+   "name": "Shed Infill - Stucco",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/shed_infill_stucco.glb",
+   "boundsMin": [
+    -2.0,
+    -0.1,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    1.02
+   ],
+   "triangles": 72,
+   "materials": [
+    "LC_stucco",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Fills the side triangle under a 1x1 shed roof; low end at local -X."
+   ]
+  },
+  {
+   "id": "wall_batten_green_full",
+   "name": "Full Wall - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_full.glb",
+   "boundsMin": [
+    -2.0,
+    -0.125,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    3.2
+   ],
+   "triangles": 180,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_door_wood",
+   "name": "Wood Door - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_door_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 588,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "wood",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_door_halfglass",
+   "name": "Half-Window Door - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_door_halfglass.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 528,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_glass",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "halfglass",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_door_screen",
+   "name": "Screen Door - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_door_screen.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 688,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass",
+    "LC_screen"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "screen",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_door_garage",
+   "name": "Garage Door (Single) - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_door_garage.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 612,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_garage_white",
+    "LC_glass",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "garage",
+      "widthMeters": 2.7,
+      "heightMeters": 2.4,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_door_barn",
+   "name": "Barn Door (Sliding) - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_door_barn.glb",
+   "boundsMin": [
+    -2.0,
+    -0.205,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 564,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_door_red",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "barn",
+      "widthMeters": 3.0,
+      "heightMeters": 2.6,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_win_small",
+   "name": "Small Window - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_win_small.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 528,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.6,
+      "heightMeters": 0.6,
+      "sillMeters": 1.4,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_win_large",
+   "name": "Large Window - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_win_large.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 600,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 1.2,
+      "heightMeters": 1.4,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_win_shutter",
+   "name": "Shutter Window - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_win_shutter.glb",
+   "boundsMin": [
+    -2.0,
+    -0.173,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 1092,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_win_corner",
+   "name": "Corner Window - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_win_corner.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 540,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 1.25
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_win_wide",
+   "name": "Wide Window - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_win_wide.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 600,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 2.4,
+      "heightMeters": 1.2,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_green"
+   ]
+  },
+  {
+   "id": "wall_batten_green_half",
+   "name": "Half Wall - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_green_half.glb",
+   "boundsMin": [
+    -2.0,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.13,
+    1.25
+   ],
+   "triangles": 180,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_green",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "heightMeters": 1.0
+   },
+   "notes": []
+  },
+  {
+   "id": "corner_batten_green_outer",
+   "name": "Outer Corner - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_batten_green_outer.glb",
+   "boundsMin": [
+    -0.13,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    0.02,
+    0.02,
+    3.2
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "corner_batten_green_inner",
+   "name": "Inner Corner - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_batten_green_inner.glb",
+   "boundsMin": [
+    -0.16,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    0.1,
+    0.1,
+    3.2
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_trim_white",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "gable_infill_batten_green",
+   "name": "Gable Infill (2 tiles) - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    2,
+    0
+   ],
+   "file": "glb/walls/gable_infill_batten_green.glb",
+   "boundsMin": [
+    -4.0,
+    -0.166,
+    0.0
+   ],
+   "boundsMax": [
+    4.0,
+    0.1,
+    2.02
+   ],
+   "triangles": 1064,
+   "materials": [
+    "LC_batten_green",
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_metal_dark"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Sits at roof level under a 2-tile-span gable end."
+   ]
+  },
+  {
+   "id": "shed_infill_batten_green",
+   "name": "Shed Infill - Board & Batten (Green)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/shed_infill_batten_green.glb",
+   "boundsMin": [
+    -2.0,
+    -0.12,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    1.02
+   ],
+   "triangles": 264,
+   "materials": [
+    "LC_batten_green",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Fills the side triangle under a 1x1 shed roof; low end at local -X."
+   ]
+  },
+  {
+   "id": "wall_batten_red_full",
+   "name": "Full Wall - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_full.glb",
+   "boundsMin": [
+    -2.0,
+    -0.125,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    3.2
+   ],
+   "triangles": 180,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_door_wood",
+   "name": "Wood Door - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_door_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 588,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "wood",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_door_halfglass",
+   "name": "Half-Window Door - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_door_halfglass.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 528,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_glass",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "halfglass",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_door_screen",
+   "name": "Screen Door - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_door_screen.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 688,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass",
+    "LC_screen"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "screen",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_door_garage",
+   "name": "Garage Door (Single) - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_door_garage.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 612,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_garage_white",
+    "LC_glass",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "garage",
+      "widthMeters": 2.7,
+      "heightMeters": 2.4,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_door_barn",
+   "name": "Barn Door (Sliding) - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_door_barn.glb",
+   "boundsMin": [
+    -2.0,
+    -0.205,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 564,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_door_red",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "barn",
+      "widthMeters": 3.0,
+      "heightMeters": 2.6,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_win_small",
+   "name": "Small Window - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_win_small.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 528,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.6,
+      "heightMeters": 0.6,
+      "sillMeters": 1.4,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_win_large",
+   "name": "Large Window - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_win_large.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 600,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 1.2,
+      "heightMeters": 1.4,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_win_shutter",
+   "name": "Shutter Window - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_win_shutter.glb",
+   "boundsMin": [
+    -2.0,
+    -0.173,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 1092,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_win_corner",
+   "name": "Corner Window - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_win_corner.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 540,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 1.25
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_win_wide",
+   "name": "Wide Window - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_win_wide.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 600,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 2.4,
+      "heightMeters": 1.2,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "batten_red"
+   ]
+  },
+  {
+   "id": "wall_batten_red_half",
+   "name": "Half Wall - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_batten_red_half.glb",
+   "boundsMin": [
+    -2.0,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.13,
+    1.25
+   ],
+   "triangles": 180,
+   "materials": [
+    "LC_drywall",
+    "LC_batten_red",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 20,
+    "flammable": true,
+    "windRatingMph": 110,
+    "heightMeters": 1.0
+   },
+   "notes": []
+  },
+  {
+   "id": "corner_batten_red_outer",
+   "name": "Outer Corner - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_batten_red_outer.glb",
+   "boundsMin": [
+    -0.13,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    0.02,
+    0.02,
+    3.2
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "corner_batten_red_inner",
+   "name": "Inner Corner - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_batten_red_inner.glb",
+   "boundsMin": [
+    -0.16,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    0.1,
+    0.1,
+    3.2
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_trim_white",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "gable_infill_batten_red",
+   "name": "Gable Infill (2 tiles) - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    2,
+    0
+   ],
+   "file": "glb/walls/gable_infill_batten_red.glb",
+   "boundsMin": [
+    -4.0,
+    -0.166,
+    0.0
+   ],
+   "boundsMax": [
+    4.0,
+    0.1,
+    2.02
+   ],
+   "triangles": 1064,
+   "materials": [
+    "LC_batten_red",
+    "LC_drywall",
+    "LC_trim_white",
+    "LC_metal_dark"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Sits at roof level under a 2-tile-span gable end."
+   ]
+  },
+  {
+   "id": "shed_infill_batten_red",
+   "name": "Shed Infill - Board & Batten (Barn Red)",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/shed_infill_batten_red.glb",
+   "boundsMin": [
+    -2.0,
+    -0.12,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    1.02
+   ],
+   "triangles": 264,
+   "materials": [
+    "LC_batten_red",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Fills the side triangle under a 1x1 shed roof; low end at local -X."
+   ]
+  },
+  {
+   "id": "wall_stone_full",
+   "name": "Full Wall - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_full.glb",
+   "boundsMin": [
+    -2.0,
+    -0.125,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    3.2
+   ],
+   "triangles": 1428,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_door_wood",
+   "name": "Wood Door - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_door_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 1836,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "wood",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_door_halfglass",
+   "name": "Half-Window Door - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_door_halfglass.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 1776,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_glass",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "halfglass",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_door_screen",
+   "name": "Screen Door - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_door_screen.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 1936,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_door_wood",
+    "LC_brass",
+    "LC_screen"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "screen",
+      "widthMeters": 0.9,
+      "heightMeters": 2.1,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": false
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_door_garage",
+   "name": "Garage Door (Single) - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_door_garage.glb",
+   "boundsMin": [
+    -2.0,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 1380,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_garage_white",
+    "LC_glass",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "garage",
+      "widthMeters": 2.7,
+      "heightMeters": 2.4,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_door_barn",
+   "name": "Barn Door (Sliding) - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_door_barn.glb",
+   "boundsMin": [
+    -2.0,
+    -0.205,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.118,
+    3.2
+   ],
+   "triangles": 1188,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_door_red",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "barn",
+      "widthMeters": 3.0,
+      "heightMeters": 2.6,
+      "offsetMeters": 0.0,
+      "passable": true,
+      "vehicle": true
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_win_small",
+   "name": "Small Window - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_win_small.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 1980,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.6,
+      "heightMeters": 0.6,
+      "sillMeters": 1.4,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_win_large",
+   "name": "Large Window - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_win_large.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 1764,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 1.2,
+      "heightMeters": 1.4,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_win_shutter",
+   "name": "Shutter Window - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_win_shutter.glb",
+   "boundsMin": [
+    -2.0,
+    -0.173,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 2436,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass",
+    "LC_door_green"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_win_corner",
+   "name": "Corner Window - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_win_corner.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 1908,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 0.9,
+      "heightMeters": 1.3,
+      "sillMeters": 0.9,
+      "offsetMeters": 1.25
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_win_wide",
+   "name": "Wide Window - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_win_wide.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.145,
+    3.2
+   ],
+   "triangles": 1752,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white",
+    "LC_glass"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "openings": [
+     {
+      "type": "window",
+      "widthMeters": 2.4,
+      "heightMeters": 1.2,
+      "sillMeters": 0.9,
+      "offsetMeters": 0.0
+     }
+    ],
+    "exterior": true
+   },
+   "notes": [
+    "stone"
+   ]
+  },
+  {
+   "id": "wall_stone_half",
+   "name": "Half Wall - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/wall_stone_half.glb",
+   "boundsMin": [
+    -2.0,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.13,
+    1.25
+   ],
+   "triangles": 480,
+   "materials": [
+    "LC_drywall",
+    "LC_mortar",
+    "LC_stone",
+    "LC_concrete",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "fireRatingMinutes": 120,
+    "flammable": false,
+    "windRatingMph": 110,
+    "heightMeters": 1.0
+   },
+   "notes": []
+  },
+  {
+   "id": "corner_stone_outer",
+   "name": "Outer Corner - Stone",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_stone_outer.glb",
+   "boundsMin": [
+    -0.13,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    0.02,
+    0.02,
+    3.2
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_stone"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "corner_stone_inner",
+   "name": "Inner Corner - Stone",
+   "category": "walls",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/walls/corner_stone_inner.glb",
+   "boundsMin": [
+    -0.16,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    0.1,
+    0.1,
+    3.2
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_stone",
+    "LC_drywall"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "gable_infill_stone",
+   "name": "Gable Infill (2 tiles) - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    2,
+    0
+   ],
+   "file": "glb/walls/gable_infill_stone.glb",
+   "boundsMin": [
+    -4.0,
+    -0.166,
+    0.0
+   ],
+   "boundsMax": [
+    4.0,
+    0.1,
+    2.02
+   ],
+   "triangles": 968,
+   "materials": [
+    "LC_stone",
+    "LC_drywall",
+    "LC_mortar",
+    "LC_trim_white",
+    "LC_metal_dark"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Sits at roof level under a 2-tile-span gable end."
+   ]
+  },
+  {
+   "id": "shed_infill_stone",
+   "name": "Shed Infill - Stone",
+   "category": "walls",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/walls/shed_infill_stone.glb",
+   "boundsMin": [
+    -2.0,
+    -0.118,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.1,
+    1.02
+   ],
+   "triangles": 276,
+   "materials": [
+    "LC_stone",
+    "LC_drywall",
+    "LC_mortar"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Fills the side triangle under a 1x1 shed roof; low end at local -X."
+   ]
+  },
+  {
+   "id": "roof_gable_mid_shingle",
+   "name": "Gable Roof, Middle - Asphalt Shingle",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_gable_mid_shingle.glb",
+   "boundsMin": [
+    -2.0,
+    -4.335,
+    -0.23
+   ],
+   "boundsMax": [
+    2.0,
+    4.335,
+    2.245
+   ],
+   "triangles": 396,
+   "materials": [
+    "LC_shingle",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "shingle",
+    "flammable": true
+   },
+   "notes": [
+    "Ridge along local X; spans 2 tiles (8 m) in local Y."
+   ]
+  },
+  {
+   "id": "roof_gable_end_shingle",
+   "name": "Gable Roof, End - Asphalt Shingle",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_gable_end_shingle.glb",
+   "boundsMin": [
+    -2.3,
+    -4.363,
+    -0.23
+   ],
+   "boundsMax": [
+    2.0,
+    4.363,
+    2.245
+   ],
+   "triangles": 420,
+   "materials": [
+    "LC_shingle",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "shingle",
+    "flammable": true
+   },
+   "notes": [
+    "Rake overhang at local -X; pair with gable_infill_*."
+   ]
+  },
+  {
+   "id": "roof_hip_end_shingle",
+   "name": "Hip Roof, End - Asphalt Shingle",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_hip_end_shingle.glb",
+   "boundsMin": [
+    -2.395,
+    -4.395,
+    -0.23
+   ],
+   "boundsMax": [
+    2.095,
+    4.395,
+    2.238
+   ],
+   "triangles": 564,
+   "materials": [
+    "LC_shingle",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "shingle",
+    "flammable": true
+   },
+   "notes": [
+    "Hip at local -X; continue with roof_gable_mid_*."
+   ]
+  },
+  {
+   "id": "roof_hip_2x2_shingle",
+   "name": "Hip Roof, 2x2 - Asphalt Shingle",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    2,
+    2
+   ],
+   "file": "glb/roofs/roof_hip_2x2_shingle.glb",
+   "boundsMin": [
+    -4.395,
+    -4.395,
+    -0.23
+   ],
+   "boundsMax": [
+    4.395,
+    4.395,
+    2.238
+   ],
+   "triangles": 800,
+   "materials": [
+    "LC_shingle",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "shingle",
+    "flammable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "roof_shed_1x1_shingle",
+   "name": "Shed Roof (Small) - Asphalt Shingle",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roofs/roof_shed_1x1_shingle.glb",
+   "boundsMin": [
+    -2.3,
+    -2.335,
+    -0.155
+   ],
+   "boundsMax": [
+    2.3,
+    2.335,
+    1.291
+   ],
+   "triangles": 240,
+   "materials": [
+    "LC_shingle",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "shingle",
+    "flammable": true
+   },
+   "notes": [
+    "High side at local +Y."
+   ]
+  },
+  {
+   "id": "roof_shed_2x1_shingle",
+   "name": "Shed Roof (Large) - Asphalt Shingle",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_shed_2x1_shingle.glb",
+   "boundsMin": [
+    -2.3,
+    -4.335,
+    -0.155
+   ],
+   "boundsMax": [
+    2.3,
+    4.335,
+    2.291
+   ],
+   "triangles": 396,
+   "materials": [
+    "LC_shingle",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "shingle",
+    "flammable": true
+   },
+   "notes": [
+    "High side at local +Y."
+   ]
+  },
+  {
+   "id": "roof_gable_mid_metal_green",
+   "name": "Gable Roof, Middle - Metal (Green)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_gable_mid_metal_green.glb",
+   "boundsMin": [
+    -2.0,
+    -4.335,
+    -0.23
+   ],
+   "boundsMax": [
+    2.0,
+    4.335,
+    2.245
+   ],
+   "triangles": 372,
+   "materials": [
+    "LC_metal_green",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_green",
+    "flammable": false
+   },
+   "notes": [
+    "Ridge along local X; spans 2 tiles (8 m) in local Y."
+   ]
+  },
+  {
+   "id": "roof_gable_end_metal_green",
+   "name": "Gable Roof, End - Metal (Green)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_gable_end_metal_green.glb",
+   "boundsMin": [
+    -2.3,
+    -4.363,
+    -0.23
+   ],
+   "boundsMax": [
+    2.0,
+    4.363,
+    2.245
+   ],
+   "triangles": 420,
+   "materials": [
+    "LC_metal_green",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_green",
+    "flammable": false
+   },
+   "notes": [
+    "Rake overhang at local -X; pair with gable_infill_*."
+   ]
+  },
+  {
+   "id": "roof_hip_end_metal_green",
+   "name": "Hip Roof, End - Metal (Green)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_hip_end_metal_green.glb",
+   "boundsMin": [
+    -2.395,
+    -4.395,
+    -0.23
+   ],
+   "boundsMax": [
+    2.095,
+    4.395,
+    2.238
+   ],
+   "triangles": 732,
+   "materials": [
+    "LC_metal_green",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_green",
+    "flammable": false
+   },
+   "notes": [
+    "Hip at local -X; continue with roof_gable_mid_*."
+   ]
+  },
+  {
+   "id": "roof_hip_2x2_metal_green",
+   "name": "Hip Roof, 2x2 - Metal (Green)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    2,
+    2
+   ],
+   "file": "glb/roofs/roof_hip_2x2_metal_green.glb",
+   "boundsMin": [
+    -4.395,
+    -4.395,
+    -0.23
+   ],
+   "boundsMax": [
+    4.395,
+    4.395,
+    2.238
+   ],
+   "triangles": 1424,
+   "materials": [
+    "LC_metal_green",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_green",
+    "flammable": false
+   },
+   "notes": []
+  },
+  {
+   "id": "roof_shed_1x1_metal_green",
+   "name": "Shed Roof (Small) - Metal (Green)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roofs/roof_shed_1x1_metal_green.glb",
+   "boundsMin": [
+    -2.3,
+    -2.335,
+    -0.155
+   ],
+   "boundsMax": [
+    2.3,
+    2.335,
+    1.304
+   ],
+   "triangles": 240,
+   "materials": [
+    "LC_metal_green",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_green",
+    "flammable": false
+   },
+   "notes": [
+    "High side at local +Y."
+   ]
+  },
+  {
+   "id": "roof_shed_2x1_metal_green",
+   "name": "Shed Roof (Large) - Metal (Green)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_shed_2x1_metal_green.glb",
+   "boundsMin": [
+    -2.3,
+    -4.335,
+    -0.155
+   ],
+   "boundsMax": [
+    2.3,
+    4.335,
+    2.304
+   ],
+   "triangles": 240,
+   "materials": [
+    "LC_metal_green",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_green",
+    "flammable": false
+   },
+   "notes": [
+    "High side at local +Y."
+   ]
+  },
+  {
+   "id": "roof_gable_mid_metal_galv",
+   "name": "Gable Roof, Middle - Metal (Galvanized)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_gable_mid_metal_galv.glb",
+   "boundsMin": [
+    -2.0,
+    -4.335,
+    -0.23
+   ],
+   "boundsMax": [
+    2.0,
+    4.335,
+    2.245
+   ],
+   "triangles": 372,
+   "materials": [
+    "LC_metal_galv",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_galv",
+    "flammable": false
+   },
+   "notes": [
+    "Ridge along local X; spans 2 tiles (8 m) in local Y."
+   ]
+  },
+  {
+   "id": "roof_gable_end_metal_galv",
+   "name": "Gable Roof, End - Metal (Galvanized)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_gable_end_metal_galv.glb",
+   "boundsMin": [
+    -2.3,
+    -4.363,
+    -0.23
+   ],
+   "boundsMax": [
+    2.0,
+    4.363,
+    2.245
+   ],
+   "triangles": 420,
+   "materials": [
+    "LC_metal_galv",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_galv",
+    "flammable": false
+   },
+   "notes": [
+    "Rake overhang at local -X; pair with gable_infill_*."
+   ]
+  },
+  {
+   "id": "roof_hip_end_metal_galv",
+   "name": "Hip Roof, End - Metal (Galvanized)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_hip_end_metal_galv.glb",
+   "boundsMin": [
+    -2.395,
+    -4.395,
+    -0.23
+   ],
+   "boundsMax": [
+    2.095,
+    4.395,
+    2.238
+   ],
+   "triangles": 732,
+   "materials": [
+    "LC_metal_galv",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_galv",
+    "flammable": false
+   },
+   "notes": [
+    "Hip at local -X; continue with roof_gable_mid_*."
+   ]
+  },
+  {
+   "id": "roof_hip_2x2_metal_galv",
+   "name": "Hip Roof, 2x2 - Metal (Galvanized)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    2,
+    2
+   ],
+   "file": "glb/roofs/roof_hip_2x2_metal_galv.glb",
+   "boundsMin": [
+    -4.395,
+    -4.395,
+    -0.23
+   ],
+   "boundsMax": [
+    4.395,
+    4.395,
+    2.238
+   ],
+   "triangles": 1424,
+   "materials": [
+    "LC_metal_galv",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_galv",
+    "flammable": false
+   },
+   "notes": []
+  },
+  {
+   "id": "roof_shed_1x1_metal_galv",
+   "name": "Shed Roof (Small) - Metal (Galvanized)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roofs/roof_shed_1x1_metal_galv.glb",
+   "boundsMin": [
+    -2.3,
+    -2.335,
+    -0.155
+   ],
+   "boundsMax": [
+    2.3,
+    2.335,
+    1.304
+   ],
+   "triangles": 240,
+   "materials": [
+    "LC_metal_galv",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_galv",
+    "flammable": false
+   },
+   "notes": [
+    "High side at local +Y."
+   ]
+  },
+  {
+   "id": "roof_shed_2x1_metal_galv",
+   "name": "Shed Roof (Large) - Metal (Galvanized)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    2
+   ],
+   "file": "glb/roofs/roof_shed_2x1_metal_galv.glb",
+   "boundsMin": [
+    -2.3,
+    -4.335,
+    -0.155
+   ],
+   "boundsMax": [
+    2.3,
+    4.335,
+    2.304
+   ],
+   "triangles": 240,
+   "materials": [
+    "LC_metal_galv",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "windRatingMph": 90,
+    "roofFinish": "metal_galv",
+    "flammable": false
+   },
+   "notes": [
+    "High side at local +Y."
+   ]
+  },
+  {
+   "id": "roof_flat_1x1",
+   "name": "Flat Roof (Utility)",
+   "category": "roofs",
+   "attach": "roof",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roofs/roof_flat_1x1.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.262
+   ],
+   "triangles": 48,
+   "materials": [
+    "LC_roof_membrane"
+   ],
+   "gameplay": {
+    "windRatingMph": 90
+   },
+   "notes": []
+  },
+  {
+   "id": "roof_flat_edge",
+   "name": "Flat Roof Parapet Edge",
+   "category": "roofs",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/roofs/roof_flat_edge.glb",
+   "boundsMin": [
+    -2.0,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.13,
+    0.5
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_stucco",
+    "LC_metal_galv"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "chimney",
+   "name": "Chimney",
+   "category": "roof_details",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/roof_details/chimney.glb",
+   "boundsMin": [
+    -0.42,
+    -0.42,
+    0.0
+   ],
+   "boundsMax": [
+    0.42,
+    0.42,
+    2.57
+   ],
+   "triangles": 96,
+   "materials": [
+    "LC_brick",
+    "LC_mortar",
+    "LC_concrete",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "fireSource": true
+   },
+   "notes": []
+  },
+  {
+   "id": "vent_pipe",
+   "name": "Vent Pipe",
+   "category": "roof_details",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/roof_details/vent_pipe.glb",
+   "boundsMin": [
+    -0.15,
+    -0.15,
+    0.0
+   ],
+   "boundsMax": [
+    0.15,
+    0.15,
+    0.66
+   ],
+   "triangles": 84,
+   "materials": [
+    "LC_metal_dark",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "plumbing": true
+   },
+   "notes": []
+  },
+  {
+   "id": "roof_vent",
+   "name": "Roof Vent",
+   "category": "roof_details",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/roof_details/roof_vent.glb",
+   "boundsMin": [
+    -0.3,
+    -0.3,
+    0.0
+   ],
+   "boundsMax": [
+    0.3,
+    0.3,
+    0.3
+   ],
+   "triangles": 36,
+   "materials": [
+    "LC_metal_dark"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "wind_vent",
+   "name": "Wind Vent (Turbine)",
+   "category": "roof_details",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/roof_details/wind_vent.glb",
+   "boundsMin": [
+    -0.25,
+    -0.25,
+    0.0
+   ],
+   "boundsMax": [
+    0.25,
+    0.25,
+    0.685
+   ],
+   "triangles": 320,
+   "materials": [
+    "LC_metal_galv"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "tv_antenna",
+   "name": "TV Antenna",
+   "category": "roof_details",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/roof_details/tv_antenna.glb",
+   "boundsMin": [
+    -0.7,
+    -0.4,
+    0.0
+   ],
+   "boundsMax": [
+    0.7,
+    0.5,
+    3.0
+   ],
+   "triangles": 184,
+   "materials": [
+    "LC_metal_dark",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "lightningRisk": true
+   },
+   "notes": []
+  },
+  {
+   "id": "gutter",
+   "name": "Gutter",
+   "category": "roof_details",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/roof_details/gutter.glb",
+   "boundsMin": [
+    -2.0,
+    -0.45,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    -0.31,
+    -0.17
+   ],
+   "triangles": 36,
+   "materials": [
+    "LC_metal_galv"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Hangs on the eave of a 6:12 roof; origin at the wall edge, wall top."
+   ]
+  },
+  {
+   "id": "porch_small_shingle",
+   "name": "Porch (Small) - Asphalt Shingle",
+   "category": "exterior",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/exterior/porch_small_shingle.glb",
+   "boundsMin": [
+    -2.15,
+    -2.285,
+    0.0
+   ],
+   "boundsMax": [
+    2.15,
+    1.9,
+    3.092
+   ],
+   "triangles": 1536,
+   "materials": [
+    "LC_wood_raw",
+    "LC_wood_deck",
+    "LC_trim_white",
+    "LC_shingle"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": [
+    "Back edge (local +Y) meets the house wall."
+   ]
+  },
+  {
+   "id": "porch_large_shingle",
+   "name": "Porch (Large) - Asphalt Shingle",
+   "category": "exterior",
+   "attach": "tile",
+   "footprintTiles": [
+    2,
+    1
+   ],
+   "file": "glb/exterior/porch_large_shingle.glb",
+   "boundsMin": [
+    -4.15,
+    -2.285,
+    0.0
+   ],
+   "boundsMax": [
+    4.15,
+    1.9,
+    3.092
+   ],
+   "triangles": 2316,
+   "materials": [
+    "LC_wood_raw",
+    "LC_wood_deck",
+    "LC_trim_white",
+    "LC_shingle"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "porch_small_metal_green",
+   "name": "Porch (Small) - Metal (Green)",
+   "category": "exterior",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/exterior/porch_small_metal_green.glb",
+   "boundsMin": [
+    -2.15,
+    -2.285,
+    0.0
+   ],
+   "boundsMax": [
+    2.15,
+    1.9,
+    3.122
+   ],
+   "triangles": 1548,
+   "materials": [
+    "LC_wood_raw",
+    "LC_wood_deck",
+    "LC_trim_white",
+    "LC_metal_green"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": [
+    "Back edge (local +Y) meets the house wall."
+   ]
+  },
+  {
+   "id": "porch_large_metal_green",
+   "name": "Porch (Large) - Metal (Green)",
+   "category": "exterior",
+   "attach": "tile",
+   "footprintTiles": [
+    2,
+    1
+   ],
+   "file": "glb/exterior/porch_large_metal_green.glb",
+   "boundsMin": [
+    -4.15,
+    -2.285,
+    0.0
+   ],
+   "boundsMax": [
+    4.15,
+    1.9,
+    3.122
+   ],
+   "triangles": 2496,
+   "materials": [
+    "LC_wood_raw",
+    "LC_wood_deck",
+    "LC_trim_white",
+    "LC_metal_green"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "porch_small_metal_galv",
+   "name": "Porch (Small) - Metal (Galvanized)",
+   "category": "exterior",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/exterior/porch_small_metal_galv.glb",
+   "boundsMin": [
+    -2.15,
+    -2.285,
+    0.0
+   ],
+   "boundsMax": [
+    2.15,
+    1.9,
+    3.122
+   ],
+   "triangles": 1548,
+   "materials": [
+    "LC_wood_raw",
+    "LC_wood_deck",
+    "LC_trim_white",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": [
+    "Back edge (local +Y) meets the house wall."
+   ]
+  },
+  {
+   "id": "porch_large_metal_galv",
+   "name": "Porch (Large) - Metal (Galvanized)",
+   "category": "exterior",
+   "attach": "tile",
+   "footprintTiles": [
+    2,
+    1
+   ],
+   "file": "glb/exterior/porch_large_metal_galv.glb",
+   "boundsMin": [
+    -4.15,
+    -2.285,
+    0.0
+   ],
+   "boundsMax": [
+    4.15,
+    1.9,
+    3.122
+   ],
+   "triangles": 2496,
+   "materials": [
+    "LC_wood_raw",
+    "LC_wood_deck",
+    "LC_trim_white",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "steps_1",
+   "name": "Steps (1 rise)",
+   "category": "exterior",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/exterior/steps_1.glb",
+   "boundsMin": [
+    -0.7,
+    -0.32,
+    0.0
+   ],
+   "boundsMax": [
+    0.7,
+    0.0,
+    0.205
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_wood_deck"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "riseMeters": 0.2
+   },
+   "notes": []
+  },
+  {
+   "id": "steps_3",
+   "name": "Steps (3 rises)",
+   "category": "exterior",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/exterior/steps_3.glb",
+   "boundsMin": [
+    -0.7,
+    -0.92,
+    0.0
+   ],
+   "boundsMax": [
+    0.7,
+    0.0,
+    0.605
+   ],
+   "triangles": 72,
+   "materials": [
+    "LC_wood_deck"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "riseMeters": 0.6
+   },
+   "notes": []
+  },
+  {
+   "id": "ramp_2x1",
+   "name": "Ramp (1:12)",
+   "category": "exterior",
+   "attach": "tile",
+   "footprintTiles": [
+    2,
+    1
+   ],
+   "file": "glb/exterior/ramp_2x1.glb",
+   "boundsMin": [
+    -4.0,
+    -0.67,
+    -0.22
+   ],
+   "boundsMax": [
+    4.0,
+    0.67,
+    1.55
+   ],
+   "triangles": 288,
+   "materials": [
+    "LC_concrete",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "accessible": true,
+    "riseMeters": 0.6
+   },
+   "notes": [
+    "Rises toward local +X."
+   ]
+  },
+  {
+   "id": "awning",
+   "name": "Awning",
+   "category": "exterior",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/exterior/awning.glb",
+   "boundsMin": [
+    -0.9,
+    -1.02,
+    2.186
+   ],
+   "boundsMax": [
+    0.9,
+    0.004,
+    2.75
+   ],
+   "triangles": 48,
+   "materials": [
+    "LC_metal_green",
+    "LC_metal_dark"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "post_wood",
+   "name": "Post",
+   "category": "exterior",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/exterior/post_wood.glb",
+   "boundsMin": [
+    -0.12,
+    -0.12,
+    0.0
+   ],
+   "boundsMax": [
+    0.12,
+    0.12,
+    3.0
+   ],
+   "triangles": 36,
+   "materials": [
+    "LC_metal_dark",
+    "LC_wood_raw"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "support_column",
+   "name": "Support Column",
+   "category": "exterior",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/exterior/support_column.glb",
+   "boundsMin": [
+    -0.16,
+    -0.16,
+    0.0
+   ],
+   "boundsMax": [
+    0.16,
+    0.16,
+    2.8
+   ],
+   "triangles": 84,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "exterior_light",
+   "name": "Exterior Light",
+   "category": "exterior",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/exterior/exterior_light.glb",
+   "boundsMin": [
+    -0.13,
+    -0.325,
+    1.9
+   ],
+   "boundsMax": [
+    0.13,
+    0.0,
+    2.25
+   ],
+   "triangles": 114,
+   "materials": [
+    "LC_metal_dark",
+    "LC_lamp_glow"
+   ],
+   "gameplay": {
+    "power": true,
+    "lightSource": true
+   },
+   "notes": []
+  },
+  {
+   "id": "downspout",
+   "name": "Downspout",
+   "category": "exterior",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/exterior/downspout.glb",
+   "boundsMin": [
+    -0.15,
+    -0.7,
+    0.0
+   ],
+   "boundsMax": [
+    0.15,
+    -0.04,
+    3.0
+   ],
+   "triangles": 36,
+   "materials": [
+    "LC_metal_galv",
+    "LC_concrete"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "rain_barrel",
+   "name": "Rain Barrel",
+   "category": "exterior",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/exterior/rain_barrel.glb",
+   "boundsMin": [
+    -0.31,
+    -0.32,
+    0.0
+   ],
+   "boundsMax": [
+    0.31,
+    0.31,
+    0.94
+   ],
+   "triangles": 268,
+   "materials": [
+    "LC_plastic_blue",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "water": true
+   },
+   "notes": []
+  },
+  {
+   "id": "wall_low_railing",
+   "name": "Low Wall with Railing",
+   "category": "exterior",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/exterior/wall_low_railing.glb",
+   "boundsMin": [
+    -2.0,
+    -0.13,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.13,
+    1.325
+   ],
+   "triangles": 408,
+   "materials": [
+    "LC_drywall",
+    "LC_stucco",
+    "LC_concrete",
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "trim_wall_top",
+   "name": "Wall Trim (Top)",
+   "category": "interior",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/interior/trim_wall_top.glb",
+   "boundsMin": [
+    -2.0,
+    0.1,
+    3.08
+   ],
+   "boundsMax": [
+    2.0,
+    0.16,
+    3.2
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Interior face (local +Y)."
+   ]
+  },
+  {
+   "id": "trim_baseboard",
+   "name": "Baseboard",
+   "category": "interior",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/interior/trim_baseboard.glb",
+   "boundsMin": [
+    -2.0,
+    0.1,
+    0.2
+   ],
+   "boundsMax": [
+    2.0,
+    0.122,
+    0.32
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "trim_chair_rail",
+   "name": "Chair Rail",
+   "category": "interior",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/interior/trim_chair_rail.glb",
+   "boundsMin": [
+    -2.0,
+    0.1,
+    1.05
+   ],
+   "boundsMax": [
+    2.0,
+    0.125,
+    1.12
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "trim_corner_guard",
+   "name": "Corner Guard",
+   "category": "interior",
+   "attach": "vertex",
+   "footprintTiles": [
+    0,
+    0
+   ],
+   "file": "glb/interior/trim_corner_guard.glb",
+   "boundsMin": [
+    -0.06,
+    -0.06,
+    0.2
+   ],
+   "boundsMax": [
+    0.0,
+    0.0,
+    1.6
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "clinic": true
+   },
+   "notes": []
+  },
+  {
+   "id": "trim_window",
+   "name": "Window Trim",
+   "category": "interior",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/interior/trim_window.glb",
+   "boundsMin": [
+    -0.68,
+    0.1,
+    0.98
+   ],
+   "boundsMax": [
+    0.68,
+    0.15,
+    2.57
+   ],
+   "triangles": 60,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Matches the Large Window opening."
+   ]
+  },
+  {
+   "id": "trim_door",
+   "name": "Door Trim",
+   "category": "interior",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/interior/trim_door.glb",
+   "boundsMin": [
+    -0.545,
+    0.1,
+    0.2
+   ],
+   "boundsMax": [
+    0.545,
+    0.13,
+    2.41
+   ],
+   "triangles": 48,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Matches 0.9 x 2.1 m doors."
+   ]
+  },
+  {
+   "id": "trim_handrail",
+   "name": "Handrail",
+   "category": "interior",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/interior/trim_handrail.glb",
+   "boundsMin": [
+    -1.95,
+    0.1,
+    1.04
+   ],
+   "boundsMax": [
+    1.95,
+    0.191,
+    1.122
+   ],
+   "triangles": 108,
+   "materials": [
+    "LC_wood_floor",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "accessible": true
+   },
+   "notes": []
+  },
+  {
+   "id": "electrical_box",
+   "name": "Electrical Box",
+   "category": "utility",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/utility/electrical_box.glb",
+   "boundsMin": [
+    -0.2,
+    -0.125,
+    0.2
+   ],
+   "boundsMax": [
+    0.2,
+    0.0,
+    1.8
+   ],
+   "triangles": 52,
+   "materials": [
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "power": true,
+    "fireRisk": true
+   },
+   "notes": []
+  },
+  {
+   "id": "utility_meter",
+   "name": "Meter",
+   "category": "utility",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/utility/utility_meter.glb",
+   "boundsMin": [
+    -0.14,
+    -0.19,
+    1.35
+   ],
+   "boundsMax": [
+    0.14,
+    0.0,
+    1.8
+   ],
+   "triangles": 116,
+   "materials": [
+    "LC_metal_galv",
+    "LC_glass",
+    "LC_sign_white"
+   ],
+   "gameplay": {
+    "power": true
+   },
+   "notes": []
+  },
+  {
+   "id": "ac_unit",
+   "name": "AC Unit (Small)",
+   "category": "utility",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/utility/ac_unit.glb",
+   "boundsMin": [
+    -0.5,
+    -0.5,
+    0.0
+   ],
+   "boundsMax": [
+    0.5,
+    0.7,
+    0.82
+   ],
+   "triangles": 212,
+   "materials": [
+    "LC_concrete",
+    "LC_ac_beige",
+    "LC_metal_dark",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "power": true
+   },
+   "notes": []
+  },
+  {
+   "id": "propane_tank",
+   "name": "Propane Tank",
+   "category": "utility",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/utility/propane_tank.glb",
+   "boundsMin": [
+    -1.003,
+    -0.45,
+    0.0
+   ],
+   "boundsMax": [
+    1.003,
+    0.45,
+    1.35
+   ],
+   "triangles": 576,
+   "materials": [
+    "LC_concrete",
+    "LC_propane"
+   ],
+   "gameplay": {
+    "gas": true,
+    "explosive": true
+   },
+   "notes": []
+  },
+  {
+   "id": "water_spigot",
+   "name": "Water Spigot",
+   "category": "utility",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/utility/water_spigot.glb",
+   "boundsMin": [
+    -0.04,
+    -0.158,
+    0.44
+   ],
+   "boundsMax": [
+    0.04,
+    0.0,
+    0.53
+   ],
+   "triangles": 92,
+   "materials": [
+    "LC_brass",
+    "LC_flower_red"
+   ],
+   "gameplay": {
+    "water": true
+   },
+   "notes": []
+  },
+  {
+   "id": "fence_wood",
+   "name": "Fence (Wood)",
+   "category": "site",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/site/fence_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -0.09,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.06,
+    1.3
+   ],
+   "triangles": 72,
+   "materials": [
+    "LC_wood_raw"
+   ],
+   "gameplay": {
+    "blocksMovement": true
+   },
+   "notes": []
+  },
+  {
+   "id": "fence_picket",
+   "name": "Fence (Picket)",
+   "category": "site",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/site/fence_picket.glb",
+   "boundsMin": [
+    -2.01,
+    -0.06,
+    0.0
+   ],
+   "boundsMax": [
+    2.01,
+    0.11,
+    1.18
+   ],
+   "triangles": 460,
+   "materials": [
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "blocksMovement": true
+   },
+   "notes": []
+  },
+  {
+   "id": "fence_wire",
+   "name": "Fence (Wire)",
+   "category": "site",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/site/fence_wire.glb",
+   "boundsMin": [
+    -2.0,
+    -0.06,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.06,
+    1.25
+   ],
+   "triangles": 84,
+   "materials": [
+    "LC_wood_raw",
+    "LC_metal_dark",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "blocksMovement": true
+   },
+   "notes": []
+  },
+  {
+   "id": "gate_wood",
+   "name": "Gate (Wood)",
+   "category": "site",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/site/gate_wood.glb",
+   "boundsMin": [
+    -2.0,
+    -0.08,
+    0.0
+   ],
+   "boundsMax": [
+    2.0,
+    0.08,
+    1.4
+   ],
+   "triangles": 96,
+   "materials": [
+    "LC_wood_raw"
+   ],
+   "gameplay": {
+    "openable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "gate_wire",
+   "name": "Gate (Wire)",
+   "category": "site",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/site/gate_wire.glb",
+   "boundsMin": [
+    -1.99,
+    -0.07,
+    0.0
+   ],
+   "boundsMax": [
+    1.99,
+    0.07,
+    1.3
+   ],
+   "triangles": 200,
+   "materials": [
+    "LC_wood_raw",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "openable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "mailbox",
+   "name": "Mailbox",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/mailbox.glb",
+   "boundsMin": [
+    -0.11,
+    -0.3,
+    0.0
+   ],
+   "boundsMax": [
+    0.13,
+    0.2,
+    1.35
+   ],
+   "triangles": 104,
+   "materials": [
+    "LC_wood_raw",
+    "LC_metal_dark",
+    "LC_sign_red"
+   ],
+   "gameplay": {
+    "interactive": true
+   },
+   "notes": []
+  },
+  {
+   "id": "planter_box",
+   "name": "Planter Box",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/planter_box.glb",
+   "boundsMin": [
+    -0.6,
+    -0.25,
+    0.0
+   ],
+   "boundsMax": [
+    0.6,
+    0.25,
+    0.707
+   ],
+   "triangles": 428,
+   "materials": [
+    "LC_wood_raw",
+    "LC_soil",
+    "LC_leaf_green",
+    "LC_flower_yellow",
+    "LC_flower_purple",
+    "LC_flower_red"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "wood_pile",
+   "name": "Wood Pile",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/wood_pile.glb",
+   "boundsMin": [
+    -0.587,
+    -0.527,
+    -0.009
+   ],
+   "boundsMax": [
+    0.583,
+    0.529,
+    0.731
+   ],
+   "triangles": 392,
+   "materials": [
+    "LC_bark"
+   ],
+   "gameplay": {
+    "flammable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "trash_can",
+   "name": "Trash Can",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/trash_can.glb",
+   "boundsMin": [
+    -0.31,
+    -0.31,
+    0.0
+   ],
+   "boundsMax": [
+    0.31,
+    0.31,
+    0.9
+   ],
+   "triangles": 252,
+   "materials": [
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "interactive": true
+   },
+   "notes": []
+  },
+  {
+   "id": "bench",
+   "name": "Bench",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/bench.glb",
+   "boundsMin": [
+    -0.8,
+    -0.22,
+    0.0
+   ],
+   "boundsMax": [
+    0.8,
+    0.24,
+    0.9
+   ],
+   "triangles": 132,
+   "materials": [
+    "LC_wood_deck",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "seat": true
+   },
+   "notes": []
+  },
+  {
+   "id": "well",
+   "name": "Well",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/well.glb",
+   "boundsMin": [
+    -1.1,
+    -0.9,
+    0.0
+   ],
+   "boundsMax": [
+    1.1,
+    0.9,
+    2.55
+   ],
+   "triangles": 300,
+   "materials": [
+    "LC_stone",
+    "LC_water",
+    "LC_wood_raw",
+    "LC_shingle"
+   ],
+   "gameplay": {
+    "water": true
+   },
+   "notes": []
+  },
+  {
+   "id": "hitching_post",
+   "name": "Hitching Post",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/hitching_post.glb",
+   "boundsMin": [
+    -1.1,
+    -0.06,
+    0.0
+   ],
+   "boundsMax": [
+    1.1,
+    0.06,
+    1.15
+   ],
+   "triangles": 52,
+   "materials": [
+    "LC_wood_raw"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "hay_bale",
+   "name": "Hay Bale",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/hay_bale.glb",
+   "boundsMin": [
+    -0.75,
+    -0.6,
+    -0.0
+   ],
+   "boundsMax": [
+    0.75,
+    0.6,
+    1.5
+   ],
+   "triangles": 60,
+   "materials": [
+    "LC_hay"
+   ],
+   "gameplay": {
+    "flammable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "sign_clinic",
+   "name": "Clinic Sign",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/sign_clinic.glb",
+   "boundsMin": [
+    -0.98,
+    -0.05,
+    0.0
+   ],
+   "boundsMax": [
+    0.98,
+    0.05,
+    2.0
+   ],
+   "triangles": 84,
+   "materials": [
+    "LC_trim_white",
+    "LC_sign_white",
+    "LC_sign_red"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "sign_facade",
+   "name": "Facade Sign Board",
+   "category": "site",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/site/sign_facade.glb",
+   "boundsMin": [
+    -1.6,
+    -0.06,
+    0.0
+   ],
+   "boundsMax": [
+    1.6,
+    0.0,
+    0.6
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_trim_white",
+    "LC_batten_green"
+   ],
+   "gameplay": {},
+   "notes": [
+    "Blank board for store names."
+   ]
+  },
+  {
+   "id": "utility_pole",
+   "name": "Utility Pole",
+   "category": "street",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/street/utility_pole.glb",
+   "boundsMin": [
+    -1.2,
+    -0.143,
+    -1.0
+   ],
+   "boundsMax": [
+    1.2,
+    0.63,
+    10.2
+   ],
+   "triangles": 188,
+   "materials": [
+    "LC_wood_dark",
+    "LC_insulator",
+    "LC_metal_galv"
+   ],
+   "gameplay": {
+    "power": true,
+    "collisionHazard": true
+   },
+   "notes": [
+    "Base sits 1 m below grade."
+   ]
+  },
+  {
+   "id": "street_light",
+   "name": "Street Light",
+   "category": "street",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/street/street_light.glb",
+   "boundsMin": [
+    -0.18,
+    -2.3,
+    -1.0
+   ],
+   "boundsMax": [
+    0.18,
+    0.133,
+    8.0
+   ],
+   "triangles": 72,
+   "materials": [
+    "LC_wood_dark",
+    "LC_metal_galv",
+    "LC_lamp_glow"
+   ],
+   "gameplay": {
+    "power": true,
+    "lightSource": true
+   },
+   "notes": [
+    "Lamp arm reaches toward local -Y (the road)."
+   ]
+  },
+  {
+   "id": "sign_street",
+   "name": "Street Sign",
+   "category": "street",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/street/sign_street.glb",
+   "boundsMin": [
+    -0.45,
+    -0.45,
+    0.0
+   ],
+   "boundsMax": [
+    0.45,
+    0.45,
+    2.91
+   ],
+   "triangles": 36,
+   "materials": [
+    "LC_metal_galv",
+    "LC_sign_green"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "sign_stop",
+   "name": "Stop Sign",
+   "category": "street",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/street/sign_stop.glb",
+   "boundsMin": [
+    -0.351,
+    -0.046,
+    0.0
+   ],
+   "boundsMax": [
+    0.351,
+    0.03,
+    2.451
+   ],
+   "triangles": 68,
+   "materials": [
+    "LC_metal_galv",
+    "LC_sign_white",
+    "LC_sign_red"
+   ],
+   "gameplay": {
+    "traffic": "stop"
+   },
+   "notes": []
+  },
+  {
+   "id": "sign_speed",
+   "name": "Speed Sign",
+   "category": "street",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/street/sign_speed.glb",
+   "boundsMin": [
+    -0.3,
+    -0.046,
+    0.0
+   ],
+   "boundsMax": [
+    0.3,
+    0.03,
+    2.35
+   ],
+   "triangles": 72,
+   "materials": [
+    "LC_metal_galv",
+    "LC_sign_white",
+    "LC_sign_black"
+   ],
+   "gameplay": {
+    "traffic": "speedLimit",
+    "speedMph": 25
+   },
+   "notes": []
+  },
+  {
+   "id": "sign_crossing",
+   "name": "Crosswalk Sign",
+   "category": "street",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/street/sign_crossing.glb",
+   "boundsMin": [
+    -0.45,
+    -0.046,
+    0.0
+   ],
+   "boundsMax": [
+    0.45,
+    0.03,
+    2.55
+   ],
+   "triangles": 36,
+   "materials": [
+    "LC_metal_galv",
+    "LC_sign_black",
+    "LC_sign_yellow"
+   ],
+   "gameplay": {
+    "traffic": "crossing"
+   },
+   "notes": []
+  },
+  {
+   "id": "fire_hydrant",
+   "name": "Fire Hydrant",
+   "category": "street",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/street/fire_hydrant.glb",
+   "boundsMin": [
+    -0.22,
+    -0.2,
+    0.0
+   ],
+   "boundsMax": [
+    0.22,
+    0.166,
+    0.78
+   ],
+   "triangles": 364,
+   "materials": [
+    "LC_sign_red"
+   ],
+   "gameplay": {
+    "water": true,
+    "fireService": true
+   },
+   "notes": []
+  },
+  {
+   "id": "water_tower",
+   "name": "Water Tower",
+   "category": "street",
+   "attach": "tile",
+   "footprintTiles": [
+    2,
+    2
+   ],
+   "file": "glb/street/water_tower.glb",
+   "boundsMin": [
+    -4.0,
+    -4.0,
+    -0.2
+   ],
+   "boundsMax": [
+    4.0,
+    4.0,
+    20.7
+   ],
+   "triangles": 2282,
+   "materials": [
+    "LC_metal_galv",
+    "LC_concrete",
+    "LC_tank_white"
+   ],
+   "gameplay": {
+    "water": true,
+    "landmark": true
+   },
+   "notes": []
+  },
+  {
+   "id": "tree_green",
+   "name": "Green Tree",
+   "category": "nature",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/nature/tree_green.glb",
+   "boundsMin": [
+    -2.656,
+    -2.76,
+    0.0
+   ],
+   "boundsMax": [
+    2.868,
+    2.745,
+    6.9
+   ],
+   "triangles": 728,
+   "materials": [
+    "LC_bark",
+    "LC_leaf_green",
+    "LC_leaf_dark"
+   ],
+   "gameplay": {
+    "collision": true
+   },
+   "notes": [
+    "season:summer"
+   ]
+  },
+  {
+   "id": "tree_autumn",
+   "name": "Autumn Tree",
+   "category": "nature",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/nature/tree_autumn.glb",
+   "boundsMin": [
+    -2.644,
+    -2.57,
+    0.0
+   ],
+   "boundsMax": [
+    2.697,
+    2.64,
+    6.9
+   ],
+   "triangles": 728,
+   "materials": [
+    "LC_bark",
+    "LC_leaf_autumn",
+    "LC_leaf_gold"
+   ],
+   "gameplay": {
+    "collision": true
+   },
+   "notes": [
+    "season:autumn"
+   ]
+  },
+  {
+   "id": "tree_bare",
+   "name": "Bare Tree",
+   "category": "nature",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/nature/tree_bare.glb",
+   "boundsMin": [
+    -0.207,
+    -0.42,
+    0.0
+   ],
+   "boundsMax": [
+    1.399,
+    1.394,
+    6.85
+   ],
+   "triangles": 512,
+   "materials": [
+    "LC_bark"
+   ],
+   "gameplay": {
+    "collision": true
+   },
+   "notes": [
+    "season:winter"
+   ]
+  },
+  {
+   "id": "tree_pine",
+   "name": "Pine Tree",
+   "category": "nature",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/nature/tree_pine.glb",
+   "boundsMin": [
+    -2.3,
+    -2.187,
+    0.0
+   ],
+   "boundsMax": [
+    2.3,
+    2.187,
+    9.8
+   ],
+   "triangles": 118,
+   "materials": [
+    "LC_bark",
+    "LC_pine"
+   ],
+   "gameplay": {
+    "collision": true
+   },
+   "notes": []
+  },
+  {
+   "id": "tree_pine_snowy",
+   "name": "Snowy Pine Tree",
+   "category": "nature",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/nature/tree_pine_snowy.glb",
+   "boundsMin": [
+    -2.323,
+    -2.209,
+    0.0
+   ],
+   "boundsMax": [
+    2.323,
+    2.209,
+    9.82
+   ],
+   "triangles": 388,
+   "materials": [
+    "LC_bark",
+    "LC_pine",
+    "LC_snow"
+   ],
+   "gameplay": {
+    "collision": true
+   },
+   "notes": [
+    "season:winter"
+   ]
+  },
+  {
+   "id": "bush",
+   "name": "Bush",
+   "category": "nature",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/nature/bush.glb",
+   "boundsMin": [
+    -0.731,
+    -0.689,
+    -0.003
+   ],
+   "boundsMax": [
+    0.511,
+    0.915,
+    1.01
+   ],
+   "triangles": 360,
+   "materials": [
+    "LC_leaf_green",
+    "LC_leaf_dark"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "hedge",
+   "name": "Hedge",
+   "category": "nature",
+   "attach": "edge",
+   "footprintTiles": [
+    1,
+    0
+   ],
+   "file": "glb/nature/hedge.glb",
+   "boundsMin": [
+    -2.143,
+    -0.44,
+    0.0
+   ],
+   "boundsMax": [
+    2.164,
+    0.457,
+    1.186
+   ],
+   "triangles": 588,
+   "materials": [
+    "LC_leaf_dark"
+   ],
+   "gameplay": {
+    "blocksMovement": true
+   },
+   "notes": []
+  },
+  {
+   "id": "flower_cluster",
+   "name": "Flower Cluster",
+   "category": "nature",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/nature/flower_cluster.glb",
+   "boundsMin": [
+    -0.428,
+    -0.407,
+    -0.052
+   ],
+   "boundsMax": [
+    0.428,
+    0.407,
+    0.429
+   ],
+   "triangles": 584,
+   "materials": [
+    "LC_leaf_green",
+    "LC_flower_white"
+   ],
+   "gameplay": {},
+   "notes": []
+  },
+  {
+   "id": "terrain_grass",
+   "name": "Grass",
+   "category": "terrain",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/terrain/terrain_grass.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.0
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_grass"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "terrain_grass_dry",
+   "name": "Dry Grass",
+   "category": "terrain",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/terrain/terrain_grass_dry.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.0
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_grass_dry"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": [
+    "season:late-summer"
+   ]
+  },
+  {
+   "id": "terrain_dirt",
+   "name": "Dirt",
+   "category": "terrain",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/terrain/terrain_dirt.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.0
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_dirt"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "terrain_gravel",
+   "name": "Gravel",
+   "category": "terrain",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/terrain/terrain_gravel.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.0
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_gravel"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "drivable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "terrain_snow",
+   "name": "Snow",
+   "category": "terrain",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/terrain/terrain_snow.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.0
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_snow"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "slippery": true
+   },
+   "notes": [
+    "season:winter"
+   ]
+  },
+  {
+   "id": "terrain_field_crops",
+   "name": "Field (Crops)",
+   "category": "terrain",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/terrain/terrain_field_crops.glb",
+   "boundsMin": [
+    -2.044,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.421
+   ],
+   "triangles": 3852,
+   "materials": [
+    "LC_dirt",
+    "LC_leaf_green"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "terrain_field_plowed",
+   "name": "Field (Plowed)",
+   "category": "terrain",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/terrain/terrain_field_plowed.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.08
+   ],
+   "triangles": 108,
+   "materials": [
+    "LC_dirt"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "road_lane",
+   "name": "Road Lane (Straight)",
+   "category": "roads",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roads/road_lane.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.004
+   ],
+   "triangles": 36,
+   "materials": [
+    "LC_asphalt",
+    "LC_line_yellow",
+    "LC_line_white"
+   ],
+   "gameplay": {
+    "utilities": [
+     "power",
+     "fiber",
+     "gas",
+     "water",
+     "storm_drain",
+     "sanitary_sewer"
+    ],
+    "drivable": true
+   },
+   "notes": [
+    "Double yellow at local +Y edge: pair with a 180-degree copy."
+   ]
+  },
+  {
+   "id": "road_plain",
+   "name": "Road (Plain / Intersection)",
+   "category": "roads",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roads/road_plain.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.0
+   ],
+   "triangles": 12,
+   "materials": [
+    "LC_asphalt"
+   ],
+   "gameplay": {
+    "utilities": [
+     "power",
+     "fiber",
+     "gas",
+     "water",
+     "storm_drain",
+     "sanitary_sewer"
+    ],
+    "drivable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "road_lane_stopbar",
+   "name": "Road Lane (Stop Bar)",
+   "category": "roads",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roads/road_lane_stopbar.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.004
+   ],
+   "triangles": 48,
+   "materials": [
+    "LC_asphalt",
+    "LC_line_yellow",
+    "LC_line_white"
+   ],
+   "gameplay": {
+    "utilities": [
+     "power",
+     "fiber",
+     "gas",
+     "water",
+     "storm_drain",
+     "sanitary_sewer"
+    ],
+    "drivable": true,
+    "traffic": "stop"
+   },
+   "notes": [
+    "Stop bar at local +X end."
+   ]
+  },
+  {
+   "id": "road_crosswalk",
+   "name": "Crosswalk",
+   "category": "roads",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roads/road_crosswalk.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.004
+   ],
+   "triangles": 48,
+   "materials": [
+    "LC_asphalt",
+    "LC_line_white"
+   ],
+   "gameplay": {
+    "utilities": [
+     "power",
+     "fiber",
+     "gas",
+     "water",
+     "storm_drain",
+     "sanitary_sewer"
+    ],
+    "drivable": true,
+    "pedestrian": true
+   },
+   "notes": []
+  },
+  {
+   "id": "road_dirt",
+   "name": "Dirt Farm Road",
+   "category": "roads",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roads/road_dirt.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.03
+   ],
+   "triangles": 84,
+   "materials": [
+    "LC_dirt",
+    "LC_grass_dry",
+    "LC_grass"
+   ],
+   "gameplay": {
+    "drivable": true
+   },
+   "notes": []
+  },
+  {
+   "id": "road_shoulder_gravel",
+   "name": "Gravel Shoulder",
+   "category": "roads",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roads/road_shoulder_gravel.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.4
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.1
+   ],
+   "triangles": 24,
+   "materials": [
+    "LC_gravel",
+    "LC_grass"
+   ],
+   "gameplay": {
+    "drivable": true
+   },
+   "notes": [
+    "Road edge at local -Y."
+   ]
+  },
+  {
+   "id": "sidewalk",
+   "name": "Sidewalk (Curb, Grass Strip, Walk)",
+   "category": "roads",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roads/sidewalk.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.15
+   ],
+   "triangles": 72,
+   "materials": [
+    "LC_concrete",
+    "LC_grass",
+    "LC_gravel",
+    "LC_sidewalk"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "utilities": [
+     "power",
+     "fiber"
+    ]
+   },
+   "notes": [
+    "Curb at local -Y; 2 m utility strip + 2 m walk."
+   ]
+  },
+  {
+   "id": "sidewalk_corner",
+   "name": "Sidewalk Corner",
+   "category": "roads",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roads/sidewalk_corner.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.3
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.15
+   ],
+   "triangles": 144,
+   "materials": [
+    "LC_concrete",
+    "LC_gravel",
+    "LC_sidewalk"
+   ],
+   "gameplay": {
+    "walkable": true
+   },
+   "notes": [
+    "Curbs at local -X and -Y."
+   ]
+  },
+  {
+   "id": "sidewalk_driveway",
+   "name": "Sidewalk with Driveway Apron",
+   "category": "roads",
+   "attach": "tile",
+   "footprintTiles": [
+    1,
+    1
+   ],
+   "file": "glb/roads/sidewalk_driveway.glb",
+   "boundsMin": [
+    -2.0,
+    -2.0,
+    -0.37
+   ],
+   "boundsMax": [
+    2.0,
+    2.0,
+    0.15
+   ],
+   "triangles": 120,
+   "materials": [
+    "LC_concrete",
+    "LC_grass",
+    "LC_gravel",
+    "LC_sidewalk"
+   ],
+   "gameplay": {
+    "walkable": true,
+    "drivable": true
+   },
+   "notes": []
+  }
+ ]
+}
