@@ -7,10 +7,11 @@ public sealed record LotDocument(LotDeed Lot, long Revision, FloorCell[] Floors,
     public CurvedWall[] CurvedWalls { get; init; } = [];
     public WallFinish[] WallFinishes { get; init; } = [];
     public FloorFinish[] FloorFinishes { get; init; } = [];
+    public string[] OpenDoors { get; init; } = [];
 
     public BuildingPlan ToPlan() => new BuildingPlan(Lot, Floors.ToHashSet(), Walls.ToHashSet(), Roofs)
     {
-        Furnishings = Furnishings, CurvedWalls = CurvedWalls ?? [], WallFinishes = WallFinishes ?? [], FloorFinishes = FloorFinishes ?? [],
+        Furnishings = Furnishings, CurvedWalls = CurvedWalls ?? [], WallFinishes = WallFinishes ?? [], FloorFinishes = FloorFinishes ?? [], OpenDoors = OpenDoors ?? [],
     };
 
     public static LotDocument From(BuildingPlan plan, long revision) =>
@@ -20,6 +21,7 @@ public sealed record LotDocument(LotDeed Lot, long Revision, FloorCell[] Floors,
             CurvedWalls = plan.CurvedWalls.OrderBy(w => w.WallId, StringComparer.Ordinal).ToArray(),
             WallFinishes = plan.WallFinishes.OrderBy(f => f.Wall.Level).ThenBy(f => f.Wall.EdgeZ).ThenBy(f => f.Wall.EdgeX).ThenBy(f => f.Wall.Axis).ToArray(),
             FloorFinishes = plan.FloorFinishes.OrderBy(f => f.Floor.Level).ThenBy(f => f.Floor.TileZ).ThenBy(f => f.Floor.TileX).ToArray(),
+            OpenDoors = plan.OpenDoors.Order(StringComparer.Ordinal).ToArray(),
         };
 }
 

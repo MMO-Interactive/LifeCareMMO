@@ -6,7 +6,13 @@ public enum LotPieceKind { Floor, Wall, Roof, Furnishing }
 /// One pack module drawn as part of a piece: offset from the piece's centre in world axes, turned by quarter turns about
 /// Y (each turn maps local +X to -Z and the module's front, +Z, to +X).
 /// </summary>
-public sealed record ModulePart(string ModuleId, float OffsetX, float OffsetY, float OffsetZ, int QuarterTurns);
+/// <remarks>Paints recolour the module's paintable faces: on a wall, its front (+Z, the outside) and back (the room side);
+/// on a floor, the walking surface.</remarks>
+/// <remarks>A clip keeps only the triangles whose centre lies in [ClipFrom, ClipTo] along the module's own X (before it turns):
+/// a door wall is split into jamb and lintel pieces that each draw their slice of the one module.</remarks>
+public sealed record ModulePart(string ModuleId, float OffsetX, float OffsetY, float OffsetZ, int QuarterTurns,
+    string? InsidePaint = null, string? OutsidePaint = null, string? FloorPaint = null,
+    float ClipFrom = float.NegativeInfinity, float ClipTo = float.PositiveInfinity);
 
 /// <summary>The arc a curved wall piece is cut from: relative radians along the wall, and the lot's base elevation.</summary>
 public sealed record CurvedPieceSource(CurvedWall Wall, double From, double To, float BaseElevation);
@@ -23,16 +29,20 @@ public sealed record LotPiece(string PieceId, string LotId, LotPieceKind Kind, f
 {
     public IReadOnlyList<ModulePart> Modules { get; init; } = [];
     public CurvedPieceSource? Curve { get; init; }
+    /// <summary>Set on a door leaf: clients animate it between closed and open; at rest and as debris it draws in its server state.</summary>
+    public DoorLeaf? Door { get; init; }
     /// <summary>Identifies the drawn shape, so equal pieces share one mesh.</summary>
-    public string? MeshKey => Curve is { } c
+    public string? MeshKey => Door is { CurvedKind: not null } d
+        ? $"leafcurve:{d.CurvedKind}:{d.CurvedColour}:{d.CurvedWidth:R}:{d.Open}:{d.PivotX:R},{d.PivotY:R},{d.PivotZ:R}:{d.ClosedYawDegrees:R}:{CenterX:R},{CenterY:R},{CenterZ:R}:{YawDegrees:R}"
+        : Curve is { } c
         ? $"curve:{c.Wall.Fingerprint}:{c.From:R}:{c.To:R}:{c.BaseElevation:R}:{CenterX:R}:{CenterY:R}:{CenterZ:R}:{YawDegrees:R}"
-        : Modules.Count == 0 ? null : string.Join('|', Modules.Select(m => $"{m.ModuleId}@{m.OffsetX:0.###},{m.OffsetY:0.###},{m.OffsetZ:0.###}q{m.QuarterTurns & 3}"));
+        : Modules.Count == 0 ? null : string.Join('|', Modules.Select(m => $"{m.ModuleId}@{m.OffsetX:0.###},{m.OffsetY:0.###},{m.OffsetZ:0.###}q{m.QuarterTurns & 3}p{m.InsidePaint},{m.OutsidePaint},{m.FloorPaint}c{m.ClipFrom:0.###},{m.ClipTo:0.###}"));
 
     /// <summary>Pieces are equal when their box, release rules and drawn shape are, so geometry compares by value across revisions.</summary>
     public bool Equals(LotPiece? other) => other is not null && PieceId == other.PieceId && LotId == other.LotId && Kind == other.Kind
         && CenterX == other.CenterX && CenterY == other.CenterY && CenterZ == other.CenterZ && SizeX == other.SizeX && SizeY == other.SizeY && SizeZ == other.SizeZ
         && YawDegrees == other.YawDegrees && ReleaseWindMph.Equals(other.ReleaseWindMph) && MassKilograms == other.MassKilograms && Material == other.Material
-        && MeshKey == other.MeshKey;
+        && MeshKey == other.MeshKey && Door == other.Door;
 
     public override int GetHashCode() => HashCode.Combine(PieceId, CenterX, CenterY, CenterZ, SizeX, SizeY, SizeZ, MeshKey);
 }
@@ -92,27 +102,113 @@ public static class LotGeometry
     {
         string id = lot.Lot.LotId; var pieces = new List<LotPiece>();
         var floors = lot.Floors.ToHashSet();
-        var floorFinish = (lot.FloorFinishes ?? []).ToDictionary(f => f.Floor, f => f.Finish);
+        var floorFinish = (lot.FloorFinishes ?? []).ToDictionary(f => f.Floor);
         var wallFinish = (lot.WallFinishes ?? []).ToDictionary(f => f.Wall);
-        foreach (var f in lot.Floors) pieces.Add(Floor(id, f, baseElevation, floorFinish.GetValueOrDefault(f, ModuleCatalog.DefaultFloorFinish)));
+        foreach (var f in lot.Floors)
+        {
+            var finish = floorFinish.GetValueOrDefault(f);
+            pieces.Add(Floor(id, f, baseElevation, finish?.Finish ?? ModuleCatalog.DefaultFloorFinish, finish?.Paint));
+        }
 
         var faces = lot.Walls.ToDictionary(w => w, w => Facing(w, floors));
         var corners = OuterCorners(lot.Walls, faces);
+        var open = (lot.OpenDoors ?? []).ToHashSet(StringComparer.Ordinal);
         foreach (var w in lot.Walls)
         {
             var face = faces[w];
             var finish = wallFinish.GetValueOrDefault(w);
             string style = StyleOf(finish, face.Interior), opening = finish?.Opening is { Length: > 0 } o ? o : ModuleCatalog.NoOpening;
+            var spec = ModuleCatalog.Opening(opening);
             var piece = Wall(id, w, baseElevation, face.Interior);
-            var parts = new List<ModulePart> { new(ModuleCatalog.WallModule(style, opening), 0, -WallCentreAboveBase, 0, face.Turns) };
-            foreach (var (vx, vz, turns) in corners.GetValueOrDefault(w, []))
-                parts.Add(new(ModuleCatalog.OuterCornerModule(style), vx * BuildGrid.TileMeters - piece.CenterX, -WallCentreAboveBase, vz * BuildGrid.TileMeters - piece.CenterZ, turns));
+            if (spec?.Partial == true)
+            {
+                // Half walls and railings: a low box you can see (and reach) over.
+                float h = spec.HeightMeters + .05f;
+                piece = piece with { CenterY = LevelElevation(baseElevation, w.Level) + FloorThickness + h / 2, SizeY = h };
+            }
+            var wallModule = new ModulePart(ModuleCatalog.WallModule(style, opening), 0, 0, 0, face.Turns, finish?.InsidePaint, finish?.OutsidePaint);
+            var cornerParts = corners.GetValueOrDefault(w, []).Select(c => (c.X, c.Z, new ModulePart(ModuleCatalog.OuterCornerModule(style), 0, 0, 0, c.Turns))).ToList();
+            if (LotDoors.IsDoor(opening) || opening == "passage")
+            {
+                pieces.AddRange(DoorWall(id, w, baseElevation, face, piece, wallModule, cornerParts, spec!, style, open));
+                continue;
+            }
+            float baseY = LevelElevation(baseElevation, w.Level);
+            var parts = new List<ModulePart> { wallModule with { OffsetY = baseY - piece.CenterY } };
+            foreach (var (vx, vz, part) in cornerParts)
+                parts.Add(part with { OffsetX = vx * BuildGrid.TileMeters - piece.CenterX, OffsetY = baseY - piece.CenterY, OffsetZ = vz * BuildGrid.TileMeters - piece.CenterZ });
             pieces.Add(piece with { Modules = parts });
         }
         foreach (var r in lot.Roofs) pieces.AddRange(RoofPieces(id, r, baseElevation, lot.Walls, wallFinish, floors));
-        foreach (var c in lot.CurvedWalls ?? []) pieces.AddRange(Curved(id, c, baseElevation));
+        foreach (var c in lot.CurvedWalls ?? []) pieces.AddRange(Curved(id, c, baseElevation, open));
         foreach (var f in lot.Furnishings) pieces.Add(Furnishing(id, f, baseElevation));
         return pieces;
+    }
+
+    /// <summary>
+    /// A wall with a door, as Tiny Clinic collides it: jambs either side and a lintel above (each drawing its slice of the
+    /// wall module), so the doorway itself is open, plus the leaves: solid while closed, swung or slid clear while open.
+    /// </summary>
+    private static IEnumerable<LotPiece> DoorWall(string lotId, WallSegment w, float baseElevation, (int Turns, bool Interior) face, LotPiece whole,
+        ModulePart wallModule, List<(int X, int Z, ModulePart Part)> corners, WallOpeningSpec spec, string style, HashSet<string> open)
+    {
+        float levelY = LevelElevation(baseElevation, w.Level), half = (BuildGrid.TileMeters + WallThickness) / 2;
+        bool alongX = w.Axis == WallAxis.AlongX;
+        var origin = new System.Numerics.Vector3(alongX ? (w.EdgeX + .5f) * BuildGrid.TileMeters : w.EdgeX * BuildGrid.TileMeters, levelY,
+            alongX ? w.EdgeZ * BuildGrid.TileMeters : (w.EdgeZ + .5f) * BuildGrid.TileMeters);
+        float x0 = spec.OffsetMeters - spec.WidthMeters / 2, x1 = spec.OffsetMeters + spec.WidthMeters / 2, top = FloorThickness + spec.HeightMeters;
+        // Wall-local box (x along the wall, y up from the level base, z across) to a world-axis box.
+        (System.Numerics.Vector3 Min, System.Numerics.Vector3 Max) World(System.Numerics.Vector3 a, System.Numerics.Vector3 b)
+        {
+            var (ax, az) = Turn(a.X, a.Z, face.Turns); var (bx, bz) = Turn(b.X, b.Z, face.Turns);
+            return (new(origin.X + MathF.Min(ax, bx), origin.Y + MathF.Min(a.Y, b.Y), origin.Z + MathF.Min(az, bz)),
+                new(origin.X + MathF.Max(ax, bx), origin.Y + MathF.Max(a.Y, b.Y), origin.Z + MathF.Max(az, bz)));
+        }
+        LotPiece Section(string suffix, float from, float to, float bottom, bool withCorners, int cornerSide)
+        {
+            var (min, max) = World(new(from, bottom, -WallThickness / 2), new(to, StoryMeters, WallThickness / 2));
+            var centre = (min + max) / 2;
+            var parts = new List<ModulePart> { wallModule with { OffsetX = origin.X - centre.X, OffsetY = origin.Y - centre.Y, OffsetZ = origin.Z - centre.Z,
+                ClipFrom = from <= -half ? float.NegativeInfinity : from, ClipTo = to >= half ? float.PositiveInfinity : to } };
+            if (withCorners)
+            {
+                var (dirX, dirZ) = Turn(1, 0, face.Turns);
+                foreach (var (vx, vz, part) in corners)
+                {
+                    float along = (vx * BuildGrid.TileMeters - origin.X) * dirX + (vz * BuildGrid.TileMeters - origin.Z) * dirZ;
+                    if (MathF.Sign(along) == cornerSide)
+                        parts.Add(part with { OffsetX = vx * BuildGrid.TileMeters - centre.X, OffsetY = origin.Y - centre.Y, OffsetZ = vz * BuildGrid.TileMeters - centre.Z });
+                }
+            }
+            return whole with { PieceId = whole.PieceId + "/" + suffix, CenterX = centre.X, CenterY = centre.Y, CenterZ = centre.Z,
+                SizeX = max.X - min.X, SizeY = max.Y - min.Y, SizeZ = max.Z - min.Z, MassKilograms = whole.MassKilograms * (to - from) / (2 * half), Modules = parts };
+        }
+        yield return Section("left", -half, x0, FloorThickness, true, -1);
+        yield return Section("right", x1, half, FloorThickness, true, 1);
+        yield return Section("top", x0, x1, top, false, 0);
+        if (!LotDoors.IsDoor(spec.Id)) yield break;
+
+        string doorId = LotDoors.StraightId(w);
+        bool isOpen = open.Contains(doorId);
+        foreach (var (leaf, index) in LotDoors.Leaves(spec.Id, style).Select((l, i) => (l, i)))
+        {
+            var pivotLocal = new System.Numerics.Vector3(leaf.PivotX, 0, leaf.PivotZ);
+            var (lo, hi) = isOpen ? (leaf.OpenMin, leaf.OpenMax) : (leaf.Min, leaf.Max);
+            var (min, max) = World(pivotLocal + lo, pivotLocal + hi);
+            var centre = (min + max) / 2;
+            var (px, pz) = Turn(leaf.PivotX, leaf.PivotZ, face.Turns);
+            var pivot = new System.Numerics.Vector3(origin.X + px, levelY, origin.Z + pz);
+            var (sx, sz) = Turn(leaf.SlideX, 0, face.Turns);
+            string module = isOpen && leaf.OpenModuleId is { } openModule ? openModule : leaf.ModuleId;
+            int turns = face.Turns + (isOpen && leaf.Motion == "swing" ? 1 : 0);
+            float slide = isOpen ? 1 : 0;
+            yield return new LotPiece($"{whole.PieceId}/leaf{index}", lotId, LotPieceKind.Wall, centre.X, centre.Y, centre.Z, max.X - min.X, max.Y - min.Y, max.Z - min.Z,
+                0, 100, spec.Vehicle ? 160 : 40, "wood")
+            {
+                Modules = [new(module, pivot.X + sx * slide - centre.X, pivot.Y - centre.Y, pivot.Z + sz * slide - centre.Z, turns)],
+                Door = new(doorId, leaf.Motion, pivot.X, pivot.Y, pivot.Z, face.Turns * 90f, sx, sz, leaf.ModuleId, leaf.OpenModuleId, isOpen),
+            };
+        }
     }
 
     private static string StyleOf(WallFinish? finish, bool interior) =>
@@ -152,11 +248,11 @@ public static class LotGeometry
         return result;
     }
 
-    public static LotPiece Floor(string lotId, FloorCell f, float baseElevation, string finish = ModuleCatalog.DefaultFloorFinish) =>
+    public static LotPiece Floor(string lotId, FloorCell f, float baseElevation, string finish = ModuleCatalog.DefaultFloorFinish, string? paint = null) =>
         new LotPiece($"lot/{lotId}/floor/{f.Level}/{f.TileX}/{f.TileZ}", lotId, LotPieceKind.Floor,
             (f.TileX + .5f) * BuildGrid.TileMeters, LevelElevation(baseElevation, f.Level) + FloorThickness / 2, (f.TileZ + .5f) * BuildGrid.TileMeters,
             BuildGrid.TileMeters, FloorThickness, BuildGrid.TileMeters, 0, f.Level == 0 ? float.PositiveInfinity : 150, 900, "floor")
-        { Modules = [new(ModuleCatalog.FloorModule(finish), 0, -FloorThickness / 2, 0, 0)] };
+        { Modules = [new(ModuleCatalog.FloorModule(finish), 0, -FloorThickness / 2, 0, 0, FloorPaint: paint ?? ModuleCatalog.DefaultFloorPaint(finish))] };
 
     /// <summary>Walls between two floored tiles brace each other and hold longer than outside walls.</summary>
     public static LotPiece Wall(string lotId, WallSegment w, float baseElevation, bool interior)
@@ -214,8 +310,8 @@ public static class LotGeometry
             {
                 // The gable end's wall triangle, finished like the wall below it.
                 var (ox, oz) = Turn(-2, 0, turns);
-                string style = GableStyle(r, first, alongX, walls, wallFinish, floors);
-                parts.Add(new(ModuleCatalog.GableInfillModule(style), ox, -PitchedRoofBoxMeters / 2, oz, (turns + 3) & 3));
+                var (style, paint) = GableStyle(r, first, alongX, walls, wallFinish, floors);
+                parts.Add(new(ModuleCatalog.GableInfillModule(style), ox, -PitchedRoofBoxMeters / 2, oz, (turns + 3) & 3, OutsidePaint: paint));
             }
             yield return new LotPiece($"lot/{lotId}/roof/{r.RoofId}/{tx}/{tz}", lotId, LotPieceKind.Roof, cx, y, cz,
                 alongX ? BuildGrid.TileMeters + WallThickness : span, PitchedRoofBoxMeters, alongX ? span : BuildGrid.TileMeters + WallThickness, 0, 90, 900, "roof")
@@ -223,39 +319,77 @@ public static class LotGeometry
         }
     }
 
-    private static string GableStyle(RoofArea r, bool first, bool alongX, IEnumerable<WallSegment> walls, IReadOnlyDictionary<WallSegment, WallFinish> wallFinish, IReadOnlySet<FloorCell> floors)
+    private static (string Style, string? Paint) GableStyle(RoofArea r, bool first, bool alongX, IEnumerable<WallSegment> walls, IReadOnlyDictionary<WallSegment, WallFinish> wallFinish, IReadOnlySet<FloorCell> floors)
     {
         var below = alongX
             ? Enumerable.Range(r.MinimumTileZ, 2).Select(z => new WallSegment(first ? r.MinimumTileX : r.MaximumTileX + 1, z, WallAxis.AlongZ, r.Level))
             : Enumerable.Range(r.MinimumTileX, 2).Select(x => new WallSegment(x, first ? r.MinimumTileZ : r.MaximumTileZ + 1, WallAxis.AlongX, r.Level));
         var built = walls.ToHashSet();
         foreach (var w in below.Where(built.Contains))
-            return StyleOf(wallFinish.GetValueOrDefault(w), Facing(w, floors).Interior);
-        return ModuleCatalog.DefaultExteriorStyle;
+            return (StyleOf(wallFinish.GetValueOrDefault(w), Facing(w, floors).Interior), wallFinish.GetValueOrDefault(w)?.OutsidePaint);
+        return (ModuleCatalog.DefaultExteriorStyle, null);
     }
 
     /// <summary>
     /// A curved wall's pieces. Each is a box around its stretch of arc (the physics shape, turned to the arc's tangent)
     /// carrying the arc itself, from which every client generates the true curved mesh.
     /// </summary>
-    public static IEnumerable<LotPiece> Curved(string lotId, CurvedWall wall, float baseElevation)
+    public static IEnumerable<LotPiece> Curved(string lotId, CurvedWall wall, float baseElevation, IReadOnlySet<string>? openDoors = null)
     {
         var segments = CurvedWalls.Segments(wall);
+        var passable = wall.HostedOpenings.Where(o => ModuleCatalog.Opening(o.Kind)?.Passable == true).Select(o => (Opening: o, Range: CurvedWalls.Range(wall, o))).ToList();
         float level = LevelElevation(baseElevation, wall.Level), height = wall.TopMeters + (wall.Profile is "half" or "counter" ? .05f : 0);
         float inner = wall.Radius - CurvedWalls.Thickness / 2 - (wall.Profile == "counter" ? .45f : 0), outer = wall.Radius + CurvedWalls.Thickness / 2 + .06f;
-        for (int i = 0; i < segments.Count; i++)
+        LotPiece Piece(string id, double from, double to, float bottom)
         {
-            var (from, to) = segments[i];
             double half = (to - from) / 2, mid = wall.StartRadians + from + half;
             float nearest = inner * (float)Math.Cos(half), depth = outer - nearest, centreRadius = (outer + nearest) / 2;
             var (cx, cz) = CurvedWalls.Point(wall, mid, centreRadius);
             float yaw = -(float)(mid * 180 / Math.PI + 90);
-            float arc = (float)((to - from) * wall.Radius);
-            yield return new LotPiece($"lot/{lotId}/curved/{wall.WallId}/{i}", lotId, LotPieceKind.Wall, cx, level + height / 2, cz,
-                2 * outer * (float)Math.Sin(half), height, depth, yaw, wall.Profile is "half" or "counter" ? 120 : 110,
-                MathF.Max(40, arc * height * 70), "wall")
+            float arc = (float)((to - from) * wall.Radius), h = height - bottom;
+            return new LotPiece(id, lotId, LotPieceKind.Wall, cx, level + bottom + h / 2, cz,
+                2 * outer * (float)Math.Sin(half), h, depth, yaw, wall.Profile is "half" or "counter" ? 120 : 110,
+                MathF.Max(40, arc * h * 70), "wall")
             { Curve = new(wall, from, to, baseElevation) };
         }
+        for (int i = 0; i < segments.Count; i++)
+        {
+            var (from, to) = segments[i];
+            string id = $"lot/{lotId}/curved/{wall.WallId}/{i}";
+            var door = passable.FirstOrDefault(p => p.Range.From >= from - 1e-9 && p.Range.To <= to + 1e-9);
+            if (door.Opening is null) { yield return Piece(id, from, to, 0); continue; }
+            // A doorway: the wall either side, the lintel above, and the opening itself clear.
+            var spec = ModuleCatalog.Opening(door.Opening.Kind)!;
+            if (door.Range.From - from > 1e-6) yield return Piece(id + "/left", from, door.Range.From, 0);
+            if (to - door.Range.To > 1e-6) yield return Piece(id + "/right", door.Range.To, to, 0);
+            yield return Piece(id + "/top", door.Range.From, door.Range.To, FloorThickness + spec.HeightMeters);
+            if (LotDoors.IsDoor(door.Opening.Kind)) yield return CurvedLeaf(id + "/leaf0", lotId, wall, door.Opening, door.Range, level, openDoors);
+        }
+    }
+
+    /// <summary>A straight leaf across the curved doorway's chord, hinged at one end and opening a quarter turn into the room.</summary>
+    private static LotPiece CurvedLeaf(string id, string lotId, CurvedWall wall, CurvedOpening opening, (double From, double To) range, float level, IReadOnlySet<string>? openDoors)
+    {
+        string doorId = LotDoors.CurvedId(wall.WallId, opening);
+        bool isOpen = openDoors?.Contains(doorId) == true;
+        double margin = .02 / wall.Radius;
+        var (ax, az) = CurvedWalls.Point(wall, wall.StartRadians + range.From + margin, wall.Radius);
+        var (bx, bz) = CurvedWalls.Point(wall, wall.StartRadians + range.To - margin, wall.Radius);
+        var hinge = new System.Numerics.Vector2(ax, az); var chord = new System.Numerics.Vector2(bx - ax, bz - az);
+        float yaw = MathF.Atan2(-chord.Y, chord.X) * 180 / MathF.PI;
+        // The leaf opens toward local -Z; make that the room side (inside the ring unless the wall faces inward).
+        var openTowards = new System.Numerics.Vector2(-MathF.Sin(yaw * MathF.PI / 180), -MathF.Cos(yaw * MathF.PI / 180));
+        var toCentre = new System.Numerics.Vector2(wall.CenterX, wall.CenterZ) - (hinge + chord / 2);
+        if ((System.Numerics.Vector2.Dot(openTowards, toCentre) > 0) != wall.ExteriorOutside) { hinge += chord; chord = -chord; yaw += 180; }
+        float width = chord.Length(), finalYaw = yaw + (isOpen ? 90 : 0), r = finalYaw * MathF.PI / 180;
+        var along = new System.Numerics.Vector2(MathF.Cos(r), -MathF.Sin(r));
+        var centre = hinge + along * (width / 2);
+        var style = ModuleCatalog.Style(wall.Style)?.Id ?? ModuleCatalog.DefaultExteriorStyle;
+        return new LotPiece(id, lotId, LotPieceKind.Wall, centre.X, level + FloorThickness + LotDoors.LeafHeight / 2, centre.Y, width, LotDoors.LeafHeight, .05f,
+            finalYaw, 100, 40, "wood")
+        {
+            Door = new(doorId, "swing", hinge.X, level, hinge.Y, yaw, 0, 0, null, null, isOpen, width, opening.Kind, LotDoors.Colour(style)),
+        };
     }
 
     public static LotPiece Furnishing(string lotId, PlacedFurnishing f, float baseElevation)
@@ -268,9 +402,11 @@ public static class LotGeometry
     }
 
     /// <summary>Ghosts for a build preview: the floor or roof rectangle, the wall run, or the curved wall itself.</summary>
-    public static IReadOnlyList<LotPiece> Ghost(string lotId, LotBuildPreview preview, float baseElevation)
+    public static IReadOnlyList<LotPiece> Ghost(string lotId, LotBuildPreview preview, float baseElevation) =>
+        preview.Edits.SelectMany(e => Ghost(lotId, e, baseElevation)).ToArray();
+
+    private static IReadOnlyList<LotPiece> Ghost(string lotId, BuildEdit e, float baseElevation)
     {
-        if (preview.Edit is not { } e) return [];
         return e.Kind switch
         {
             BuildEditKind.AddFloor or BuildEditKind.RemoveFloor => e.FloorCells().Select(c => Floor(lotId, c, baseElevation) with { SizeY = FloorThickness + .04f, Modules = [] }).ToArray(),

@@ -55,10 +55,10 @@ public sealed record RoofArea(string RoofId, int MinimumTileX, int MinimumTileZ,
 }
 
 /// <summary>A straight wall's finish and the opening its module hosts (ModuleCatalog ids). Walls without one use defaults.</summary>
-public sealed record WallFinish(WallSegment Wall, string Style, string Opening);
+public sealed record WallFinish(WallSegment Wall, string Style, string Opening, string? InsidePaint = null, string? OutsidePaint = null);
 
 /// <summary>A floor tile's finish (ModuleCatalog floor finish id).</summary>
-public sealed record FloorFinish(FloorCell Floor, string Finish);
+public sealed record FloorFinish(FloorCell Floor, string Finish, string? Paint = null);
 
 /// <summary>A deeded lot: the tile rectangle its owner may build on.</summary>
 public sealed record LotDeed(string LotId, string OwnerCharacterId, int MinimumTileX, int MinimumTileZ, int MaximumTileX, int MaximumTileZ)
@@ -75,6 +75,8 @@ public sealed record BuildingPlan(LotDeed Lot, IReadOnlySet<FloorCell> Floors, I
     public IReadOnlyList<CurvedWall> CurvedWalls { get; init; } = [];
     public IReadOnlyList<WallFinish> WallFinishes { get; init; } = [];
     public IReadOnlyList<FloorFinish> FloorFinishes { get; init; } = [];
+    /// <summary>Doors standing open (<see cref="LotDoors"/> ids). Server-held, so every player and the host agree.</summary>
+    public IReadOnlyList<string> OpenDoors { get; init; } = [];
     public static BuildingPlan Empty(LotDeed lot) => new(lot, new HashSet<FloorCell>(), new HashSet<WallSegment>(), []);
 }
 

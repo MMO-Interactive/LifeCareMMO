@@ -11,6 +11,8 @@ namespace StormChase.Server;
 /// key) and registers each piece as a PhysX destructible part, so tornadoes tear roofs and walls off player-built rooms
 /// with the same release, flight and replication as authored buildings: every player in the district sees the same debris.
 /// </summary>
+public sealed record CharacterPositionDto(float X, float Y, float Z, float? LotBase);
+
 public sealed partial class GameAuthority
 {
     private readonly ConcurrentQueue<LotDocument> lotUpdates = new();
@@ -66,6 +68,18 @@ public sealed partial class GameAuthority
             destruction.SetExternalParts("lot/" + lotId, pieces.Select(StormChaseLotParts.Destructible));
             lotRevisions[lotId] = document.Revision; RememberLotCenter(document);
             Console.WriteLine($"Lot {lotId} revision {document.Revision}: {pieces.Count} pieces in the district's physics.");
+        }
+    }
+
+    /// <summary>A connected character's feet, and the base height of the lot asked about (if this host has it).</summary>
+    public CharacterPositionDto? CharacterPosition(string characterId, string? lotId)
+    {
+        lock (gate)
+        {
+            var player = players.Values.FirstOrDefault(p => p.Character.CharacterId == characterId);
+            if (player is null) return null;
+            float? lotBase = lotId is not null && lotBases.TryGetValue(lotId, out float b) ? b : null;
+            return new(player.Feet.X, player.Feet.Y, player.Feet.Z, lotBase);
         }
     }
 

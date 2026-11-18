@@ -1,4 +1,4 @@
-﻿using LifeCare.Construction;
+using LifeCare.Construction;
 
 int failed = 0, passed = 0;
 void Check(bool ok, string name) { if (ok) passed++; else failed++; Console.WriteLine((ok ? "PASS " : "FAIL ") + name); }
@@ -159,7 +159,7 @@ Check(furnished.Furnishings.Count == 0, "The lot is empty again");
     Check(missing.Count == 0, "Every catalog module is in the pack" + (missing.Count == 0 ? "" : ": missing " + string.Join(", ", missing.Take(5))));
     var door = library.Module("wall_lap_white_door_wood")!;
     Check(door.VertexCount > 100 && door.Positions.Min(p => p.Y) >= -.001f && MathF.Abs(door.Positions.Max(p => p.Y) - 3.2f) < .01f, "A wall module stands from the level base to the 3.2 m story top");
-    Check(door.Colors.Select(c => (c.X, c.Y, c.Z)).Distinct().Count() >= 4, "Module materials become vertex colours");
+    Check(library.Module("wall_lap_white_win_shutter")!.Colors.Select(c => (c.X, c.Y, c.Z)).Distinct().Count() >= 4, "Module materials become vertex colours");
     var turned = library.Compose([new("wall_lap_white_full", 0, 0, 0, 1)])!;
     Check(turned.Positions.Max(p => p.Z) > 1.9f && turned.Positions.Max(p => MathF.Abs(p.X)) < .2f, "A quarter turn lays a wall along Z");
 }
@@ -178,7 +178,7 @@ Check(furnished.Furnishings.Count == 0, "The lot is empty again");
     var doc = LotDocument.From(p, 3);
     var geo = LotGeometry.Build(doc, 0);
     LotPiece W(string id) => geo.First(x => x.PieceId == "lot/lot-m/wall/0/" + id);
-    Check(W("x/1/1").Modules[0] is { ModuleId: "wall_stone_door_wood", QuarterTurns: 2 }, "The south wall's door module faces south (out of the room)");
+    Check(W("x/1/1/left").Modules[0] is { ModuleId: "wall_stone_door_wood", QuarterTurns: 2 }, "The south wall's door module faces south (out of the room)");
     Check(W("x/1/3").Modules[0].QuarterTurns == 0 && W("z/1/1").Modules[0].QuarterTurns == 3 && W("z/3/1").Modules[0].QuarterTurns == 1, "North, west and east walls face out of the room");
     Check(W("z/2/1").Modules[0].ModuleId == "wall_stone_full", "A finished interior wall keeps its finish");
     Check(geo.SelectMany(x => x.Modules).Count(m => m.ModuleId == "corner_stone_outer") == 4, "A rectangular building gets four outer corner trims");
@@ -253,7 +253,7 @@ Check(furnished.Furnishings.Count == 0, "The lot is empty again");
     CurvedWall C(string id, int r, int sweep, string profile = "full", CurvedOpening[]? o = null) => new(id, 0, 16_000, 16_000, r, 0, sweep, "stucco", profile, true, o);
     Check(CurvedWalls.Problem(C("a", 1_000, 360_000), deed)?.Code == "invalid_radius", "Radius below 1.5 m is refused");
     Check(CurvedWalls.Problem(C("a", 20_000, 360_000), deed)?.Code == "outside_lot", "A ring reaching off the lot is refused");
-    Check(CurvedWalls.Problem(C("a", 3_025, 360_000), deed)?.Code == "unquantized_geometry", "Curves snap to 5 cm");
+    Check(CurvedWalls.Problem(C("a", 3_025, 360_000), deed) is null, "Curves are stored to the millimetre, so they can start exactly on a corner");
     Check(CurvedWalls.Problem(C("a", 3_000, 10_000), deed)?.Code == "invalid_sweep", "Arcs sweep at least 15°");
     Check(CurvedWalls.Problem(C("a", 1_500, 360_000, o: [new("win_wide", 90_000)]), deed)?.Code == "opening_too_curved", "A wide window is refused on a tight curve");
     Check(CurvedWalls.Problem(C("a", 3_000, 360_000, o: [new("door_wood", 90_000), new("win_small", 100_000)]), deed)?.Code == "openings_overlap", "Overlapping openings are refused");
@@ -286,6 +286,161 @@ Check(furnished.Furnishings.Count == 0, "The lot is empty again");
     Check(legacyDoc.CurvedWalls.Length == 0 && legacyDoc.ToPlan().Roofs[0].Shape == "flat" && LotGeometry.Build(legacyDoc, 0).Count == 2, "A lot saved before modules and curves loads with defaults");
 }
 
+// ---- Sims-style build mode: room tool, paints, carpets, half walls and the corner-drag curve
+{
+    var authority = new InMemoryLotAuthority();
+    var session = new LotSession(authority, "owner", authority.Deed(new LotDeed("lot-s", "owner", 0, 0, 9, 9)));
+    var build = new LotBuildController(session);
+    async Task Settle() { while (session.HasPendingEdit) await session.SettleAsync(); }
+    async Task Gesture(float x0, float z0, float x1, float z1) { build.SetPointer(x0, z0); build.BeginGesture(); build.SetPointer(x1, z1); build.CompleteGesture(); await Settle(); }
+
+    // Room: one drag lays the floor and walls it in, as two edits sent in turn.
+    build.Choose(LotBuildTool.Room, s => s with { WallStyle = "stucco", FloorFinish = "carpet", FloorPaint = "carpet_blue" });
+    await Gesture(5, 5, 11, 11);   // tiles 1..2
+    var roomLot = session.Lot;
+    Check(roomLot.Floors.Length == 4 && roomLot.Walls.Length == 8 && RoomFinder.Find(roomLot.ToPlan(), 0).Count == 1, "The room tool lays a 2x2 floor and its 8 walls");
+    Check(roomLot.FloorFinishes.All(f => f is { Finish: "carpet", Paint: "carpet_blue" }) && roomLot.WallFinishes.All(f => f.Style == "stucco"), "The room uses the chosen carpet and wall style");
+    var library = ModuleMeshLibrary.Load(ModuleMeshLibrary.Locate(AppContext.BaseDirectory)!);
+    var floorPiece = LotGeometry.Build(roomLot, 0).First(p => p.Kind == LotPieceKind.Floor);
+    var carpet = library.Compose(floorPiece.Modules)!; var blue = ModuleCatalog.PaintColor("carpet_blue")!.Value;
+    Check(floorPiece.Modules[0].ModuleId == "floor_concrete" && carpet.Colors.Any(c => MathF.Abs(c.X - blue.R) < 1e-4f && MathF.Abs(c.Z - blue.B) < 1e-4f), "Carpet draws as a blue floor surface");
+
+    // Paint: clicking from inside paints the inside face only; Shift paints every wall of the room.
+    build.Choose(LotBuildTool.PaintWall, s => s with { WallPaint = "mint" });
+    await Gesture(6, 4.3f, 6, 4.3f);   // just inside the south wall (z = 4)
+    var south = session.Lot.WallFinishes.Single(f => f.Wall == new WallSegment(1, 1, WallAxis.AlongX, 0));
+    Check(south is { InsidePaint: "mint", OutsidePaint: null }, "Clicking a wall from inside the room paints its inside face");
+    build.PaintWholeRoom = true;
+    build.Choose(LotBuildTool.PaintWall, s => s with { WallPaint = "lavender" });
+    await Gesture(11.7f, 6, 11.7f, 6);   // inside, next to the east wall
+    build.PaintWholeRoom = false;
+    Check(session.Lot.WallFinishes.Count(f => f.InsidePaint == "lavender") == 8 && session.Lot.WallFinishes.All(f => f.OutsidePaint is null), "Shift paints the inside of every wall of the room");
+    await Gesture(6, 3.7f, 6, 3.7f);   // just outside the south wall, still lavender
+    Check(session.Lot.WallFinishes.Single(f => f.Wall == new WallSegment(1, 1, WallAxis.AlongX, 0)) is { InsidePaint: "lavender", OutsidePaint: "lavender" }, "Clicking from outside paints the outside face");
+    var southPiece = LotGeometry.Build(session.Lot, 0).First(p => p.PieceId == "lot/lot-s/wall/0/x/1/1");
+    var painted = library.Compose(southPiece.Modules)!; var lavender = ModuleCatalog.PaintColor("lavender")!.Value;
+    Check(painted.Colors.Count(c => MathF.Abs(c.X - lavender.R) < 1e-4f) > painted.VertexCount / 4, "The painted wall module carries the paint on its faces");
+
+    // Doors and windows go into existing walls; half walls stand without closing a room.
+    build.Choose(LotBuildTool.Fitting, s => s with { Fitting = "door_halfglass" });
+    await Gesture(6, 4.3f, 6, 4.3f);
+    Check(session.Lot.WallFinishes.Single(f => f.Wall == new WallSegment(1, 1, WallAxis.AlongX, 0)).Opening == "door_halfglass", "The fitting tool sets a door into the wall");
+    build.Choose(LotBuildTool.Wall, s => s with { WallKind = "half" });
+    await Gesture(12, 4, 12, 12);   // a half wall run beside the room
+    Check(session.Lot.WallFinishes.Count(f => f.Opening == "half") == 2, "Half walls are built from the half-wall modules");
+    var openPlan = BuildingEditor.Apply(session.Lot.ToPlan(), "owner", new(BuildEditKind.SetWallFinish, 0, Walls: [new(3, 1, WallAxis.AlongZ, 0)], Opening: "half")).Plan;
+    Check(RoomFinder.Find(openPlan, 0).Count == 0, "Turning a room's wall into a half wall opens the room");
+
+    // Curved wall: press on the corner, drag to the half point, release, carry it round, then finish.
+    build.Choose(LotBuildTool.CurvedWall, s => s with { CurvedProfile = "counter" });
+    build.SetPointer(20.2f, 20.3f); build.BeginGesture();          // snaps to the corner (20, 20)
+    build.SetPointer(26, 20);
+    Check(build.Preview.Edit?.Curve is { SweepMilliDegrees: 180_000 } half && MathF.Abs(half.Radius - 3) < 1e-3f && MathF.Abs(half.CenterX - 23) < 1e-3f,
+        "Dragging from the corner previews a half circle through the half point");
+    build.CompleteGesture();
+    Check(build.CurveExtending && !session.HasPendingEdit, "Releasing locks the half circle and waits for the sweep");
+    build.SetPointer(23, 17.5f);                                     // a quarter further round
+    var arc = build.Preview.Edit!.Curve!;
+    Check(arc.SweepMilliDegrees == 270_000, "Moving round from the half point carries the curve to 270°");
+    var (sx, sz) = CurvedWalls.Point(arc, arc.StartRadians, arc.Radius); var (ex, ez) = CurvedWalls.Point(arc, arc.StartRadians + arc.SweepRadians, arc.Radius);
+    Check(new[] { (sx, sz), (ex, ez) }.Any(p => MathF.Abs(p.Item1 - 20) < .01f && MathF.Abs(p.Item2 - 20) < .01f), "The curve still starts exactly on the corner");
+    build.BeginGesture(); build.CompleteGesture(); await Settle();
+    Check(session.Lot.CurvedWalls.Single() is { Profile: "counter", SweepMilliDegrees: 270_000 }, "A click finishes a 270° nurses' station counter");
+    build.SetPointer(30, 20); build.BeginGesture(); build.SetPointer(30, 28); build.CompleteGesture();
+    Check(build.FinishCurve(true), "F closes the curve into a full circle");
+    await Settle();
+    Check(session.Lot.CurvedWalls.Any(c => c.IsFullCircle && MathF.Abs(c.Radius - 4) < 1e-3f), "The full circle has the dragged diameter");
+    build.SetPointer(10, 30); build.BeginGesture(); build.SetPointer(10, 31); build.CompleteGesture();
+    Check(!build.CurveExtending && build.Status.Contains("3 m"), "A curve shorter than the minimum diameter is refused with the reason");
+}
+
+// ---- doors: server-held state, a clear doorway, and leaves that swing, lift or slide out of the way
+{
+    var deed = new LotDeed("lot-d", "owner", 0, 0, 9, 9);
+    var p = Must(BuildingEditor.Apply(BuildingPlan.Empty(deed), "owner", new(BuildEditKind.AddFloor, 0, 1, 1, 2, 2)), "Floor for the door tests");
+    var box = new List<WallSegment>();
+    for (int i = 1; i <= 2; i++) { box.Add(new(i, 1, WallAxis.AlongX, 0)); box.Add(new(i, 3, WallAxis.AlongX, 0)); box.Add(new(1, i, WallAxis.AlongZ, 0)); box.Add(new(3, i, WallAxis.AlongZ, 0)); }
+    p = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.AddWall, 0, Walls: box)), "Walls for the door tests");
+    var south = new WallSegment(1, 1, WallAxis.AlongX, 0); var east = new WallSegment(3, 1, WallAxis.AlongZ, 0); var north = new WallSegment(2, 3, WallAxis.AlongX, 0);
+    p = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.SetWallFinish, 0, Walls: [south], Opening: "door_wood")), "Fit a front door");
+    p = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.SetWallFinish, 0, Walls: [east], Opening: "door_garage")), "Fit a garage door");
+    p = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.SetWallFinish, 0, Walls: [north], Opening: "door_barn")), "Fit a barn door");
+    var doors = LotDoors.All(p).ToList();
+    Check(doors.Count == 3 && doors.Single(d => d.DoorId == LotDoors.StraightId(south)) is { CenterX: 6, CenterZ: 4, WidthMeters: .9f }, "The lot lists its three doors where they are");
+
+    bool Blocks(IEnumerable<LotPiece> pieces, float x, float y, float z) => pieces.Any(q => MathF.Abs(x - q.CenterX) < q.SizeX / 2 && MathF.Abs(y - q.CenterY) < q.SizeY / 2 && MathF.Abs(z - q.CenterZ) < q.SizeZ / 2);
+    var closed = LotGeometry.Build(LotDocument.From(p, 1), 0);
+    Check(closed.Count(q => q.PieceId.StartsWith("lot/lot-d/wall/0/x/1/1/", StringComparison.Ordinal)) == 4, "A door wall is two jambs, a lintel and a leaf");
+    Check(Blocks(closed, 6, 1.2f, 3.96f) && !Blocks(closed.Where(q => q.Door is null), 6, 1.2f, 3.96f), "Closed, only the leaf fills the doorway");
+    Check(Blocks(closed, 6, 3.0f, 4) && Blocks(closed, 7.5f, 1.2f, 4), "The lintel and the wall beside the door stay solid");
+
+    // Server-held state: anyone signed in may set it; the state is explicit, so repeating it changes nothing.
+    var opened = LotDoors.SetOpen(p, "visitor", LotDoors.StraightId(south), true);
+    Check(opened.Accepted && opened.Plan.OpenDoors.SequenceEqual([LotDoors.StraightId(south)]), "A visitor can open the door (it is an interaction, not an edit)");
+    Check(LotDoors.SetOpen(opened.Plan, "visitor", LotDoors.StraightId(south), true).Plan.OpenDoors.Count == 1, "Opening an open door changes nothing");
+    Check(LotDoors.SetOpen(p, "visitor", "wall/0/x/9/9", true).ErrorCode == "door_not_found", "A door that is not there cannot be opened");
+    p = LotDoors.SetOpen(LotDoors.SetOpen(opened.Plan, "owner", LotDoors.StraightId(east), true).Plan, "owner", LotDoors.StraightId(north), true).Plan;
+    var open = LotGeometry.Build(LotDocument.From(p, 2), 0);
+    Check(!Blocks(open, 6, 1.2f, 4), "Open, the front doorway is clear to walk through");
+    var frontLeaf = open.Single(q => q.PieceId == "lot/lot-d/wall/0/x/1/1/leaf0");
+    Check(frontLeaf.CenterZ > 4.1f && frontLeaf.SizeZ > .8f && frontLeaf.Modules[0].QuarterTurns == 3, "The front door swings a quarter turn into the room");
+    Check(!Blocks(open, 12, 1.2f, 6) && open.Single(q => q.PieceId.EndsWith("z/3/1/leaf0", StringComparison.Ordinal)) is { CenterY: > 2.5f, Modules: [{ ModuleId: "door_leaf_garage_open" }] },
+        "The garage door rolls up overhead, clearing the opening");
+    Check(!Blocks(open, 10, 1.2f, 12) && open.Where(q => q.PieceId.Contains("x/2/3/leaf", StringComparison.Ordinal)).All(q => MathF.Abs(q.CenterX - 10) > 1.5f), "The barn doors slide apart");
+    var removedDoor = Must(BuildingEditor.Apply(p, "owner", new(BuildEditKind.SetWallFinish, 0, Walls: [south], Opening: ModuleCatalog.NoOpening)), "Wall the front door up");
+    Check(!removedDoor.OpenDoors.Contains(LotDoors.StraightId(south)) && removedDoor.OpenDoors.Count == 2, "A removed door is no longer open");
+
+    // The jamb pieces draw only their own slice of the wall module.
+    var doorLibrary = ModuleMeshLibrary.Load(ModuleMeshLibrary.Locate(AppContext.BaseDirectory)!);
+    var leftJamb = open.Single(q => q.PieceId == "lot/lot-d/wall/0/x/1/1/left");
+    var jambMesh = doorLibrary.Compose(leftJamb.Modules)!;
+    var wholeWall = doorLibrary.Compose([leftJamb.Modules[0] with { ClipFrom = float.NegativeInfinity, ClipTo = float.PositiveInfinity }])!;
+    Check(jambMesh.Indices.Count < wholeWall.Indices.Count * .7 && jambMesh.Indices.Count > 0, "A jamb piece draws its slice of the wall, not the whole wall");
+    Check(doorLibrary.Compose(frontLeaf.Modules) is { VertexCount: > 50 }, "Door leaves come from the pack's leaf modules");
+
+    // Interaction reach and aiming, as in Life Beyond: within one tile, the door the crosshair is on.
+    var front = LotDoors.All(p).Single(d => d.DoorId == LotDoors.StraightId(south));
+    Check(LotDoors.InReach(front, new(6, 0, 2.5f), 0) && !LotDoors.InReach(front, new(6, 0, -1), 0) && !LotDoors.InReach(front, new(6, 6, 2.5f), 0), "Doors are used from within one tile, on their own floor");
+    Check(LotDoors.Hit(LotDoors.All(p), 0, new(6, 1.7f, 1.5f), System.Numerics.Vector3.UnitZ)?.Door.DoorId == front.DoorId, "Aiming at the doorway picks that door");
+    Check(LotDoors.Hit(LotDoors.All(p), 0, new(6, 1.7f, 1.5f), -System.Numerics.Vector3.UnitZ) is null, "Looking away picks no door");
+    var doorWheel = InteractionPieMenu.ForDoor("lot-d|" + front.DoorId, front.Name, isOpen: true, 640, 360, 1280, 720);
+    Check(doorWheel.Actions.Select(a => a.Label).SequenceEqual(["Close", "Inspect"]), "An open door's wheel offers Close and Inspect");
+
+    // A door in a curved wall: the doorway clear, and a straight leaf that opens into the round room.
+    var doorRing = new CurvedWall("ring", 0, 16_000, 16_000, 5_000, 180_000, CurvedWall.FullCircleMilliDegrees, "stucco", "full", true, [new("door_wood", 90_000)]);
+    var rp = Must(BuildingEditor.Apply(BuildingPlan.Empty(deed), "owner", new(BuildEditKind.AddCurvedWall, 0, Curve: doorRing)), "A round room with a door");
+    string ringDoor = LotDoors.All(rp).Single().DoorId;
+    var shut = LotGeometry.Build(LotDocument.From(rp, 1), 0);
+    var shutLeaf = shut.Single(q => q.Door is not null);
+    Check(Blocks(shut, 16, 1.2f, 11) && !Blocks(shut.Where(q => q.Door is null), 16, 1.2f, 11), "The curved doorway is clear except for its closed leaf");
+    var ajar = LotGeometry.Build(LotDocument.From(LotDoors.SetOpen(rp, "visitor", ringDoor, true).Plan, 2), 0);
+    var ajarLeaf = ajar.Single(q => q.Door is not null);
+    Check(!Blocks(ajar, 16, 1.2f, 11) && MathF.Sqrt((ajarLeaf.CenterX - 16) * (ajarLeaf.CenterX - 16) + (ajarLeaf.CenterZ - 16) * (ajarLeaf.CenterZ - 16)) < 4.8f,
+        "Opened, the curved door's leaf swings into the round room and the doorway clears");
+    Check(DoorLeafMesher.ForPiece(ajarLeaf).VertexCount > 0 && shutLeaf.MeshKey != ajarLeaf.MeshKey, "The curved leaf has its own mesh in each state");
+}
+
+// ---- the construction client stays signed in: a 401 refreshes the 15-minute access token and retries once
+{
+    var seen = new List<(string? Token, string Body)>();
+    var lotDoc = LotDocument.From(BuildingPlan.Empty(new LotDeed("lot-t", "owner", 0, 0, 3, 3)), 1);
+    var handler = new StubHandler(async request =>
+    {
+        string body = request.Content is null ? "" : await request.Content.ReadAsStringAsync();
+        seen.Add((request.Headers.Authorization?.Parameter, body));
+        if (request.Headers.Authorization?.Parameter != "fresh") return new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.Unauthorized);
+        return new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            { Content = System.Net.Http.Json.JsonContent.Create(new ChangeResult(true, lotDoc), options: ConstructionClient.Json) };
+    });
+    int refreshes = 0;
+    using var client = new ConstructionClient("http://gateway", "expired", handler, async (rejected, _) => { refreshes++; await Task.Yield(); return rejected == "expired" ? "fresh" : null; });
+    var reply = await client.BuildAsync("lot-t", new("owner", new(BuildEditKind.AddFloor, 0, 0, 0, 0, 0)));
+    Check(reply.Accepted && refreshes == 1 && seen.Count == 2 && seen[0].Token == "expired" && seen[1].Token == "fresh" && seen[0].Body == seen[1].Body && seen[1].Body.Contains("AddFloor"),
+        "An expired token is refreshed once and the same edit is retried");
+    await client.BuildAsync("lot-t", new("owner", new(BuildEditKind.AddFloor, 0, 0, 0, 0, 0)));
+    Check(refreshes == 1 && seen[^1].Token == "fresh", "Later requests keep the fresh token");
+}
+
 // ---- the pie wheel (Tiny Clinic's furnishing menu)
 {
     var piece = PlacedFurnishing.Of("chair-1", FurnishingCatalog.Find("chair")!.Definition, 0, 0, 0, 0, 0, 0);
@@ -306,3 +461,8 @@ Check(furnished.Furnishings.Count == 0, "The lot is empty again");
 
 Console.WriteLine($"{passed}/{passed + failed} construction checks passed");
 return failed == 0 ? 0 : 1;
+
+sealed class StubHandler(Func<System.Net.Http.HttpRequestMessage, Task<System.Net.Http.HttpResponseMessage>> reply) : System.Net.Http.HttpMessageHandler
+{
+    protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, CancellationToken cancellationToken) => reply(request);
+}

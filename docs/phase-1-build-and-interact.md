@@ -23,16 +23,24 @@ Start the servers with `tools/Start-LifeCareServers.ps1` and sign in through the
 service posts it to the Construction service's `/api/internal/lots` with the service key. The client polls the
 Gateway's `/construction/api/lots` every 2 s.
 
-- **Y** toggles build mode on your lot. **1** floor, **2** wall, **3** roof, **4** delete, **5** curved wall, **6** finish.
-  **PgUp/PgDn** change level.
-- **B** steps the tool's finish: wall siding (walls, curved walls, finish tool), floor finish (floor) or roof finish (roof).
-- **N** steps the second option: the opening a wall hosts (walls, finish tool), the roof shape (flat, gable, hip) or the
-  curved wall's profile (full, glazed, half wall, counter).
-- **C** (curved wall tool) steps the sweep: full circle, 270°, 180°, 90°. Press at the centre and drag out the radius; the
-  arc's middle points where you release, so a 270° counter's open side faces away from the drag.
-- The finish tool restyles the wall you click and sets its opening. On a curved wall it adds the selected opening where you
-  click, or removes the one you click.
-- In build mode, aim with the crosshair and click or drag. A click with the wall tool takes the nearest tile edge.
+- **Y** toggles build mode on your lot. The camera leaves the avatar and flies freely: **WASD** move, **Space/Ctrl** rise
+  and sink, **Q/E** turn, **Shift** hurries, the **wheel** zooms and a **right-drag** looks around. **Home** resets the view.
+  The play HUD gives way to the build screen: lot information (left), controls (right) and the build catalog (bottom).
+- The catalog's categories are structure, curved walls, doors and windows, wall styles, wall paint, floors and carpet,
+  roofs, and edit. Picking an item selects its tool. Keys **1–9** pick the tools directly: room, wall, curved wall, doors
+  and windows, wall style, wall paint, floor, roof, delete.
+  - **Room:** drag a rectangle; the tool lays the floor and walls it in.
+  - **Wall:** drag along tile edges. It builds full walls, half walls or railings, all from the module pack.
+  - **Doors & windows:** click a wall, or drag along several. On a curved wall the fitting goes where you click, and
+    clicking an opening removes it.
+  - **Wall style:** changes a wall's siding.
+  - **Wall paint:** paints the face the mouse is on. Hold **Shift** to paint every wall around the room.
+  - **Floor:** wood, tile, concrete, carpet and vinyl, each in several colours.
+- **Curved walls:** press on the corner where the wall starts and drag to the point halfway round. Releasing locks the
+  half circle; then move the mouse to carry the curve further round, and click to finish. **H** stops at the half circle
+  and **F** closes the full circle. A right click or **Esc** cancels.
+- The mouse aims from the build camera. Wall tools act on the face the cursor ray hits first; a click with the wall
+  tool takes the nearest tile edge.
 - **I** unpacks a furniture package. **R** turns it, a click sets it down, **Esc** puts it away.
 - **Right click** on a piece opens the pie wheel: Arrange (Move, Rotate, Pick Up) for the owner, Inspect for anyone.
 
@@ -83,6 +91,24 @@ The test tornado comes from `--storm-test-routes`, which needs keyed internal ro
   (`assets/modules/rural`, see [Building modules and curved walls](#building-modules-and-curved-walls)); without the pack
   they fall back to boxes.
 
+## Doors
+
+Doors work as in Life Beyond v2 and Tiny Clinic:
+- **Interaction:** right-click a door to open its wheel: **Open** or **Close**, and **Inspect**. Anyone within one tile
+  (4 m) of the door can use it, on their own lot or a neighbour's.
+- **Server state:** whether a door is open is part of the lot document (`OpenDoors`). The Construction service sets it at
+  `POST /construction/api/lots/{lot}/doors` with an explicit state and an operation id, so a retried request is applied
+  once. It asks the district host where the character really stands (`/api/internal/characters/{id}/position`) and
+  refuses a request from further away.
+- **Doors block movement:** a door wall is two jambs and a lintel, each drawing its slice of the wall module, so the
+  doorway itself is open. The leaf is a separate physics piece: closed it fills the doorway; open it stands clear of it.
+  - Wood, half-glass and screen doors swing into the room.
+  - The garage door rolls up under the ceiling.
+  - The barn doors slide apart.
+  - A door in a curved wall is a straight leaf across the opening's chord, swinging into the round room.
+- **Timing:** clients animate the leaf, which starts moving as soon as you choose Open or Close. The district host picks
+  up the new state within a second; other players see it on their next lot refresh, within two seconds.
+
 ## Building modules and curved walls
 
 - **Finishes are data.** Lot documents store a style and an opening per straight wall (`WallFinishes`), a finish per floor
@@ -108,6 +134,6 @@ The test tornado comes from `--storm-test-routes`, which needs keyed internal ro
 - **Capture:** `PmWeather.Showcase --chase-capture --chase-scene lot-modules` (or `lot-round-room`) builds a showcase lot
   through `BuildingEditor` and renders it. The lot holds the module house, a hip-roofed garage, the round room with its
   nurses' station, a glazed screen and a curved low wall.
-- **Access tokens are not refreshed** by the lot client. A session longer than the token's life loses lot access until
-  the player rejoins.
+- **Lot access stays signed in.** On a 401 the lot client refreshes its 15-minute access token through the Gateway and
+  retries the request once.
 - **The client polls every lot.** Fine for Phase 1. Many lots will need the list filtered by area.

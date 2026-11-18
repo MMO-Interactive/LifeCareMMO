@@ -74,6 +74,8 @@ internal sealed partial class StormChaseHud
             return new(new GuiOverlayPanel { Width = GuiLength.Pixels(w), Height = GuiLength.Pixels(h), Items = BuildShop(w, h, s, c).ToList() });
         TrackNotifications(t);
         dragHandles.Clear();
+        if (BuildMode && WorldOverlay is { } buildPanels)
+            return new(new GuiOverlayPanel { Width = GuiLength.Pixels(w), Height = GuiLength.Pixels(h), Items = buildPanels(w, h).ToList() });
         var kit = new HudKit(s, composer);
 
         GuiLabel Label(GuiRect panel, string text, float x, float y, float width, float size, GuiColor color,

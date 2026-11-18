@@ -43,7 +43,7 @@ internal static partial class Showcase
             }
             DemoThreadPump.Wait(Task.Run(()=>host.Reconfigure(CreateBackend)),surface);
             var clock=Stopwatch.StartNew();double previous=0,nextStatus=1,lastStatus=0;long number=0,completed=0;
-            double fps=0;bool paused=false,firstPresented=false;bool? fullscreenPreference=null;
+            double fps=0;bool paused=false,firstPresented=false,pieWasOpen=false;bool? fullscreenPreference=null;
             Console.WriteLine("Native Storm Chase: account login → main menu → single player / host / authenticated multiplayer.");
             while(!surface.IsCloseRequested)
             {
@@ -126,6 +126,8 @@ internal static partial class Showcase
                     foreach(var key in keyboard)
                     {
                         if(hud.ChatTyping){hud.ChatKey(key);continue;}
+                        // Build mode takes the keyboard (tools, levels, camera); Y and Esc still leave it.
+                        if(play.Lots?.BuildMode==true&&!paused&&key.Key is not (0 or 0x1B or 0x59)){play.Lots.HandleBuildKey(key.Key);continue;}
                         if(key.Key==0x0D&&!play.ShopOpen&&!paused){hud.BeginChat();continue;}
                         if(key.Key==0x1B)
                         {if(play.Lots?.Cancel()==true){}else if(hud.MapOpen)hud.MapOpen=false;else if(hud.PhoneOpen)hud.PhoneOpen=false;else if(hud.ForecastOpen)hud.ForecastOpen=false;else if(play.ShopOpen||play.DispatchOpen||play.HousingOpen){play.ShopOpen=false;play.DispatchOpen=false;play.HousingOpen=false;}else paused=!paused;}
@@ -134,7 +136,13 @@ internal static partial class Showcase
                         else if(key.Key==0x51)hud.HandleWeatherGuiAction("radar/toggle");
                         else if(!paused&&key.Key is 0x26 or 0x28 or 0x0D or 0x55 or 0x4F or 0x48 or 0x59)play.HandleKey(key.Key);
                     }
-                    surface.GuiInputEnabled=paused||play.ShopOpen||play.DispatchOpen||play.HousingOpen||hud.ForecastOpen||hud.WantsCursor||play.Lots?.Pie is not null;
+                    surface.GuiInputEnabled=paused||play.ShopOpen||play.DispatchOpen||play.HousingOpen||hud.ForecastOpen||hud.WantsCursor||play.Lots?.Pie is not null||play.Lots?.BuildMode==true;
+                    hud.BuildMode=play.Lots?.BuildMode==true&&!paused;
+                    // Closing the interaction wheel (choosing an option, clicking away or Esc) hands the mouse straight back to
+                    // the camera, unless what the option opened still needs the cursor (a container, build mode, a menu).
+                    bool pieOpen=play.Lots?.Pie is not null;
+                    if(pieWasOpen&&!pieOpen&&!surface.GuiInputEnabled)surface.CaptureMouseLook();
+                    pieWasOpen=pieOpen;
                     foreach(var line in play.DrainChat())
                         hud.AddChat(new(DateTime.Now.ToString("h:mm"),line.Channel,line.From,line.Text,line.FromPlayerId==0));
                     if(hud.InventoryOpen)hud.Inventory=play.Inventory();
@@ -152,6 +160,7 @@ internal static partial class Showcase
                     profiler?.Mark("PlayStep");
                     var input=surface.ReadGuiInput();hud.Housing=play.Session.HousingState;hud.HousingOpen=play.HousingOpen;hud.HousingCashCents=play.HousingCashCents;
                     hud.Update(surface,play.Telemetry(fps,host.LastGpuTiming?.TotalMilliseconds??0,audio?.Muted??true),frame,input);
+                    if(!paused)play.Lots?.UpdateBuild(input,hud.LastFrame.Interaction.HoveredElementId,surface,delta);
                     profiler?.Mark("Hud");
                     if(paused)
                     {

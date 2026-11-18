@@ -14,7 +14,7 @@ public sealed record CurvedOpening(string Kind, int CenterMilliDegrees);
 /// </summary>
 public sealed record CurvedWall(string WallId, int Level, int CenterXMillimeters, int CenterZMillimeters, int RadiusMillimeters,
     int StartMilliDegrees, int SweepMilliDegrees, string Style = ModuleCatalog.DefaultExteriorStyle, string Profile = "full",
-    bool ExteriorOutside = true, CurvedOpening[]? Openings = null)
+    bool ExteriorOutside = true, CurvedOpening[]? Openings = null, string? InsidePaint = null, string? OutsidePaint = null)
 {
     public const int FullCircleMilliDegrees = 360_000;
     public bool IsFullCircle => SweepMilliDegrees == FullCircleMilliDegrees;
@@ -27,7 +27,7 @@ public sealed record CurvedWall(string WallId, int Level, int CenterXMillimeters
     public float ArcLengthMeters => (float)(Radius * SweepRadians);
     /// <summary>Every saved parameter, openings included, as one stable string.</summary>
     public string Fingerprint => $"{WallId}/{Level}/{CenterXMillimeters}/{CenterZMillimeters}/{RadiusMillimeters}/{StartMilliDegrees}/{SweepMilliDegrees}/{Style}/{Profile}/{ExteriorOutside}/"
-        + string.Join(',', HostedOpenings.Select(o => o.Kind + "@" + o.CenterMilliDegrees));
+        + string.Join(',', HostedOpenings.Select(o => o.Kind + "@" + o.CenterMilliDegrees)) + $"/{InsidePaint}/{OutsidePaint}";
     /// <summary>Wall top above the level base.</summary>
     public float TopMeters => CurvedWalls.ProfileTop(Profile);
 }
@@ -37,7 +37,8 @@ public static class CurvedWalls
 {
     public const int MinimumRadiusMillimeters = 1500, MaximumRadiusMillimeters = 24_000;
     public const int MinimumSweepMilliDegrees = 15_000;
-    public const int PositionQuantumMillimeters = 50, AngleQuantumMilliDegrees = 1000;
+    /// <summary>Curves are stored to the millimetre and millidegree, so one can start exactly on a wall corner.</summary>
+    public const int PositionQuantumMillimeters = 1, AngleQuantumMilliDegrees = 1;
     public const int MaximumPerLot = 64, MaximumOpenings = 16;
     public const float Thickness = .2f, Cladding = .03f, EndMarginMeters = .3f, OpeningGapMeters = .3f, SegmentMeters = 2.4f;
     public static readonly IReadOnlyList<string> Profiles = ["full", "glazed", "half", "counter"];
@@ -70,6 +71,8 @@ public static class CurvedWalls
             || wall.StartMilliDegrees % AngleQuantumMilliDegrees != 0 || wall.SweepMilliDegrees % AngleQuantumMilliDegrees != 0)
             return ("unquantized_geometry", "Curved walls snap to 5 cm and whole degrees.");
         if (ModuleCatalog.Style(wall.Style) is null) return ("invalid_style", "Unknown wall finish.");
+        if (wall.InsidePaint is not null && ModuleCatalog.Paint(wall.InsidePaint) is null || wall.OutsidePaint is not null && ModuleCatalog.Paint(wall.OutsidePaint) is null)
+            return ("invalid_paint", "Unknown paint.");
         if (!Profiles.Contains(wall.Profile)) return ("invalid_profile", "Unknown curved wall profile.");
 
         float reach = wall.Radius + Thickness / 2 + Cladding + (wall.Profile == "counter" ? 0 : 0);
@@ -116,7 +119,6 @@ public static class CurvedWalls
         double margin = .15 / wall.Radius, sweep = wall.SweepRadians;
         var openings = wall.HostedOpenings.Select(o => Range(wall, o)).Select(r => (From: Math.Max(0, r.From - margin), To: Math.Min(sweep, r.To + margin)))
             .OrderBy(r => r.From).ToList();
-        if (wall.Profile == "glazed") openings.Clear();
         var result = new List<(double, double)>();
         double cursor = 0;
         void Run(double from, double to)
@@ -267,6 +269,11 @@ public static class CurvedWallMesher
         var mesh = new MeshBuffer();
         var style = ModuleCatalog.Style(wall.Style) ?? ModuleCatalog.Style(ModuleCatalog.DefaultExteriorStyle)!;
         var (siding, trim, skirt, drywall) = (ModuleCatalog.Color(style.Siding), ModuleCatalog.Color(style.Trim), ModuleCatalog.Color(style.Skirt), ModuleCatalog.Color("drywall"));
+        // Paints: the face on the room side (inside) and the other face (outside). Stone keeps its colour.
+        var insidePaint = ModuleCatalog.PaintColor(wall.ExteriorOutside ? wall.InsidePaint : wall.OutsidePaint);
+        var outsidePaint = ModuleCatalog.PaintColor(wall.ExteriorOutside ? wall.OutsidePaint : wall.InsidePaint);
+        if (insidePaint is { } ip) drywall = ip;
+        if (outsidePaint is { } op && style.Pattern != "stone") siding = op;
         float R = wall.Radius, half = CurvedWalls.Thickness / 2, side = wall.ExteriorOutside ? 1 : -1;
         float yBase = LotGeometry.LevelElevation(baseElevation, wall.Level), yFloor = yBase + LotGeometry.FloorThickness, yTop = yBase + wall.TopMeters;
         double start = wall.StartRadians;
@@ -482,28 +489,6 @@ public static class CurvedWallMesher
                     double t = a + (b - a) * i / (bars + 1);
                     mesh.Box(At(t, R, (c.Bottom + c.Top) / 2), new(.02f, (c.Top - c.Bottom) / 2, .035f), Tangent(t), trim);
                 }
-            }
-            if (c.Spec.Passable && c.Spec.Id != "passage")
-            {
-                // A real door is straight: its leaf spans the opening's chord, set inside the wall's thickness.
-                var p0 = At(a + .02 / R, R, 0); var p1 = At(b - .02 / R, R, 0);
-                var along = Vector3.Normalize(p1 - p0); float len = Vector3.Distance(p0, p1) / 2; var mid = (p0 + p1) / 2;
-                float leafTop = c.Top - .03f, h = (leafTop - yFloor) / 2;
-                var door = ModuleCatalog.Color(style.Id == "lap_white" ? "door_green" : "door_wood");
-                if (c.Spec.Glazed)
-                {
-                    float split = yFloor + 1.0f;
-                    mesh.Box(new(mid.X, (yFloor + split) / 2, mid.Z), new(len, (split - yFloor) / 2, .0225f), along, door);
-                    mesh.Box(new(mid.X, (split + leafTop) / 2, mid.Z), new(len, (leafTop - split) / 2, .012f), along, ModuleCatalog.Color("glass"));
-                    foreach (float s in new[] { -1f, 1f })
-                        mesh.Box(new Vector3(mid.X, (split + leafTop) / 2, mid.Z) + along * s * (len - .05f), new(.05f, (leafTop - split) / 2, .0225f), along, door);
-                    mesh.Box(new(mid.X, leafTop - .05f, mid.Z), new(len, .05f, .0225f), along, door);
-                }
-                else mesh.Box(new(mid.X, yFloor + h, mid.Z), new(len, h, .0225f), along, door);
-                var knob = mid + along * (len - .08f);
-                var normal = Vector3.Normalize(Vector3.Cross(along, Vector3.UnitY));
-                foreach (float s in new[] { -1f, 1f })
-                    mesh.Box(new Vector3(knob.X, yFloor + .98f, knob.Z) + normal * s * .05f, new(.025f, .025f, .03f), along, ModuleCatalog.Color("brass"));
             }
         }
     }

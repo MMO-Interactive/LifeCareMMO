@@ -73,7 +73,8 @@ internal sealed class StormChaseLotRenderer
     {
         if (piece.MeshKey is not { } key) return null;
         if (meshes.TryGetValue(key, out var cached)) return cached;
-        MeshBuffer? data = piece.Curve is not null ? CurvedWallMesher.ForPiece(piece) : modules?.Compose(piece.Modules);
+        MeshBuffer? data = piece.Door is { CurvedKind: not null } ? DoorLeafMesher.ForPiece(piece)
+            : piece.Curve is not null ? CurvedWallMesher.ForPiece(piece) : modules?.Compose(piece.Modules);
         AssetHandle? handle = null;
         if (data is { VertexCount: > 0 })
         {
@@ -98,12 +99,64 @@ internal sealed class StormChaseLotRenderer
 
     public static IEnumerable<RenderItem> Items(IEnumerable<LotPiece> pieces, Vector3f observer, Func<string, bool> released, float range = 900)
     {
+        active?.Tick();
         foreach (var piece in pieces)
         {
             if (released(piece.PieceId)) continue;
             float dx = piece.CenterX - observer.X, dz = piece.CenterZ - observer.Z;
-            if (dx * dx + dz * dz <= range * range) yield return Item(piece);
+            if (dx * dx + dz * dz > range * range) continue;
+            yield return piece.Door is { } door && active?.AnimatedLeaf(piece, door) is { } leaf ? leaf : Item(piece);
         }
+    }
+
+    // ---------------------------------------------------------------- doors: leaves swing, slide or lift between the server's states
+    private readonly Dictionary<string, float> doorFraction = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (bool Open, double Until)> doorRequested = new(StringComparer.Ordinal);
+    private readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
+    private double lastTick;
+    private float tickDelta;
+    private const float DoorSecondsToOpen = .6f;
+
+    private void Tick() { double now = clock.Elapsed.TotalSeconds; tickDelta = (float)Math.Clamp(now - lastTick, 0, .1); lastTick = now; }
+
+    /// <summary>Shows a door moving the moment the player asks; the server's state takes over when it arrives or after a few seconds.</summary>
+    public static void RequestDoor(string doorId, bool open) { if (active is { } r) r.doorRequested[doorId] = (open, r.clock.Elapsed.TotalSeconds + 4); }
+
+    /// <summary>Whether a door looks open to this player: a pending request, else the server's state.</summary>
+    public static bool? DoorShownOpen(string doorId) => active is { } r && r.doorRequested.TryGetValue(doorId, out var q) && q.Until > r.clock.Elapsed.TotalSeconds ? q.Open : null;
+
+    private RenderItem? AnimatedLeaf(LotPiece piece, DoorLeaf door)
+    {
+        bool target = door.Open;
+        if (doorRequested.TryGetValue(door.DoorId, out var request))
+        {
+            if (request.Until < clock.Elapsed.TotalSeconds || request.Open == door.Open) doorRequested.Remove(door.DoorId);
+            else target = request.Open;
+        }
+        float f = doorFraction.TryGetValue(door.DoorId + piece.PieceId, out float known) ? known : door.Open ? 1 : 0;
+        f = Math.Clamp(f + (target ? 1 : -1) * tickDelta / DoorSecondsToOpen, 0, 1);
+        doorFraction[door.DoorId + piece.PieceId] = f;
+        float eased = f * f * (3 - 2 * f);
+        string? module = door.Motion == "overhead" && f >= .5f ? door.OpenModule : door.ClosedModule;
+        string key = door.CurvedKind is { } kind ? $"hingecurve:{kind}:{door.CurvedColour}:{door.CurvedWidth:R}" : "hinge:" + module;
+        if (!meshes.TryGetValue(key, out var mesh))
+        {
+            MeshBuffer? data = door.CurvedKind is { } k ? DoorLeafMesher.Build(k, door.CurvedColour ?? "wood", door.CurvedWidth)
+                : module is null ? null : modules?.Compose([new(module, 0, 0, 0, 0)]);
+            mesh = null;
+            if (data is { VertexCount: > 0 })
+            {
+                mesh = new AssetHandle("mesh", "lot/mesh/" + meshes.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                catalog.UpsertMesh(ToRender(mesh.Value, data));
+            }
+            meshes[key] = mesh;
+        }
+        if (mesh is null) return null;
+        float yaw = door.ClosedYawDegrees + (door.Motion == "swing" ? 90 * eased : 0);
+        float slide = door.Motion == "slide" ? eased : 0;
+        return new("lot/" + ModuleMaterial, mesh.Value, new AssetHandle("material", "lot/" + ModuleMaterial),
+            new(door.PivotX + door.SlideX * slide, door.PivotY, door.PivotZ + door.SlideZ * slide), new(1, 1, 1), yaw, true,
+            MotionVectorId: piece.PieceId, AllowStaticInstancing: false, WritesMotionVectors: f is > 0 and < 1);
     }
 
     /// <summary>Ghosts draw as tinted boxes, except curved walls, which preview their true curved mesh.</summary>
@@ -118,7 +171,7 @@ internal sealed class StormChaseLotRenderer
 /// handling: packages are unpacked (I) and set down, placed pieces open the pie wheel (right click) to move, turn or
 /// pick up. Everything is aimed with the crosshair and every edit goes to the authority.
 /// </summary>
-internal sealed class StormChaseLotPlay : IDisposable
+internal sealed partial class StormChaseLotPlay : IDisposable
 {
     private readonly ConstructionClient client;
     private readonly string characterId;
@@ -132,9 +185,16 @@ internal sealed class StormChaseLotPlay : IDisposable
     private int packageCursor;
     private string? unavailable;
 
-    public StormChaseLotPlay(string gatewayUrl, string accessToken, string characterId, StormChaseWorld world)
+    /// <param name="refreshToken">Keeps the lot client signed in past the 15-minute access token.</param>
+    public StormChaseLotPlay(string gatewayUrl, string accessToken, string characterId, StormChaseWorld world, string? refreshToken = null)
     {
-        client = new(gatewayUrl, accessToken); this.characterId = characterId; this.world = world;
+        accounts = new ChaseApiClient(); accounts.ResumeLogin(gatewayUrl, accessToken, refreshToken);
+        client = new(gatewayUrl, accessToken, refreshAccess: string.IsNullOrWhiteSpace(refreshToken) ? null : async (rejected, cancel) =>
+        {
+            if (accounts.Login?.AccessToken == rejected) await accounts.RefreshLoginAsync(cancel);
+            return accounts.Login?.AccessToken;
+        });
+        this.characterId = characterId; this.world = world;
     }
 
     public bool BuildMode { get; private set; }
@@ -149,8 +209,54 @@ internal sealed class StormChaseLotPlay : IDisposable
     private Task<LotDocument?>? claim;
     private Vector3f lastFeet;
 
+    private string? lotMessage;
+    private double lotMessageUntil, clockSeconds;
+
+    /// <summary>The door under the crosshair within reach, on any lot (yours or a neighbour's).</summary>
+    private (LotSession Session, LotDoor Door)? DoorAt(CameraState camera)
+    {
+        (LotSession, LotDoor, float)? best = null;
+        var origin = new System.Numerics.Vector3(camera.Position.X, camera.Position.Y, camera.Position.Z);
+        var direction = System.Numerics.Vector3.Normalize(new(camera.Forward.X, camera.Forward.Y, camera.Forward.Z));
+        foreach (var (id, session) in lots)
+        {
+            if (!geometry.TryGetValue(id, out var g)) continue;
+            if (LotDoors.Hit(LotDoors.All(session.Lot.ToPlan()), g.Base, origin, direction, LotDoors.InteractionRangeMeters + 1.5f) is { } hit
+                && (best is null || hit.Distance < best.Value.Item3)) best = (session, hit.Door, hit.Distance);
+        }
+        return best is { } b ? (b.Item1, b.Item2) : null;
+    }
+
+    private (LotSession Session, LotDoor Door)? FindDoor(string target)
+    {
+        var parts = target.Split('|', 2);
+        if (parts.Length != 2 || !lots.TryGetValue(parts[0], out var session)) return null;
+        return LotDoors.All(session.Lot.ToPlan()).FirstOrDefault(d => d.DoorId == parts[1]) is { } door ? (session, door) : null;
+    }
+
+    /// <summary>Asks the lot authority to set the door; the leaf starts moving at once and the server's state settles it.</summary>
+    private void SetDoor(string target, bool open)
+    {
+        if (FindDoor(target) is not { } found) { lotMessage = "That door is no longer there."; lotMessageUntil = clockSeconds + 4; return; }
+        var (session, door) = found;
+        string lotId = session.Lot.Lot.LotId, operation = Guid.NewGuid().ToString("N");
+        if (session.Submit((authority, _) => authority.SetDoorAsync(lotId, new(characterId, door.DoorId, open, operation)), open ? "open the door" : "close the door"))
+            StormChaseLotRenderer.RequestDoor(door.DoorId, open);
+    }
+
+    private void InspectDoor(string target)
+    {
+        if (FindDoor(target) is not { } found) return;
+        var (session, door) = found;
+        bool open = session.Lot.OpenDoors.Contains(door.DoorId);
+        string whose = session.IsOwner ? "your lot" : "a neighbour's lot";
+        lotMessage = $"{door.Name}, {door.WidthMeters:0.0#} m wide · {(open ? "open" : "closed")} · on {whose}. Anyone nearby can open or close it.";
+        lotMessageUntil = clockSeconds + 6;
+    }
+
     public void Tick(double seconds)
     {
+        clockSeconds = seconds;
         foreach (var session in lots.Values) session.Tick();
         if (claim is { IsCompleted: true } claimed)
         {
@@ -172,6 +278,7 @@ internal sealed class StormChaseLotPlay : IDisposable
                     else
                     {
                         lots[document.Lot.LotId] = session = new LotSession(client, characterId, document);
+                        session.EditResolved += (_, message) => { lotMessage = message; lotMessageUntil = clockSeconds + 5; };
                         if (build is null && session.IsOwner) { build = new(session); furnish = new(session); }
                     }
                 }
@@ -209,25 +316,9 @@ internal sealed class StormChaseLotPlay : IDisposable
                 return true;
             }
             BuildMode = !BuildMode; build.CancelGesture(); furnish?.Cancel(); Pie = null;
-            build.Session.Status = BuildMode ? "Build mode: 1 floor · 2 wall · 3 roof · 4 delete · 5 curved wall · 6 finish · B finish · N opening/shape/profile · C arc sweep · PgUp/PgDn level." : "Left build mode.";
+            if (BuildMode) EnterBuildCamera();
+            build.Session.Status = BuildMode ? "Build mode: pick a tool from the catalog, or 1 room · 2 wall · 3 curved · 4 doors · 5 style · 6 paint · 7 floor · 8 roof · 9 delete." : "Left build mode.";
             return true;
-        }
-        if (BuildMode && build is not null)
-        {
-            switch (key)
-            {
-                case 0x31: build.SelectTool(LotBuildTool.Floor); return true;
-                case 0x32: build.SelectTool(LotBuildTool.Wall); return true;
-                case 0x33: build.SelectTool(LotBuildTool.Roof); return true;
-                case 0x34: build.SelectTool(LotBuildTool.Delete); return true;
-                case 0x35: build.SelectTool(LotBuildTool.CurvedWall); return true;
-                case 0x36: build.SelectTool(LotBuildTool.Finish); return true;
-                case 0x42: build.CyclePrimary(); return true;
-                case 0x4E: build.CycleSecondary(); return true;
-                case 0x43 when build.Tool == LotBuildTool.CurvedWall: build.CycleSweep(); return true;
-                case 0x21: build.ChangeLevel(1); return true;
-                case 0x22: build.ChangeLevel(-1); return true;
-            }
         }
         if (furnish is null) return false;
         if (key == 0x52 && furnish.Gesture != FurnishingGesture.None) { furnish.Rotate(); return true; }
@@ -250,8 +341,20 @@ internal sealed class StormChaseLotPlay : IDisposable
     /// <summary>Aims at the build plane with the crosshair and applies world clicks.</summary>
     public void Update(CameraState camera, Vector3f feet, IEnumerable<WorldClick> clicks, int viewportWidth, int viewportHeight)
     {
-        lastFeet = feet;
-        if (build is null || furnish is null) { foreach (var _ in clicks) { } return; }
+        lastFeet = feet; lastCamera = camera;
+        if (build is null || furnish is null || BuildMode)
+        {
+            // Build mode aims with the mouse from the build camera (UpdateBuild), not with the crosshair.
+            // Without a lot of your own you can still use the doors on other lots.
+            foreach (var click in clicks)
+                if (!BuildMode && Pie is null && click == WorldClick.SecondaryDown && DoorAt(camera) is { } target)
+                    Pie = InteractionPieMenu.ForDoor(target.Session.Lot.Lot.LotId + "|" + target.Door.DoorId, target.Door.Name,
+                        StormChaseLotRenderer.DoorShownOpen(target.Door.DoorId) ?? target.Session.Lot.OpenDoors.Contains(target.Door.DoorId),
+                        viewportWidth / 2, viewportHeight / 2, viewportWidth, viewportHeight);
+            if (build is not null && geometry.TryGetValue(build.Session.Lot.Lot.LotId, out var g0))
+                playerLevel = Math.Clamp((int)MathF.Round((feet.Y - g0.Base) / LotGeometry.StoryMeters), 0, LotBuildController.MaximumLevels - 1);
+            return;
+        }
         float baseY = geometry.TryGetValue(build.Session.Lot.Lot.LotId, out var g) ? g.Base : feet.Y;
         playerLevel = Math.Clamp((int)MathF.Round((feet.Y - baseY) / LotGeometry.StoryMeters), 0, LotBuildController.MaximumLevels - 1);
         float plane = LotGeometry.LevelElevation(baseY, ActiveLevel) + LotGeometry.FloorThickness;
@@ -272,6 +375,13 @@ internal sealed class StormChaseLotPlay : IDisposable
                 continue;
             }
             if (click == WorldClick.PrimaryDown && furnish.Gesture != FurnishingGesture.None) furnish.SetDown();
+            else if (click == WorldClick.SecondaryDown && furnish.Gesture == FurnishingGesture.None && DoorAt(camera) is { } target)
+            {
+                // Life Beyond's door wheel: Open or Close, and Inspect. Anyone near the door can use it; the server checks reach.
+                bool isOpen = StormChaseLotRenderer.DoorShownOpen(target.Door.DoorId) ?? target.Session.Lot.OpenDoors.Contains(target.Door.DoorId);
+                Pie = InteractionPieMenu.ForDoor(target.Session.Lot.Lot.LotId + "|" + target.Door.DoorId, target.Door.Name, isOpen,
+                    viewportWidth / 2, viewportHeight / 2, viewportWidth, viewportHeight);
+            }
             else if (click == WorldClick.SecondaryDown && furnish.Gesture == FurnishingGesture.None && aim is { } at)
             {
                 var session = lots.Values.FirstOrDefault(s => LotFurnishingController.HitTest(s.Lot, at.X, at.Z, playerLevel) is not null);
@@ -296,7 +406,8 @@ internal sealed class StormChaseLotPlay : IDisposable
     /// <summary>HUD button ids beginning with lot/.</summary>
     public void HandleGuiAction(string action)
     {
-        if (Pie is not { } menu || furnish is null) return;
+        if (HandleBuildAction(action)) return;
+        if (Pie is not { } menu) return;
         if (action == "lot/pie/outside") { Pie = null; return; }
         if (action == "lot/pie/center") { if (!menu.NavigateBack()) Pie = null; return; }
         if (!action.StartsWith("lot/pie/", StringComparison.Ordinal) || !int.TryParse(action.AsSpan(8), out int slot)) return;
@@ -304,9 +415,11 @@ internal sealed class StormChaseLotPlay : IDisposable
         Pie = null;
         switch (invocation.ActionId)
         {
-            case InteractionPieMenu.MoveAction: furnish.BeginMove(invocation.TargetId); break;
-            case InteractionPieMenu.RotateAction: furnish.RotateInPlace(invocation.TargetId); break;
-            case InteractionPieMenu.PickUpAction: furnish.PickUp(invocation.TargetId); break;
+            case InteractionPieMenu.MoveAction: furnish?.BeginMove(invocation.TargetId); break;
+            case InteractionPieMenu.RotateAction: furnish?.RotateInPlace(invocation.TargetId); break;
+            case InteractionPieMenu.PickUpAction: furnish?.PickUp(invocation.TargetId); break;
+            case LotDoors.OpenAction or LotDoors.CloseAction: SetDoor(invocation.TargetId, invocation.ActionId == LotDoors.OpenAction); break;
+            case InteractionPieMenu.InspectAction when invocation.TargetKind == "door": InspectDoor(invocation.TargetId); break;
             case OpenCrateAction: ContainerRequest = DeliveryCrateId; break;
             case BuildModeAction: HandleKey(0x59); break;
         }
@@ -324,16 +437,14 @@ internal sealed class StormChaseLotPlay : IDisposable
 
     /// <summary>The status-pill line for the HUD: what build mode or the carried piece is doing, else the lot layer's last message.</summary>
     public string? StatusLine => BuildMode && build is not null
-        ? $"BUILD · {build.Tool.ToString().ToUpperInvariant()} · {(build.Level == 0 ? "GROUND" : "FLOOR " + (build.Level + 1))}{(build.SelectionText is { Length: > 0 } sel ? " · " + sel : "")}  —  {build.Preview.Status}"
+        ? $"BUILD · {LotBuildController.ToolName(build.Tool).ToUpperInvariant()} · {(build.Level == 0 ? "GROUND" : "FLOOR " + (build.Level + 1))}  —  {build.Preview.Status}"
         : furnish?.Preview is { } ghost ? $"{(furnish.Gesture == FurnishingGesture.CarryingPackage ? "Carrying " + furnish.Carried!.Definition.Name : "Moving")}  —  {ghost.Status}  ·  R turn, click set down"
-        : unavailable;
+        : unavailable ?? (clockSeconds < lotMessageUntil ? lotMessage : null);
 
     /// <summary>Hotbar contents: build tools in build mode, the carried piece in hand, otherwise null (empty hands).</summary>
     public IReadOnlyList<HudSlot>? Hotbar()
     {
-        if (BuildMode && build is not null)
-            return [new("Floor", build.Tool == LotBuildTool.Floor), new("Wall", build.Tool == LotBuildTool.Wall), new("Roof", build.Tool == LotBuildTool.Roof),
-                new("Delete", build.Tool == LotBuildTool.Delete), new("Curved", build.Tool == LotBuildTool.CurvedWall), new("Finish", build.Tool == LotBuildTool.Finish)];
+        if (BuildMode && build is not null) return null;
         if (furnish?.Gesture == FurnishingGesture.CarryingPackage) return [new(furnish.Carried!.Definition.Name, true)];
         if (furnish?.Gesture == FurnishingGesture.MovingPiece) return [new("Moving", true)];
         return null;
@@ -386,7 +497,7 @@ internal sealed class StormChaseLotPlay : IDisposable
     }).ToArray();
 
     /// <summary>The interaction wheel. It behaves like Tiny Clinic's pie menu but is drawn with the HUD's own glass, tiles and type.</summary>
-    public IEnumerable<GuiElement> Overlay(int width, int height) => Pie is { } menu ? PieOverlay(menu, width, height) : [];
+    public IEnumerable<GuiElement> Overlay(int width, int height) => BuildMode ? BuildOverlay(width, height) : Pie is { } menu ? PieOverlay(menu, width, height) : [];
 
     public static IEnumerable<GuiElement> PieOverlay(InteractionPieMenu menu, int width, int height)
     {
@@ -429,5 +540,6 @@ internal sealed class StormChaseLotPlay : IDisposable
         Style = new(bold ? StormChaseHud.Theme.Bold : StormChaseHud.Theme.Font, size, 1.1f, color),
     };
 
-    public void Dispose() => client.Dispose();
+    private readonly ChaseApiClient accounts;
+    public void Dispose() { client.Dispose(); accounts.Dispose(); }
 }

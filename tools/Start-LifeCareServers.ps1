@@ -40,8 +40,9 @@ Start-Role 'accounts' (Dll 'StormChase.Server') @('--accounts-only', '--http-por
 Wait-Http "http://127.0.0.1:$AccountsPort/health" 60
 $env:LIFECARE_MASTER_KEY = (Get-Content (Join-Path $DataRoot 'accounts\master-server.key') -Raw).Trim()
 Start-Role 'district' (Dll 'StormChase.Server') @('--http-port', $DistrictHttpPort, '--relay-port', $DistrictRelayPort, '--climate', "127.0.0.1:$ClimatePort",
-    '--master-url', "http://127.0.0.1:$AccountsPort", '--master-key-env', 'LIFECARE_MASTER_KEY', '--world-seed', $WorldSeed, '--construction', "http://127.0.0.1:$ConstructionPort", '--server-name', 'LifeCare district', '--data-root', (Join-Path $DataRoot 'district'))
-$constructionArgs = @('--http-port', $ConstructionPort, '--accounts', "http://127.0.0.1:$AccountsPort", '--accounts-key-env', 'LIFECARE_MASTER_KEY', '--data-root', (Join-Path $DataRoot 'construction'))
+    '--master-url', "http://127.0.0.1:$AccountsPort", '--master-key-env', 'LIFECARE_MASTER_KEY', '--world-seed', $WorldSeed, '--construction', "http://127.0.0.1:$ConstructionPort", '--lot-poll-seconds', 1, '--server-name', 'LifeCare district', '--data-root', (Join-Path $DataRoot 'district'))
+$constructionArgs = @('--http-port', $ConstructionPort, '--accounts', "http://127.0.0.1:$AccountsPort", '--accounts-key-env', 'LIFECARE_MASTER_KEY', '--data-root', (Join-Path $DataRoot 'construction'),
+    '--district', "http://127.0.0.1:$DistrictHttpPort")
 if ($DevStarterLots) { $constructionArgs += '--dev-starter-lots' }
 Start-Role 'construction' (Dll 'LifeCare.Construction.Service') $constructionArgs
 Start-Role 'gateway' (Dll 'LifeCare.Gateway') @('--http-port', $GatewayHttpPort, '--game-port', $GatewayGamePort, '--accounts', "http://127.0.0.1:$AccountsPort",

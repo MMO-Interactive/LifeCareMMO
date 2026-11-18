@@ -12,7 +12,9 @@ public static class RoomFinder
     public static IReadOnlyList<Room> Find(BuildingPlan plan, int level)
     {
         var floor = plan.Floors.Where(f => f.Level == level).Select(f => f.Tile).ToHashSet();
-        var walls = plan.Walls.Where(w => w.Level == level).ToHashSet();
+        // Half walls and railings stand on an edge without closing it.
+        var partial = plan.WallFinishes.Where(f => ModuleCatalog.Opening(f.Opening)?.Encloses == false).Select(f => f.Wall).ToHashSet();
+        var walls = plan.Walls.Where(w => w.Level == level && !partial.Contains(w)).ToHashSet();
         var seen = new HashSet<TileCell>(); var rooms = new List<Room>();
         foreach (var start in floor.OrderBy(t => t.Z).ThenBy(t => t.X))
         {

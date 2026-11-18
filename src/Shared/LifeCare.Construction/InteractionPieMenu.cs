@@ -55,6 +55,13 @@ public sealed class InteractionPieMenu
     }
 
     /// <summary>The furniture wheel: arranging for the lot's owner, and inspecting for anyone.</summary>
+    /// <summary>Life Beyond's door wheel: Open or Close (whichever applies) and Inspect. Anyone near the door may use it.</summary>
+    public static InteractionPieMenu ForDoor(string targetId, string displayName, bool isOpen, int cursorX, int cursorY, int viewportWidth, int viewportHeight) =>
+        Create(targetId, "door", displayName,
+            [isOpen ? PieMenuAction.Leaf("Close", "Close the door.", LotDoors.CloseAction) : PieMenuAction.Leaf("Open", "Open the door.", LotDoors.OpenAction),
+             PieMenuAction.Leaf("Inspect", "What this door is and whether it is open.", InspectAction)],
+            cursorX, cursorY, viewportWidth, viewportHeight);
+
     public static InteractionPieMenu ForFurnishing(PlacedFurnishing piece, string displayName, bool isOwner, int cursorX, int cursorY, int viewportWidth, int viewportHeight,
         IEnumerable<PieMenuAction>? additionalActions = null)
     {

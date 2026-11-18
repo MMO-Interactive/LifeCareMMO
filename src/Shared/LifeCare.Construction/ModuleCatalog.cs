@@ -2,7 +2,14 @@ namespace LifeCare.Construction;
 
 /// <summary>An opening a wall can host: its clear size, sill and offset along the wall, and whether people can pass.</summary>
 public sealed record WallOpeningSpec(string Id, string Name, float WidthMeters, float HeightMeters, float SillMeters, float OffsetMeters, bool Passable,
-    bool Vehicle = false, bool Glazed = false);
+    bool Vehicle = false, bool Glazed = false, bool Partial = false)
+{
+    /// <summary>Half walls and railings stand on an edge without closing it: rooms see through them.</summary>
+    public bool Encloses => !Partial;
+}
+
+/// <summary>A Sims-style paint, wallpaper colour or carpet: an sRGB colour applied to a wall face or a floor.</summary>
+public sealed record PaintSpec(string Id, string Name, string Hex, string Family);
 
 /// <summary>A wall finish: its display name, how long it holds against fire, and its colours for generated geometry.</summary>
 public sealed record WallStyleSpec(string Id, string Name, int FireRatingMinutes, string Siding, string Trim, string Skirt, string Pattern);
@@ -47,10 +54,44 @@ public static class ModuleCatalog
         new("win_corner", "Corner window", .9f, 1.3f, .9f, 1.25f, false, Glazed: true),
         new("win_wide", "Wide window", 2.4f, 1.2f, .9f, 0, false, Glazed: true),
         new("passage", "Open passage", 1.2f, 2.3f, 0, 0, true),
+        new("half", "Half wall", 0, 1.0f, 0, 0, false, Partial: true),
+        new("railing", "Railing", 0, 1.1f, 0, 0, false, Partial: true),
     ];
+
+    /// <summary>Wall paints (both faces), carpets and vinyl colours (floors). Ids are stored in lot documents.</summary>
+    public static readonly IReadOnlyList<PaintSpec> Paints =
+    [
+        new("white", "Clinic white", "#F1EFE8", "paint"), new("cream", "Cream", "#EDE3C8", "paint"), new("butter", "Butter yellow", "#F2DC8C", "paint"),
+        new("peach", "Peach", "#F2C1A0", "paint"), new("blush", "Blush pink", "#EBBBC0", "paint"), new("lavender", "Lavender", "#C9BDE0", "paint"),
+        new("sky", "Sky blue", "#AFCFEA", "paint"), new("mint", "Mint", "#BFE3CF", "paint"), new("sage", "Sage", "#A9BC98", "paint"),
+        new("teal", "Teal", "#4F9A9A", "paint"), new("navy", "Navy", "#2F416B", "paint"), new("forest", "Forest green", "#3E6145", "paint"),
+        new("terracotta", "Terracotta", "#C0704E", "paint"), new("brick_red", "Brick red", "#8C3A2E", "paint"), new("slate", "Slate grey", "#6E757C", "paint"),
+        new("charcoal", "Charcoal", "#3A3C40", "paint"),
+        new("carpet_beige", "Beige carpet", "#C8B79A", "carpet"), new("carpet_grey", "Grey carpet", "#8E9094", "carpet"), new("carpet_blue", "Blue carpet", "#4F6B95", "carpet"),
+        new("carpet_green", "Green carpet", "#5F7F55", "carpet"), new("carpet_red", "Red carpet", "#93403D", "carpet"), new("carpet_rainbow", "Play-room carpet", "#E0A445", "carpet"),
+        new("vinyl_white", "White vinyl", "#E6E6E0", "vinyl"), new("vinyl_mint", "Mint vinyl", "#B7DBCB", "vinyl"), new("vinyl_blue", "Blue vinyl", "#A9C4DE", "vinyl"),
+        new("wood_light", "Light oak", "#C69C6D", "wood"), new("wood_dark", "Dark walnut", "#5E4129", "wood"), new("tile_blue", "Blue tile", "#9DBBD6", "tile"),
+        new("tile_green", "Green tile", "#A8CDB2", "tile"), new("tile_black", "Black tile", "#3C3E42", "tile"),
+    ];
+
+    public static PaintSpec? Paint(string? id) => Paints.FirstOrDefault(p => p.Id == id);
+    public static IEnumerable<PaintSpec> WallPaints => Paints.Where(p => p.Family == "paint");
+
+    /// <summary>Linear RGB of a paint, or null for no paint (the finish's own colour).</summary>
+    public static (float R, float G, float B)? PaintColor(string? id) => Paint(id) is { } p ? Linear(p.Hex) : null;
+
+    /// <summary>Module materials a wall paint covers: siding, stucco, battens and plaster. Stone, brick and trim keep their colour.</summary>
+    public static readonly IReadOnlySet<string> PaintableWall = new HashSet<string>(StringComparer.Ordinal)
+        { "siding_white", "siding_natural", "stucco", "batten_green", "batten_red", "drywall" };
+
+    /// <summary>Module materials a floor paint or carpet covers: the walking surface.</summary>
+    public static readonly IReadOnlySet<string> PaintableFloor = new HashSet<string>(StringComparer.Ordinal)
+        { "wood_floor", "tile_floor", "concrete" };
 
     /// <summary>Openings a straight 4 m wall module provides.</summary>
     public static IEnumerable<WallOpeningSpec> StraightOpenings => Openings.Where(o => o.Id != "passage");
+    /// <summary>Doors and windows that can be set into an existing full straight wall.</summary>
+    public static IEnumerable<WallOpeningSpec> Fittings => Openings.Where(o => o.Id is not (NoOpening or "passage" or "half" or "railing"));
 
     /// <summary>Openings a curved wall can host; garage and barn doors need a straight wall.</summary>
     public static IEnumerable<WallOpeningSpec> CurvedOpenings => Openings.Where(o => o.Id is "door_wood" or "door_halfglass" or "passage" or "win_small" or "win_large" or "win_wide");
@@ -58,8 +99,11 @@ public static class ModuleCatalog
     public static readonly IReadOnlyList<(string Id, string Name, string ModuleId)> FloorFinishes =
     [
         ("wood", "Wood floor", "floor_wood"), ("tile", "Tile floor", "floor_tile"), ("concrete", "Concrete slab", "floor_concrete"),
-        ("raised_wood", "Raised wood floor", "floor_raised_wood"),
+        ("raised_wood", "Raised wood floor", "floor_raised_wood"), ("carpet", "Carpet", "floor_concrete"), ("vinyl", "Vinyl", "floor_concrete"),
     ];
+
+    /// <summary>The colour a finish starts with when no paint is chosen (carpet and vinyl are coloured slabs).</summary>
+    public static string? DefaultFloorPaint(string finish) => finish switch { "carpet" => "carpet_beige", "vinyl" => "vinyl_white", _ => null };
 
     public static readonly IReadOnlyList<(string Id, string Name)> RoofShapes = [("flat", "Flat"), ("gable", "Gable"), ("hip", "Hip")];
     public static readonly IReadOnlyList<(string Id, string Name)> RoofFinishes = [("shingle", "Asphalt shingle"), ("metal_green", "Metal (green)"), ("metal_galv", "Metal (galvanized)")];
@@ -70,7 +114,7 @@ public static class ModuleCatalog
     public static bool IsRoofShape(string? id) => RoofShapes.Any(s => s.Id == id);
     public static bool IsRoofFinish(string? id) => RoofFinishes.Any(f => f.Id == id);
 
-    public static string WallModule(string style, string opening) => $"wall_{style}_{opening}";
+    public static string WallModule(string style, string opening) => opening == "railing" ? "wall_low_railing" : $"wall_{style}_{opening}";
     public static string OuterCornerModule(string style) => $"corner_{style}_outer";
     public static string GableInfillModule(string style) => $"gable_infill_{style}";
     public static string FloorModule(string finish) => FloorFinishes.FirstOrDefault(f => f.Id == finish).ModuleId ?? "floor_wood";
@@ -78,7 +122,7 @@ public static class ModuleCatalog
     /// <summary>Linear RGB of the pack's palette (sRGB hex in the generator), for vertex-coloured generated meshes.</summary>
     public static (float R, float G, float B) Color(string material) => Palette.TryGetValue(material, out var hex) ? Linear(hex) : (1, 0, 1);
 
-    private static (float, float, float) Linear(string hex)
+    public static (float R, float G, float B) Linear(string hex)
     {
         static float Channel(string h, int i)
         {

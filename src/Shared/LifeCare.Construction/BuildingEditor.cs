@@ -20,7 +20,7 @@ public enum BuildEditKind
 /// </summary>
 public sealed record BuildEdit(BuildEditKind Kind, int Level, int MinimumTileX = 0, int MinimumTileZ = 0, int MaximumTileX = 0, int MaximumTileZ = 0,
     IReadOnlyList<WallSegment>? Walls = null, string? RoofId = null, string? Style = null, string? Opening = null, string? Finish = null,
-    string? Shape = null, CurvedWall? Curve = null, string? TargetId = null)
+    string? Shape = null, CurvedWall? Curve = null, string? TargetId = null, string? Paint = null, string? InsidePaint = null, string? OutsidePaint = null)
 {
     public IEnumerable<FloorCell> FloorCells()
     {
@@ -36,6 +36,8 @@ public sealed record BuildResult(bool Accepted, BuildingPlan Plan, string ErrorC
 public static class BuildingEditor
 {
     public const int MaximumTilesPerEdit = 1024;
+    /// <summary>A paint value that clears a face back to its finish's own colour.</summary>
+    public const string NoPaint = "none";
 
     public static BuildResult Apply(BuildingPlan plan, string actorCharacterId, BuildEdit edit)
     {
@@ -55,10 +57,16 @@ public static class BuildingEditor
                 if (edit.Kind == BuildEditKind.AddFloor)
                 {
                     if (edit.Finish is not null && !ModuleCatalog.IsFloorFinish(edit.Finish)) return Reject("invalid_finish", "Unknown floor finish.");
+                    if (edit.Paint is not null && edit.Paint != NoPaint && ModuleCatalog.Paint(edit.Paint) is null) return Reject("invalid_paint", "Unknown paint.");
                     floors.UnionWith(cells);
-                    if (edit.Finish is not null)
+                    if (edit.Finish is not null || edit.Paint is not null)
                         foreach (var c in cells)
-                            if (edit.Finish == ModuleCatalog.DefaultFloorFinish) floorFinishes.Remove(c); else floorFinishes[c] = new(c, edit.Finish);
+                        {
+                            var old = floorFinishes.GetValueOrDefault(c);
+                            string finish = edit.Finish ?? old?.Finish ?? ModuleCatalog.DefaultFloorFinish;
+                            string? paint = edit.Paint == NoPaint ? null : edit.Paint ?? (edit.Finish is null ? old?.Paint : null);
+                            if (finish == ModuleCatalog.DefaultFloorFinish && paint is null) floorFinishes.Remove(c); else floorFinishes[c] = new(c, finish, paint);
+                        }
                 }
                 else { floors.ExceptWith(cells); foreach (var c in cells) floorFinishes.Remove(c); }
                 break;
@@ -70,13 +78,17 @@ public static class BuildingEditor
                 if (edit.Style is not null && ModuleCatalog.Style(edit.Style) is null) return Reject("invalid_style", "Unknown wall finish.");
                 if (edit.Opening is not null && !ModuleCatalog.StraightOpenings.Any(o => o.Id == edit.Opening)) return Reject("invalid_opening", "That opening does not fit a straight wall.");
                 if (edit.Kind == BuildEditKind.SetWallFinish && segments.Any(w => !walls.Contains(w))) return Reject("unknown_wall", "Build the wall before finishing it.");
+                foreach (var paint in new[] { edit.InsidePaint, edit.OutsidePaint })
+                    if (paint is not null && paint != NoPaint && ModuleCatalog.Paint(paint) is null) return Reject("invalid_paint", "Unknown paint.");
                 walls.UnionWith(segments);
-                if (edit.Style is not null || edit.Opening is not null)
+                if (edit.Style is not null || edit.Opening is not null || edit.InsidePaint is not null || edit.OutsidePaint is not null)
                     foreach (var w in segments)
                     {
                         var old = wallFinishes.GetValueOrDefault(w);
-                        var finish = new WallFinish(w, edit.Style ?? old?.Style ?? "", edit.Opening ?? old?.Opening ?? ModuleCatalog.NoOpening);
-                        if (finish.Style == "" && finish.Opening == ModuleCatalog.NoOpening) wallFinishes.Remove(w); else wallFinishes[w] = finish;
+                        string? Paint(string? requested, string? current) => requested == NoPaint ? null : requested ?? current;
+                        var finish = new WallFinish(w, edit.Style ?? old?.Style ?? "", edit.Opening ?? old?.Opening ?? ModuleCatalog.NoOpening,
+                            Paint(edit.InsidePaint, old?.InsidePaint), Paint(edit.OutsidePaint, old?.OutsidePaint));
+                        if (finish is { Style: "", Opening: ModuleCatalog.NoOpening, InsidePaint: null, OutsidePaint: null }) wallFinishes.Remove(w); else wallFinishes[w] = finish;
                     }
                 break;
             case BuildEditKind.AddRoof:
@@ -122,6 +134,12 @@ public static class BuildingEditor
             WallFinishes = wallFinishes.Values.Where(f => walls.Contains(f.Wall)).ToList(),
             FloorFinishes = floorFinishes.Values.Where(f => floors.Contains(f.Floor)).ToList(),
         };
+        // A door that was removed or replaced is no longer open.
+        if (candidate.OpenDoors.Count > 0)
+        {
+            var doors = LotDoors.All(candidate).Select(d => d.DoorId).ToHashSet();
+            candidate = candidate with { OpenDoors = candidate.OpenDoors.Where(doors.Contains).ToList() };
+        }
         if (edit.Kind is BuildEditKind.RemoveFloor or BuildEditKind.AddWall or BuildEditKind.AddCurvedWall or BuildEditKind.SetCurvedWall
             && candidate.Furnishings.FirstOrDefault(f => FurnishingEditor.Problem(candidate, f) is not null) is { } blocked)
             return Reject("furnishing_in_the_way", $"Move the {blocked.DefinitionId} first; this edit would leave it {(edit.Kind == BuildEditKind.RemoveFloor ? "without a floor" : "crossed by a wall")}.");

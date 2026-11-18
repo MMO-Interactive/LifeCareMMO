@@ -580,13 +580,19 @@ def leaf_garage(s, x0, x1, z0, z1):
     s.box((cx - .15, -.07, z0 + .5), (cx + .15, -.04, z0 + .53), "metal_dark")
 
 
-def leaf_barn(s, x0, x1, z0, z1, material="door_red"):
+def barn_track(s, x0, x1, z1):
+    s.box((x0 - .3, Y_EXT - .075, z1 + .08), (x1 + .3, Y_EXT - .035, z1 + .16), "metal_dark")
+
+
+def leaf_barn(s, x0, x1, z0, z1, material="door_red", sides=(0, 1)):
     ya, yb, tf, fw = Y_EXT - .085, Y_EXT - .045, "trim_white", .12
     yo = ya - .02
     mid = (x0 + x1) / 2
     zb, zt = z0 - .02, z1 + .05
     zm = (zb + zt) / 2
-    for lx0, lx1 in ((x0 - .1, mid), (mid, x1 + .1)):
+    for side, (lx0, lx1) in enumerate(((x0 - .1, mid), (mid, x1 + .1))):
+        if side not in sides:
+            continue
         s.box((lx0, ya, zb), (lx1, yb, zt), material)
         s.box((lx0, yo, zb), (lx0 + fw, ya, zt), tf)
         s.box((lx1 - fw, yo, zb), (lx1, ya, zt), tf)
@@ -596,7 +602,6 @@ def leaf_barn(s, x0, x1, z0, z1, material="door_red"):
         for za, zz in ((zb + fw, zm - fw / 2), (zm + fw / 2, zt - fw)):
             s.beam((lx0 + fw, yo + .01, za), (lx1 - fw, yo + .01, zz), .1, .02, tf, up=(0, -1, 0))
             s.beam((lx1 - fw, yo + .01, za), (lx0 + fw, yo + .01, zz), .1, .02, tf, up=(0, -1, 0))
-    s.box((x0 - .3, Y_EXT - .075, z1 + .08), (x1 + .3, Y_EXT - .035, z1 + .16), "metal_dark")
 
 
 def window_fill(s, o, t, cols=1, double_hung=True, shutters=None):
@@ -651,17 +656,8 @@ def wall_kind(kind):
         def f(s, st, sd):
             o = door_op(w, h, casing=kind != "door_barn")
             build_wall(s, st, [o], seed=sd)
-            x0, x1, z0, z1 = o["x0"] + .03, o["x1"] - .03, o["z0"], o["z1"] - .03
-            if kind == "door_wood":
-                leaf_panel(s, x0, x1, z0, z1, st["door"])
-            elif kind == "door_halfglass":
-                leaf_halfglass(s, x0, x1, z0, z1, st["door"])
-            elif kind == "door_screen":
-                leaf_screen(s, x0, x1, z0, z1, st["door"])
-            elif kind == "door_garage":
-                leaf_garage(s, x0, x1, z0, z1)
-            else:
-                leaf_barn(s, o["x0"], o["x1"], o["z0"], o["z1"])
+            if kind == "door_barn":
+                barn_track(s, o["x0"], o["x1"], o["z1"])
         return name, f, [dict(type=kind[5:], widthMeters=w, heightMeters=h, offsetMeters=0.0,
                               passable=True, vehicle=kind in ("door_garage", "door_barn"))]
     spec = {"win_small": ("Small Window", .6, .6, 1.4, 0.0, 1, False, False),
@@ -676,6 +672,35 @@ def wall_kind(kind):
         build_wall(s, st, [o], seed=sd)
         window_fill(s, o, st["trim"], cols=cols, double_hung=dh, shutters=st["shutter"] if sh else None)
     return name, g, [dict(type="window", widthMeters=w, heightMeters=h, sillMeters=sill, offsetMeters=x)]
+
+
+HINGE_X, HINGE_Y = -.42, -.0425
+
+
+def door_leaf(kind, material):
+    def f(s, r):
+        x0, x1, z0, z1 = -.42, .42, WALL_Z0, WALL_Z0 + 2.1 - .03
+        with s.at((-HINGE_X, -HINGE_Y, 0)):
+            if kind == "wood":
+                leaf_panel(s, x0, x1, z0, z1, material)
+            elif kind == "halfglass":
+                leaf_halfglass(s, x0, x1, z0, z1, material)
+            else:
+                leaf_screen(s, x0, x1, z0, z1, material)
+    return f
+
+
+def garage_leaf(open_):
+    def f(s, r):
+        x0, x1, z0, z1 = -1.32, 1.32, WALL_Z0, WALL_Z0 + 2.4 - .03
+        if not open_:
+            leaf_garage(s, x0, x1, z0, z1)
+            return
+        # Rolled up: the sections lie flat under the ceiling, reaching into the room (+Y in Blender).
+        with s.at((0, .15, WALL_Z0 + 2.4 + .06), rx=-90):
+            with s.at((0, 0, -z0)):
+                leaf_garage(s, x0, x1, z0, z1)
+    return f
 
 
 WALL_KINDS = ["full", "door_wood", "door_halfglass", "door_screen", "door_garage", "door_barn",
@@ -754,6 +779,18 @@ def _style_reg():
 
 
 _style_reg()
+
+for _kind, _label in (("wood", "Wood Door"), ("halfglass", "Half-Window Door"), ("screen", "Screen Door")):
+    for _colour, _material in (("green", "door_green"), ("wood", "door_wood")):
+        R(f"door_leaf_{_kind}_{_colour}", f"{_label} Leaf ({_colour})", "doors", "free", door_leaf(_kind, _material), sheet="doors",
+          game=dict(interactive=True, motion="swing"), tags=["Origin on the hinge axis at the level base; swings into the room (-Z)."])
+R("door_leaf_garage", "Garage Door Leaf", "doors", "free", garage_leaf(False), sheet="doors", game=dict(interactive=True, motion="overhead"),
+  tags=["Wall coordinates: place at the wall origin."])
+R("door_leaf_garage_open", "Garage Door Leaf (Open)", "doors", "free", garage_leaf(True), sheet="doors", game=dict(interactive=True, motion="overhead"))
+R("door_leaf_barn_left", "Barn Door Leaf (Left)", "doors", "free", lambda s, r: leaf_barn(s, -1.5, 1.5, WALL_Z0, WALL_Z0 + 2.6, sides=(0,)),
+  sheet="doors", game=dict(interactive=True, motion="slide"), tags=["Wall coordinates; slides along -X to open."])
+R("door_leaf_barn_right", "Barn Door Leaf (Right)", "doors", "free", lambda s, r: leaf_barn(s, -1.5, 1.5, WALL_Z0, WALL_Z0 + 2.6, sides=(1,)),
+  sheet="doors", game=dict(interactive=True, motion="slide"), tags=["Wall coordinates; slides along +X to open."])
 
 
 def low_wall_railing(s, r):
@@ -1844,7 +1881,7 @@ SHEET_TITLES = {
     "floors": "Foundations & Floors", "roofs": "Roofs", "roof_details": "Roof Details",
     "exterior": "Exterior Details", "interior": "Interior / Wall Details", "utility": "Utility & Service",
     "site": "Site & Miscellaneous", "street": "Street & Infrastructure", "nature": "Nature",
-    "terrain": "Terrain", "roads": "Roads & Sidewalks (4 m grid)",
+    "terrain": "Terrain", "roads": "Roads & Sidewalks (4 m grid)", "doors": "Door Leaves",
 }
 for _k, _st in STYLES.items():
     SHEET_TITLES["walls_" + _k] = "Walls, Doors & Windows - " + _st["name"]
@@ -1990,14 +2027,27 @@ def build_town(meshes):
         for a in range(w):
             for b in range(d):
                 put(floor, (4 * a + 2, 4 * b + 2, 0), 0, g)
+        def wall(k, loc, r):
+            put(f"wall_{style}_{k}", loc, r, g)
+            # Door leaves are separate modules now: hinged leaves sit on the hinge, garage and barn leaves at the wall origin.
+            colour = "green" if style == "lap_white" else "wood"
+            leaves = {"door_wood": [f"door_leaf_wood_{colour}"], "door_halfglass": [f"door_leaf_halfglass_{colour}"],
+                      "door_screen": [f"door_leaf_screen_{colour}"], "door_garage": ["door_leaf_garage"],
+                      "door_barn": ["door_leaf_barn_left", "door_leaf_barn_right"]}.get(k, [])
+            for leaf in leaves:
+                hinge = leaf.startswith(("door_leaf_wood", "door_leaf_halfglass", "door_leaf_screen"))
+                cs, sn = math.cos(math.radians(r)), math.sin(math.radians(r))
+                hx, hy = (HINGE_X, HINGE_Y) if hinge else (0, 0)
+                put(leaf, (loc[0] + hx * cs - hy * sn, loc[1] + hx * sn + hy * cs, loc[2]), r, g)
+
         for a, k in enumerate(front):
-            put(f"wall_{style}_{k}", (4 * a + 2, 0, 0), 0, g)
+            wall(k, (4 * a + 2, 0, 0), 0)
         for a, k in enumerate(back):
-            put(f"wall_{style}_{k}", (4 * a + 2, 4 * d, 0), 180, g)
+            wall(k, (4 * a + 2, 4 * d, 0), 180)
         for b, k in enumerate(left):
-            put(f"wall_{style}_{k}", (0, 4 * b + 2, 0), -90, g)
+            wall(k, (0, 4 * b + 2, 0), -90)
         for b, k in enumerate(right):
-            put(f"wall_{style}_{k}", (4 * w, 4 * b + 2, 0), 90, g)
+            wall(k, (4 * w, 4 * b + 2, 0), 90)
         for (x, y), r in (((0, 0), 0), ((4 * w, 0), 90), ((4 * w, 4 * d), 180), ((0, 4 * d), -90)):
             put(f"corner_{style}_outer", (x, y, 0), r, g)
         for a in range(w):

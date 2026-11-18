@@ -94,6 +94,9 @@ internal static class MasterApi
         app.MapPost("/api/internal/service-purchase",(RemotePurchaseRequest request,GameAuthority game)=>Results.Ok(game.Purchase(request.CharacterId,request.Purchase)));
         app.MapPost("/api/internal/service-select",(RemoteSelectRequest request,GameAuthority game)=>Results.Ok(game.SelectVehicle(request.CharacterId,request.VehicleId)));
         app.MapGet("/api/internal/lots",(GameAuthority game)=>Results.Ok(game.LotRevisions()));
+        // Door interactions: where a character really stands, and the lot's base height, so the Construction service can check reach.
+        app.MapGet("/api/internal/characters/{characterId}/position",(string characterId,string? lotId,GameAuthority game)=>
+            game.CharacterPosition(characterId,lotId) is { } at?Results.Ok(at):Results.NotFound());
         if(app.Services.GetRequiredService<ServerOptions>().StormTestRoutes)
         {
             app.MapPost("/api/internal/test/lot-tornado",(LotTornadoRequest request,GameAuthority game)=>game.StartLotTestStorm(request.LotId,request.Seconds,request.PeakMph,request.WidthMeters) is { } started?Results.Ok(started):Results.NotFound());

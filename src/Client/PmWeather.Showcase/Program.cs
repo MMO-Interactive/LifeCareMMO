@@ -668,7 +668,7 @@ internal sealed class NativeSurface : IRenderSurfaceHost, IDisposable
     private readonly Queue<GuiPointerState> guiPointerEvents = new();
     private readonly Queue<GuiKeyboardEvent> guiKeyboardEvents = new();
     private GuiPointerState guiPointer = GuiPointerState.Missing;
-    private bool guiInputEnabled, guiPrimaryDown;
+    private bool guiInputEnabled, guiPrimaryDown, guiSecondaryDown, guiSecondaryPressed, guiSecondaryReleased;
     private NativePoint mouseRestorePosition;
     public NativeSurface(int width, int height, bool visible)
     {
@@ -740,6 +740,17 @@ internal sealed class NativeSurface : IRenderSurfaceHost, IDisposable
     public IReadOnlyList<WorldClick> DrainWorldClicks() { var clicks = worldClicks.ToArray(); worldClicks.Clear(); return clicks; }
     public bool TryGetGuiKeyboardEvent(out GuiKeyboardEvent input) => guiKeyboardEvents.TryDequeue(out input);
     public void SetTitle(string title) => SetWindowTextW(WindowHandle, title);
+    /// <summary>Mouse-wheel notches since the last call (build camera zoom), taken before the fly camera can spend them.</summary>
+    public float TakeWheelNotches() { float notches = wheelNotches; wheelNotches = 0; return notches; }
+    /// <summary>Whether a key is held right now (build camera movement while the cursor is free).</summary>
+    public bool IsKeyHeld(int virtualKey) => IsInputActive && (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+    /// <summary>The right mouse button while the GUI cursor is free: held, and pressed or released since the last call.</summary>
+    public (bool Down, bool Pressed, bool Released) TakeSecondaryButton()
+    {
+        var state = (guiSecondaryDown, guiSecondaryPressed, guiSecondaryReleased);
+        guiSecondaryPressed = guiSecondaryReleased = false;
+        return state;
+    }
     public void RequestClose() => closeRequested = true;
     public GuiInputState ReadGuiInput()
     {
@@ -909,6 +920,12 @@ internal sealed class NativeSurface : IRenderSurfaceHost, IDisposable
         if (MenuControlsEnabled && GuiInputEnabled && message == 0x0102)
         {
             if (guiKeyboardEvents.Count < 256) guiKeyboardEvents.Enqueue(new(0, (char)parameter, false));
+            return 0;
+        }
+        if (GuiInputEnabled && message is 0x0204 or 0x0205)
+        {
+            if (message == 0x0204) { guiSecondaryDown = true; guiSecondaryPressed = true; SetCapture(window); }
+            else { guiSecondaryDown = false; guiSecondaryReleased = true; if (GetCapture() == window && !guiPrimaryDown) ReleaseCapture(); }
             return 0;
         }
         if (GuiInputEnabled && message is 0x0200 or 0x0201 or 0x0202)

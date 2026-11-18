@@ -116,7 +116,7 @@ internal sealed class StormChasePlaySession : IDisposable
             online=new(server,ticket,session.World.ContentFingerprint);
             await online.Admission.WaitAsync(TimeSpan.FromSeconds(25),cancellation);
             _=new StormChaseLotRenderer(catalog);
-            var lots=new StormChaseLotPlay(selection.AccountAddress,selection.AccessToken,selection.Character.Id,session.World);
+            var lots=new StormChaseLotPlay(selection.AccountAddress,selection.AccessToken,selection.Character.Id,session.World,selection.RefreshToken);
             session.LotItems=lots.RenderItems;session.LotDebrisPart=id=>lots.Piece(id) is { } piece?StormChaseLotRenderer.Item(piece):null;
             return new(session,online,name,output,staging){Lots=lots};
         }
@@ -215,8 +215,11 @@ internal sealed class StormChasePlaySession : IDisposable
         {
             client.ThrowIfFaulted();var state=client.Current??throw new IOException("Server world is unavailable.");
             var player=state.Player??throw new IOException("Server removed the admitted player.");
+            bool building=Lots?.BuildMode==true;
+            if(building)Lots!.AddBuildWheel(surface.TakeWheelNotches());   // the build camera zooms with the wheel
             surface.UpdateFlyCamera(Camera,delta,false);
             var axes=surface.ChaseInput();
+            if(building)blocked=true;                                       // the avatar stays put while the build camera flies
             if(player.Mode==PlayerMovementMode.Driving&&state.Vehicle is { } headingVehicle)
             {
                 if(previousVehicleYaw is { } previousYaw&&!blocked)
@@ -235,6 +238,7 @@ internal sealed class StormChasePlaySession : IDisposable
                 var position=pivot-Camera.Forward*7;position.Y=Math.Max(position.Y,Session.World.HeightAt(position.X,position.Z)+1);
                 camera=camera with{Position=new(position.X,position.Y,position.Z),VerticalFieldOfViewDegrees=66};
             }
+            if(building)camera=Lots!.BuildCameraState;
             if(Lots is { } lots)
             {
                 lots.Tick(localSeconds+=delta);

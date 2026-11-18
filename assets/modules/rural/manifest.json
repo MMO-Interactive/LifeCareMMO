@@ -764,13 +764,11 @@
     0.118,
     3.2
    ],
-   "triangles": 852,
+   "triangles": 624,
    "materials": [
     "LC_drywall",
     "LC_siding_white",
-    "LC_trim_white",
-    "LC_door_green",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -812,14 +810,11 @@
     0.118,
     3.2
    ],
-   "triangles": 792,
+   "triangles": 624,
    "materials": [
     "LC_drywall",
     "LC_siding_white",
-    "LC_trim_white",
-    "LC_door_green",
-    "LC_glass",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -861,14 +856,11 @@
     0.118,
     3.2
    ],
-   "triangles": 952,
+   "triangles": 624,
    "materials": [
     "LC_drywall",
     "LC_siding_white",
-    "LC_trim_white",
-    "LC_door_green",
-    "LC_brass",
-    "LC_screen"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -910,14 +902,11 @@
     0.118,
     3.2
    ],
-   "triangles": 852,
+   "triangles": 600,
    "materials": [
     "LC_drywall",
     "LC_siding_white",
-    "LC_trim_white",
-    "LC_garage_white",
-    "LC_glass",
-    "LC_metal_dark"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -951,7 +940,7 @@
    "file": "glb/walls/wall_lap_white_door_barn.glb",
    "boundsMin": [
     -2.0,
-    -0.205,
+    -0.175,
     0.0
    ],
    "boundsMax": [
@@ -959,12 +948,11 @@
     0.118,
     3.2
    ],
-   "triangles": 792,
+   "triangles": 552,
    "materials": [
     "LC_drywall",
     "LC_siding_white",
     "LC_trim_white",
-    "LC_door_red",
     "LC_metal_dark"
    ],
    "gameplay": {
@@ -1426,14 +1414,12 @@
     0.118,
     3.2
    ],
-   "triangles": 852,
+   "triangles": 624,
    "materials": [
     "LC_drywall",
     "LC_siding_natural",
     "LC_wood_dark",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -1475,15 +1461,12 @@
     0.118,
     3.2
    ],
-   "triangles": 792,
+   "triangles": 624,
    "materials": [
     "LC_drywall",
     "LC_siding_natural",
     "LC_wood_dark",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_glass",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -1525,15 +1508,12 @@
     0.118,
     3.2
    ],
-   "triangles": 952,
+   "triangles": 624,
    "materials": [
     "LC_drywall",
     "LC_siding_natural",
     "LC_wood_dark",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass",
-    "LC_screen"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -1575,15 +1555,12 @@
     0.118,
     3.2
    ],
-   "triangles": 852,
+   "triangles": 600,
    "materials": [
     "LC_drywall",
     "LC_siding_natural",
     "LC_wood_dark",
-    "LC_trim_white",
-    "LC_garage_white",
-    "LC_glass",
-    "LC_metal_dark"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -1617,7 +1594,7 @@
    "file": "glb/walls/wall_lap_natural_door_barn.glb",
    "boundsMin": [
     -2.0,
-    -0.205,
+    -0.175,
     0.0
    ],
    "boundsMax": [
@@ -1625,13 +1602,12 @@
     0.118,
     3.2
    ],
-   "triangles": 792,
+   "triangles": 552,
    "materials": [
     "LC_drywall",
     "LC_siding_natural",
     "LC_wood_dark",
     "LC_trim_white",
-    "LC_door_red",
     "LC_metal_dark"
    ],
    "gameplay": {
@@ -2098,14 +2074,12 @@
     0.118,
     3.2
    ],
-   "triangles": 468,
+   "triangles": 240,
    "materials": [
     "LC_drywall",
     "LC_stucco",
     "LC_concrete",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 60,
@@ -2147,15 +2121,12 @@
     0.118,
     3.2
    ],
-   "triangles": 408,
+   "triangles": 240,
    "materials": [
     "LC_drywall",
     "LC_stucco",
     "LC_concrete",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_glass",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 60,
@@ -2197,15 +2168,12 @@
     0.118,
     3.2
    ],
-   "triangles": 568,
+   "triangles": 240,
    "materials": [
     "LC_drywall",
     "LC_stucco",
     "LC_concrete",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass",
-    "LC_screen"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 60,
@@ -2247,15 +2215,12 @@
     0.118,
     3.2
    ],
-   "triangles": 492,
+   "triangles": 240,
    "materials": [
     "LC_drywall",
     "LC_stucco",
     "LC_concrete",
-    "LC_trim_white",
-    "LC_garage_white",
-    "LC_glass",
-    "LC_metal_dark"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 60,
@@ -2289,7 +2254,7 @@
    "file": "glb/walls/wall_stucco_door_barn.glb",
    "boundsMin": [
     -2.0,
-    -0.205,
+    -0.175,
     0.0
    ],
    "boundsMax": [
@@ -2297,13 +2262,12 @@
     0.118,
     3.2
    ],
-   "triangles": 444,
+   "triangles": 204,
    "materials": [
     "LC_drywall",
     "LC_stucco",
     "LC_concrete",
     "LC_trim_white",
-    "LC_door_red",
     "LC_metal_dark"
    ],
    "gameplay": {
@@ -2771,13 +2735,11 @@
     0.118,
     3.2
    ],
-   "triangles": 588,
+   "triangles": 360,
    "materials": [
     "LC_drywall",
     "LC_batten_green",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -2819,14 +2781,11 @@
     0.118,
     3.2
    ],
-   "triangles": 528,
+   "triangles": 360,
    "materials": [
     "LC_drywall",
     "LC_batten_green",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_glass",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -2868,14 +2827,11 @@
     0.118,
     3.2
    ],
-   "triangles": 688,
+   "triangles": 360,
    "materials": [
     "LC_drywall",
     "LC_batten_green",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass",
-    "LC_screen"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -2917,14 +2873,11 @@
     0.118,
     3.2
    ],
-   "triangles": 612,
+   "triangles": 360,
    "materials": [
     "LC_drywall",
     "LC_batten_green",
-    "LC_trim_white",
-    "LC_garage_white",
-    "LC_glass",
-    "LC_metal_dark"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -2958,7 +2911,7 @@
    "file": "glb/walls/wall_batten_green_door_barn.glb",
    "boundsMin": [
     -2.0,
-    -0.205,
+    -0.175,
     0.0
    ],
    "boundsMax": [
@@ -2966,12 +2919,11 @@
     0.118,
     3.2
    ],
-   "triangles": 564,
+   "triangles": 324,
    "materials": [
     "LC_drywall",
     "LC_batten_green",
     "LC_trim_white",
-    "LC_door_red",
     "LC_metal_dark"
    ],
    "gameplay": {
@@ -3432,13 +3384,11 @@
     0.118,
     3.2
    ],
-   "triangles": 588,
+   "triangles": 360,
    "materials": [
     "LC_drywall",
     "LC_batten_red",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -3480,14 +3430,11 @@
     0.118,
     3.2
    ],
-   "triangles": 528,
+   "triangles": 360,
    "materials": [
     "LC_drywall",
     "LC_batten_red",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_glass",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -3529,14 +3476,11 @@
     0.118,
     3.2
    ],
-   "triangles": 688,
+   "triangles": 360,
    "materials": [
     "LC_drywall",
     "LC_batten_red",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass",
-    "LC_screen"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -3578,14 +3522,11 @@
     0.118,
     3.2
    ],
-   "triangles": 612,
+   "triangles": 360,
    "materials": [
     "LC_drywall",
     "LC_batten_red",
-    "LC_trim_white",
-    "LC_garage_white",
-    "LC_glass",
-    "LC_metal_dark"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 20,
@@ -3619,7 +3560,7 @@
    "file": "glb/walls/wall_batten_red_door_barn.glb",
    "boundsMin": [
     -2.0,
-    -0.205,
+    -0.175,
     0.0
    ],
    "boundsMax": [
@@ -3627,12 +3568,11 @@
     0.118,
     3.2
    ],
-   "triangles": 564,
+   "triangles": 324,
    "materials": [
     "LC_drywall",
     "LC_batten_red",
     "LC_trim_white",
-    "LC_door_red",
     "LC_metal_dark"
    ],
    "gameplay": {
@@ -4095,15 +4035,13 @@
     0.118,
     3.2
    ],
-   "triangles": 1836,
+   "triangles": 1608,
    "materials": [
     "LC_drywall",
     "LC_mortar",
     "LC_stone",
     "LC_concrete",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 120,
@@ -4145,16 +4083,13 @@
     0.118,
     3.2
    ],
-   "triangles": 1776,
+   "triangles": 1608,
    "materials": [
     "LC_drywall",
     "LC_mortar",
     "LC_stone",
     "LC_concrete",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_glass",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 120,
@@ -4196,16 +4131,13 @@
     0.118,
     3.2
    ],
-   "triangles": 1936,
+   "triangles": 1608,
    "materials": [
     "LC_drywall",
     "LC_mortar",
     "LC_stone",
     "LC_concrete",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass",
-    "LC_screen"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 120,
@@ -4247,16 +4179,13 @@
     0.118,
     3.2
    ],
-   "triangles": 1380,
+   "triangles": 1128,
    "materials": [
     "LC_drywall",
     "LC_mortar",
     "LC_stone",
     "LC_concrete",
-    "LC_trim_white",
-    "LC_garage_white",
-    "LC_glass",
-    "LC_metal_dark"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 120,
@@ -4290,7 +4219,7 @@
    "file": "glb/walls/wall_stone_door_barn.glb",
    "boundsMin": [
     -2.0,
-    -0.205,
+    -0.175,
     0.0
    ],
    "boundsMax": [
@@ -4298,14 +4227,13 @@
     0.118,
     3.2
    ],
-   "triangles": 1188,
+   "triangles": 948,
    "materials": [
     "LC_drywall",
     "LC_mortar",
     "LC_stone",
     "LC_concrete",
     "LC_trim_white",
-    "LC_door_red",
     "LC_metal_dark"
    ],
    "gameplay": {
@@ -4780,12 +4708,10 @@
     0.118,
     3.2
    ],
-   "triangles": 468,
+   "triangles": 240,
    "materials": [
     "LC_drywall",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 30,
@@ -4827,13 +4753,10 @@
     0.118,
     3.2
    ],
-   "triangles": 408,
+   "triangles": 240,
    "materials": [
     "LC_drywall",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_glass",
-    "LC_brass"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 30,
@@ -4875,13 +4798,10 @@
     0.118,
     3.2
    ],
-   "triangles": 568,
+   "triangles": 240,
    "materials": [
     "LC_drywall",
-    "LC_trim_white",
-    "LC_door_wood",
-    "LC_brass",
-    "LC_screen"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 30,
@@ -4923,13 +4843,10 @@
     0.118,
     3.2
    ],
-   "triangles": 492,
+   "triangles": 240,
    "materials": [
     "LC_drywall",
-    "LC_trim_white",
-    "LC_garage_white",
-    "LC_glass",
-    "LC_metal_dark"
+    "LC_trim_white"
    ],
    "gameplay": {
     "fireRatingMinutes": 30,
@@ -4963,7 +4880,7 @@
    "file": "glb/walls/wall_plaster_door_barn.glb",
    "boundsMin": [
     -2.0,
-    -0.205,
+    -0.175,
     0.0
    ],
    "boundsMax": [
@@ -4971,11 +4888,10 @@
     0.118,
     3.2
    ],
-   "triangles": 444,
+   "triangles": 204,
    "materials": [
     "LC_drywall",
     "LC_trim_white",
-    "LC_door_red",
     "LC_metal_dark"
    ],
    "gameplay": {
@@ -5369,6 +5285,312 @@
    "gameplay": {},
    "notes": [
     "Fills the side triangle under a 1x1 shed roof; low end at local -X."
+   ]
+  },
+  {
+   "id": "door_leaf_wood_green",
+   "name": "Wood Door Leaf (green)",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_wood_green.glb",
+   "boundsMin": [
+    0.0,
+    -0.082,
+    0.2
+   ],
+   "boundsMax": [
+    0.84,
+    0.083,
+    2.27
+   ],
+   "triangles": 228,
+   "materials": [
+    "LC_door_green",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "swing"
+   },
+   "notes": [
+    "Origin on the hinge axis at the level base; swings into the room (-Z)."
+   ]
+  },
+  {
+   "id": "door_leaf_wood_wood",
+   "name": "Wood Door Leaf (wood)",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_wood_wood.glb",
+   "boundsMin": [
+    0.0,
+    -0.082,
+    0.2
+   ],
+   "boundsMax": [
+    0.84,
+    0.083,
+    2.27
+   ],
+   "triangles": 228,
+   "materials": [
+    "LC_door_wood",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "swing"
+   },
+   "notes": [
+    "Origin on the hinge axis at the level base; swings into the room (-Z)."
+   ]
+  },
+  {
+   "id": "door_leaf_halfglass_green",
+   "name": "Half-Window Door Leaf (green)",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_halfglass_green.glb",
+   "boundsMin": [
+    0.0,
+    -0.082,
+    0.2
+   ],
+   "boundsMax": [
+    0.84,
+    0.083,
+    2.27
+   ],
+   "triangles": 168,
+   "materials": [
+    "LC_door_green",
+    "LC_glass",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "swing"
+   },
+   "notes": [
+    "Origin on the hinge axis at the level base; swings into the room (-Z)."
+   ]
+  },
+  {
+   "id": "door_leaf_halfglass_wood",
+   "name": "Half-Window Door Leaf (wood)",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_halfglass_wood.glb",
+   "boundsMin": [
+    0.0,
+    -0.082,
+    0.2
+   ],
+   "boundsMax": [
+    0.84,
+    0.083,
+    2.27
+   ],
+   "triangles": 168,
+   "materials": [
+    "LC_door_wood",
+    "LC_glass",
+    "LC_brass"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "swing"
+   },
+   "notes": [
+    "Origin on the hinge axis at the level base; swings into the room (-Z)."
+   ]
+  },
+  {
+   "id": "door_leaf_screen_green",
+   "name": "Screen Door Leaf (green)",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_screen_green.glb",
+   "boundsMin": [
+    0.0,
+    -0.093,
+    0.2
+   ],
+   "boundsMax": [
+    0.84,
+    0.148,
+    2.27
+   ],
+   "triangles": 328,
+   "materials": [
+    "LC_door_green",
+    "LC_brass",
+    "LC_trim_white",
+    "LC_screen"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "swing"
+   },
+   "notes": [
+    "Origin on the hinge axis at the level base; swings into the room (-Z)."
+   ]
+  },
+  {
+   "id": "door_leaf_screen_wood",
+   "name": "Screen Door Leaf (wood)",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_screen_wood.glb",
+   "boundsMin": [
+    0.0,
+    -0.093,
+    0.2
+   ],
+   "boundsMax": [
+    0.84,
+    0.148,
+    2.27
+   ],
+   "triangles": 328,
+   "materials": [
+    "LC_door_wood",
+    "LC_brass",
+    "LC_trim_white",
+    "LC_screen"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "swing"
+   },
+   "notes": [
+    "Origin on the hinge axis at the level base; swings into the room (-Z)."
+   ]
+  },
+  {
+   "id": "door_leaf_garage",
+   "name": "Garage Door Leaf",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_garage.glb",
+   "boundsMin": [
+    -1.32,
+    -0.07,
+    0.205
+   ],
+   "boundsMax": [
+    1.32,
+    0.0,
+    2.565
+   ],
+   "triangles": 252,
+   "materials": [
+    "LC_garage_white",
+    "LC_glass",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "overhead"
+   },
+   "notes": [
+    "Wall coordinates: place at the wall origin."
+   ]
+  },
+  {
+   "id": "door_leaf_garage_open",
+   "name": "Garage Door Leaf (Open)",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_garage_open.glb",
+   "boundsMin": [
+    -1.32,
+    0.155,
+    2.66
+   ],
+   "boundsMax": [
+    1.32,
+    2.515,
+    2.73
+   ],
+   "triangles": 252,
+   "materials": [
+    "LC_garage_white",
+    "LC_glass",
+    "LC_metal_dark"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "overhead"
+   },
+   "notes": []
+  },
+  {
+   "id": "door_leaf_barn_left",
+   "name": "Barn Door Leaf (Left)",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_barn_left.glb",
+   "boundsMin": [
+    -1.6,
+    -0.205,
+    0.18
+   ],
+   "boundsMax": [
+    0.0,
+    -0.145,
+    2.85
+   ],
+   "triangles": 120,
+   "materials": [
+    "LC_door_red",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "slide"
+   },
+   "notes": [
+    "Wall coordinates; slides along -X to open."
+   ]
+  },
+  {
+   "id": "door_leaf_barn_right",
+   "name": "Barn Door Leaf (Right)",
+   "category": "doors",
+   "attach": "free",
+   "footprintTiles": null,
+   "file": "glb/doors/door_leaf_barn_right.glb",
+   "boundsMin": [
+    0.0,
+    -0.205,
+    0.18
+   ],
+   "boundsMax": [
+    1.6,
+    -0.145,
+    2.85
+   ],
+   "triangles": 120,
+   "materials": [
+    "LC_door_red",
+    "LC_trim_white"
+   ],
+   "gameplay": {
+    "interactive": true,
+    "motion": "slide"
+   },
+   "notes": [
+    "Wall coordinates; slides along +X to open."
    ]
   },
   {

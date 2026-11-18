@@ -8,6 +8,8 @@ public interface ILotAuthority
     Task<ChangeResult> PlaceAsync(string lotId, FurnishingRequest request, CancellationToken cancel = default);
     Task<ChangeResult> MoveAsync(string lotId, FurnishingRequest request, CancellationToken cancel = default);
     Task<ChangeResult> PickUpAsync(string lotId, FurnishingRequest request, CancellationToken cancel = default);
+    /// <summary>Opens or closes a door. Not owner-only: the service checks the character is near the door.</summary>
+    Task<ChangeResult> SetDoorAsync(string lotId, DoorRequest request, CancellationToken cancel = default);
 }
 
 /// <summary>The same rules and revisions as the Construction service, held in memory.</summary>
@@ -20,6 +22,7 @@ public sealed class InMemoryLotAuthority : ILotAuthority
     public Task<ChangeResult> PlaceAsync(string lotId, FurnishingRequest r, CancellationToken cancel = default) => Change(lotId, r.ExpectedRevision, p => FurnishingEditor.Place(p, r.CharacterId, r.Piece!));
     public Task<ChangeResult> MoveAsync(string lotId, FurnishingRequest r, CancellationToken cancel = default) => Change(lotId, r.ExpectedRevision, p => FurnishingEditor.Move(p, r.CharacterId, r.Piece!));
     public Task<ChangeResult> PickUpAsync(string lotId, FurnishingRequest r, CancellationToken cancel = default) => Change(lotId, r.ExpectedRevision, p => FurnishingEditor.PickUp(p, r.CharacterId, r.InstanceId ?? ""));
+    public Task<ChangeResult> SetDoorAsync(string lotId, DoorRequest r, CancellationToken cancel = default) => Change(lotId, null, p => LotDoors.SetOpen(p, r.CharacterId, r.DoorId, r.Open));
     private Task<ChangeResult> Change(string lotId, long? expected, Func<BuildingPlan, BuildResult> change)
     {
         lock (lots)

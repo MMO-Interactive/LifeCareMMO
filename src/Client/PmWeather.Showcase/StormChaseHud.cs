@@ -42,6 +42,8 @@ internal sealed partial class StormChaseHud : IDisposable
     public RenderUiFrame? Ui { get; private set; }
     /// <summary>Extra chase-screen elements (LifeCare build strip and pie wheel), in HUD pixels.</summary>
     public Func<int, int, IEnumerable<GuiElement>>? WorldOverlay { get; set; }
+    /// <summary>Build mode clears the play HUD: only the build panels (the world overlay) are drawn.</summary>
+    public bool BuildMode { get; set; }
 
     public StormChaseHud(nint owner)
     {
@@ -77,9 +79,9 @@ internal sealed partial class StormChaseHud : IDisposable
                 DrawGpuHodograph(mesh, w, h, atmosphere);
             else if (MapOpen && World is not null && !HousingOpen && telemetry.Campaign?.DispatchOpen != true)
                 DrawWorldMapInstruments(mesh, frame);
-            else if (!modal && telemetry.Campaign?.ShopOpen != true)
+            else if (!modal && telemetry.Campaign?.ShopOpen != true && !BuildMode)
                 DrawInstruments(mesh, frame);
-        }, chase && PhoneOpen && layoutForInstruments is { } phoneLayout && telemetryForInstruments is { } phoneTelemetry
+        }, chase && PhoneOpen && !BuildMode && layoutForInstruments is { } phoneLayout && telemetryForInstruments is { } phoneTelemetry
             ? mesh => DrawPhoneInstruments(mesh, phoneLayout, phoneTelemetry, frame) : null, chase ? topLayer : int.MaxValue);
     }
 
