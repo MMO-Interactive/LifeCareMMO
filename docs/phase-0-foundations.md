@@ -1,5 +1,8 @@
 # Phase 0: Foundations
 
+> Since 2026-11-18 the server projects, probes and `tools/Start-LifeCareServers.ps1` named below live in the
+> separate **LifeCareMMO-Server** repo (sibling checkout `%USERPROFILE%\LifeCareMMO-Server`), at the same relative paths.
+
 Status, 2026-11-17: the server side is done and its gate probe passes 18/18. The real DX12 client has not yet been
 pointed at the Gateway.
 
