@@ -25,7 +25,7 @@ internal static class ShowcaseLauncher
             Console.SetError(log);
             try
             {
-                Console.WriteLine("Direct executable launch: Storm Chase login and game menu.");
+                Console.WriteLine("Direct executable launch: LifeCare: Online login.");
                 Console.WriteLine("Application directory: " + AppContext.BaseDirectory);
                 Console.WriteLine("Runtime: " + RuntimeInformation.FrameworkDescription);
                 return await Showcase.RunAsync(["--game", "--output", Path.Combine(dataRoot, "Captures")]);
@@ -51,8 +51,8 @@ internal static class ShowcaseLauncher
 
     private static void ShowLaunchError(string message, string logPath)
     {
-        string text = "Storm Chase could not start.\n\n" + message + "\n\nLaunch log:\n" + logPath;
-        if (OperatingSystem.IsWindows()) MessageBoxW(nint.Zero, text, "MMOI Storm Chase", 0x10);
+        string text = "LifeCare: Online could not start.\n\n" + message + "\n\nLaunch log:\n" + logPath;
+        if (OperatingSystem.IsWindows()) MessageBoxW(nint.Zero, text, "LifeCare: Online", 0x10);
         else Console.Error.WriteLine(text);
     }
 

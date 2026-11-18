@@ -22,8 +22,7 @@ internal static partial class Showcase
             Environment.SetEnvironmentVariable("MMOI_STORM_CHASE_ACCOUNTS_API", null);
             deploymentEndpoint = ChaseClientConfiguration.AccountAddress;
             migrated = ChaseClientPreferences.Load();
-            using var deploymentLocal = new LocalChaseServer();
-            using var deploymentFrontend = new StormChaseFrontend(deploymentLocal);
+            using var deploymentFrontend = new StormChaseFrontend();
             deploymentFrontend.Update(1280, 720, GuiInputState.Empty, [], 0);
             Check(deploymentFrontend.Preferences.AccountAddress == deploymentEndpoint &&
                     deploymentFrontend.Frame.Elements.Where(element => element.IsInteractive).Select(element => element.ElementId).ToHashSet()
@@ -36,10 +35,12 @@ internal static partial class Showcase
         finally { Environment.SetEnvironmentVariable("MMOI_STORM_CHASE_ACCOUNTS_API", FrontendVerificationProfile.AccountAddress); }
         Check(migrated.AccountAddress == deploymentEndpoint && migrated.AccountAddress != FrontendVerificationProfile.LegacyAccountAddress,
             "Packaged deployment configuration replaces a stale player-saved account endpoint before credentials can be routed");
-        Check(migrated.LastServer == "http://127.0.0.1:5188" && migrated.Servers.SequenceEqual(new[] { "http://127.0.0.1:5188" }) &&
+        Check(migrated.LastCharacterId == "verification-character" &&
                 migrated.WeatherQuality == "Ultra" && migrated.Muted && !migrated.Fullscreen && migrated.Username == "",
-            "Account endpoint migration preserves saved game server, quality, sound and player preferences");
-        using var local = new LocalChaseServer(); using var frontend = new StormChaseFrontend(local);
+            "Account endpoint migration preserves last character, quality, sound and player preferences");
+        Check(ChaseClientConfiguration.DefaultAccountAddress == "http://127.0.0.1:5000",
+            "The client connects to the LifeCare Gateway by default");
+        using var frontend = new StormChaseFrontend();
         Check(frontend.Preferences.AccountAddress == FrontendVerificationProfile.AccountAddress,
             "Explicit isolated operator override takes precedence over packaged configuration and stale saved settings");
         using var api = new ChaseApiClient();
@@ -57,8 +58,8 @@ internal static partial class Showcase
 
         var ui = frontend.Update(1280, 720, GuiInputState.Empty, [], 0);
         Check(frontend.Screen == ChaseFrontendScreen.Login && !frontend.SignedIn, "Client starts at account login");
-        Check(!frontend.Frame.Elements.Any(element => element.ElementId is "offline" or "host" or "browser" or "menu"),
-            "Login contains no single-player, hosting or multiplayer bypass");
+        Check(!frontend.Frame.Elements.Any(element => element.ElementId is "offline" or "host" or "browser" or "menu" or "enter" or "new-character"),
+            "Login contains no single-player, hosting, server-browser or world-entry bypass");
         Check(frontend.Frame.Elements.Where(element => element.IsInteractive).Select(element => element.ElementId).ToHashSet()
                 .SetEquals(new[] { "username", "password", "login", "register", "quit" }),
             "Login exposes only account name, password, sign-in, registration and quit");
@@ -81,16 +82,16 @@ internal static partial class Showcase
         Check(frontend.Status == genericFailure && !frontend.Frame.DrawCommands.OfType<GuiTextCommand>()
                 .Any(command => command.Text.Contains("dev.redirectme.net", StringComparison.OrdinalIgnoreCase)),
             "Join failure displays a generic message in the native login UI");
-        frontend.ReturnToMenu("Native transport disconnected from https://dev.redirectme.net with private metadata");
+        frontend.ReturnToCharacterSelect("Native transport disconnected from https://dev.redirectme.net with private metadata");
         frontend.Update(1280, 720, GuiInputState.Empty, [], .006);
         Check(frontend.Status == genericFailure && !frontend.Frame.DrawCommands.OfType<GuiTextCommand>()
                 .Any(command => command.Text.Contains("dev.redirectme.net", StringComparison.OrdinalIgnoreCase)),
-            "Active-session disconnects cannot leak transport details through the returned menu");
-        frontend.ReturnToMenu("Returned to the main menu.");
-        Check(frontend.Status == "Returned to the main menu.", "Normal leave feedback survives status privacy filtering");
+            "Active-session disconnects cannot leak transport details through the returned screen");
+        frontend.ReturnToCharacterSelect(StormChaseFrontend.ReturnedToCharacters);
+        Check(frontend.Status == StormChaseFrontend.ReturnedToCharacters, "Normal leave feedback survives status privacy filtering");
         frontend.JoinFailed("Server metadata at https://dev.redirectme.net is unavailable");
         frontend.Update(1280, 720, GuiInputState.Empty, [new(0x1B, '\0', false)], .01);
-        Check(frontend.Screen == ChaseFrontendScreen.Login && frontend.Selection is null, "Escape cannot bypass authentication into the main menu");
+        Check(frontend.Screen == ChaseFrontendScreen.Login && frontend.Selection is null, "Escape cannot bypass authentication into character select");
         var password = frontend.Frame.Elements.Single(element => element.ElementId == "password").Bounds;
         frontend.Update(1280, 720, new(new(true, password.X + 15, password.Y + 20, true, false)), [], .1);
         frontend.Update(1280, 720, new(new(true, password.X + 15, password.Y + 20, false, true)),
@@ -109,12 +110,14 @@ internal static partial class Showcase
         {
             frontend.ShowForVerification(screen);
             ui = frontend.Update(surface.Width, surface.Height, GuiInputState.Empty, [], 2);
-            if (screen == ChaseFrontendScreen.Menu)
-            {
-                var menuText = frontend.Frame.DrawCommands.OfType<GuiTextCommand>().Select(command => command.Text).ToArray();
-                Check(menuText.Contains("SINGLE PLAYER") && menuText.Contains("HOST A SERVER") && menuText.Contains("JOIN MULTIPLAYER"),
-                    "Authenticated main menu presents Tiny Clinic style game-mode flow");
-            }
+            var screenText = frontend.Frame.DrawCommands.OfType<GuiTextCommand>().Select(command => command.Text).ToArray();
+            Check(!screenText.Any(text => text.Contains("SINGLE PLAYER") || text.Contains("HOST A SERVER") || text.Contains("STORM CHASE")),
+                screen + " offers no single-player, hosting or old Storm Chase branding");
+            if (screen == ChaseFrontendScreen.Characters)
+                Check(screenText.Any(text => text.StartsWith("ENTER WORLD", StringComparison.Ordinal)) && screenText.Contains("NEW CHARACTER"),
+                    "Character select enters the world directly, with no server browser");
+            if (screen == ChaseFrontendScreen.CreateCharacter)
+                Check(screenText.Contains("CREATE CHARACTER"), "Character creation screen offers creation");
             Check(ui.Vertices.Count > 0 && frontend.Frame.Elements.Count > 3, screen + " builds native game controls");
             var frame = CreateFrontendBackground(number, surface.Width, surface.Height, 40) with { Ui = ui };
             ExportCompleted.SetValue(backend, false);
@@ -147,7 +150,7 @@ internal static partial class Showcase
         {
             // Pause menu shares the same card style; capture it beside the account pages.
             var pause = new ChasePauseMenu();
-            ui = pause.Update(surface.Width, surface.Height, GuiInputState.Empty, [], "Verification chaser", false);
+            ui = pause.Update(surface.Width, surface.Height, GuiInputState.Empty, [], "Verification character");
             var pauseFrame = CreateFrontendBackground(number, surface.Width, surface.Height, 40) with { Ui = ui };
             ExportCompleted.SetValue(backend, false);
             for (int warm = 0; warm < 32 && !(bool)ExportCompleted.GetValue(backend)!; warm++)
@@ -166,7 +169,7 @@ internal static partial class Showcase
 
     private sealed class FrontendVerificationProfile : IDisposable
     {
-        public const string AccountAddress = "http://127.0.0.1:5080";
+        public const string AccountAddress = "http://127.0.0.1:5000";
         public const string LegacyAccountAddress = "https://legacy-accounts.example.invalid";
         private readonly string? previousRoot = Environment.GetEnvironmentVariable("MMOI_STORM_CHASE_DATA_ROOT");
         private readonly string? previousEndpoint = Environment.GetEnvironmentVariable("MMOI_STORM_CHASE_ACCOUNTS_API");
@@ -178,8 +181,8 @@ internal static partial class Showcase
             Environment.SetEnvironmentVariable("MMOI_STORM_CHASE_ACCOUNTS_API", AccountAddress);
             try
             {
-                new ChaseClientPreferences { AccountAddress = LegacyAccountAddress, LastServer = "http://127.0.0.1:5188",
-                    Username = "", Servers = ["http://127.0.0.1:5188"], WeatherQuality = "Ultra", Muted = true, Fullscreen = false }.Save();
+                new ChaseClientPreferences { AccountAddress = LegacyAccountAddress, LastCharacterId = "verification-character",
+                    Username = "", WeatherQuality = "Ultra", Muted = true, Fullscreen = false }.Save();
             }
             catch
             {

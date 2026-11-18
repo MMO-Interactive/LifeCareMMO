@@ -1,9 +1,10 @@
 using System.Text.Json;
 
-/// <summary>Operator configuration; connection details are absent from player login.</summary>
+/// <summary>Operator configuration; connection details are absent from player login.
+/// The address is the LifeCare Gateway, which fronts accounts, characters and the world.</summary>
 internal static class ChaseClientConfiguration
 {
-    public const string DefaultAccountAddress = "http://localhost:5080";
+    public const string DefaultAccountAddress = "http://127.0.0.1:5000";
 
     public static string AccountAddress
     {

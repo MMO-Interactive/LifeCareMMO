@@ -151,9 +151,10 @@ internal static partial class Showcase
             return await VerifyStormChaseRadarUiAsync(options, surface, catalog, logger, validation, output, staging);
         if (args.Contains("--weather-integration-smoke", StringComparer.OrdinalIgnoreCase))
             return await VerifyStormChaseWeatherIntegrationAsync(options, surface, catalog, logger, validation, output, staging);
-        if (demo) return legacyDemo
-            ? RunDemo(options, surface, catalog, logger, validation, particles, weatherSettings.Name, new LiveStormController(args))
-            : RunStormChaseDemo(options, surface, catalog, logger, validation, particles, weatherSettings.Name, new LiveStormController(args), output, args);
+        // Gameplay is server-only (--game). The legacy demo is a weather viewer with no career or local play.
+        if (demo && !legacyDemo)
+            throw new ArgumentException("The local storm-chase demo was removed. Play through the Gateway with --game, or view weather with --demo --legacy-demo.");
+        if (demo) return RunDemo(options, surface, catalog, logger, validation, particles, weatherSettings.Name, new LiveStormController(args));
         if (args.Contains("--campaign-capture", StringComparer.OrdinalIgnoreCase))
             return await RunCampaignCaptureAsync(options, surface, catalog, logger, validation,
                 particles, weatherSettings.Name, output, staging, width, height, args);
